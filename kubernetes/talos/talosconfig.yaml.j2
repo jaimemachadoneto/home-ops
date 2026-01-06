@@ -1,0 +1,14 @@
+context: home-ops
+contexts:
+  home-ops:
+    endpoints:
+      - 10.30.4.1
+      - 10.30.4.2
+      - 10.30.4.3
+    nodes:
+      - home-ops-00
+      - home-ops-01
+      - home-ops-02
+    ca: op://Home-Ops/talos/MACHINE_CA_CRT
+    crt: op://Home-Ops/talos/TALOSCONFIG_CLIENT_CRT
+    key: op://Home-Ops/talos/TALOSCONFIG_CLIENT_KEY
