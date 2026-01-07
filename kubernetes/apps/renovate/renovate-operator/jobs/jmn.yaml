@@ -19,7 +19,7 @@ kind: ExternalSecret
 metadata:
   name: lab-assistant-auth-token
 spec:
-  refreshInterval: "30m0s"
+  refreshInterval: "2m0s"
   target:
     name: lab-assistant-jmn-labs
     template:
