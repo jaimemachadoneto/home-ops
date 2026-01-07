@@ -33,7 +33,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   interval: 1h
-  path: ./kubernetes/apps/network/external-dns/pihole/app
+  path: ./kubernetes/apps/network/external-dns/pihole
   prune: true
   sourceRef:
     kind: GitRepository
