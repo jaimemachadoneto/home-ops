@@ -13,3 +13,7 @@ spec:
     fullnameOverride: renovate-operator
     webhook:
       enabled: true
+      authentication:
+        enabled: true
+        existingSecret: renovate-webhook-token
+        tokenKey: token
