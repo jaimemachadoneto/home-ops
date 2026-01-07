@@ -7,4 +7,3 @@ resources:
   - ./httproute.yaml
   - ./ocirepository.yaml
   - ./rbac.yaml
-  - ./webhook-externalsecret.yaml
