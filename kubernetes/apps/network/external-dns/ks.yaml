@@ -41,10 +41,7 @@ spec:
     namespace: flux-system
   targetNamespace: network
   timeout: 5m
-  wait: true
-  dependsOn:
-    - name: external-secrets-stores
-  retryInterval: 1m
+  wait: false
   postBuild:
     substituteFrom:
       - name: cluster-secrets
