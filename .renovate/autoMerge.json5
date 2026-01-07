@@ -11,6 +11,8 @@
         "ghcr.io/onedr0p",
         "ghcr.io/bjw-s",
         "ghcr.io/bjw-s-labs",
+        "ghcr.io/jaimemachadoneto",
+        "ghcr.io/jaimemachado",
       ],
       ignoreTests: false,
     },
