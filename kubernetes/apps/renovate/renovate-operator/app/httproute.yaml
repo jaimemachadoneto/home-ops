@@ -6,7 +6,7 @@ metadata:
   name: renovate-operator
 spec:
   hostnames:
-    - renovate.${SECRET_DOMAIN}
+    - renovate2.${SECRET_DOMAIN}
   parentRefs:
     - name: envoy-internal
       namespace: network
