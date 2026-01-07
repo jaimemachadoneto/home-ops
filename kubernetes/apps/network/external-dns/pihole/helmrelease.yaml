@@ -32,7 +32,7 @@ spec:
       - name: &name EXTERNAL_DNS_PIHOLE_PASSWORD
         valueFrom:
           secretKeyRef:
-            name: &secret external-dns-pihole
+            name: external-dns-pihole
             key: password
     extraArgs:
       - --pihole-server=https://10.30.0.3
