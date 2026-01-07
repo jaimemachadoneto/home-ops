@@ -1,0 +1,28 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
+    "github>bjw-s/renovate-config",
+    "github>bjw-s-labs/home-ops//.renovate/overrides.json5",
+    "github>bjw-s-labs/home-ops//.renovate/groups.json5",
+    "github>bjw-s-labs/home-ops//.renovate/autoMerge.json5",
+    "github>bjw-s-labs/home-ops//.renovate/customManagers.json5",
+    "github>bjw-s-labs/home-ops//.renovate/grafanaDashboards.json5",
+  ],
+  flux: {
+    managerFilePatterns: ["/^kubernetes/.+\\.yaml(?:\\.j2)?$/"],
+  },
+  "helm-values": {
+    managerFilePatterns: ["/^kubernetes/.+\\.yaml(?:\\.j2)?$/"],
+  },
+  kubernetes: {
+    managerFilePatterns: ["/^kubernetes/.+\\.yaml(?:\\.j2)?$/"],
+  },
+  packageRules: [
+    {
+      description: "Configure Emby versioning",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/home-operations/emby"],
+      versioning: "loose",
+    },
+  ],
+}
