@@ -65,3 +65,8 @@ spec:
   secretRef: lab-assistant-jmn-labs
   webhook:
     enabled: true
+    authentication:
+      enabled: true
+      secretRef:
+        name: renovate-webhook-token
+        key: token
