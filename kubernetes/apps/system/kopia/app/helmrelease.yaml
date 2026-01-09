@@ -47,7 +47,12 @@ spec:
               - /bin/sh
               - -c
               - |
-                if [ ! -f /repository/kopia.repository ]; then
+                if ! kopia repository connect filesystem \
+                  --path=/repository \
+                  --config-file=/config/repository.config \
+                  --override-hostname=volsync.system.svc.cluster.local \
+                  --override-username=volsync \
+                  --log-level=error 2>/dev/null; then
                   echo "Initializing Kopia repository..."
                   kopia repository create filesystem \
                     --path=/repository \
