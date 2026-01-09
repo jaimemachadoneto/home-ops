@@ -1,6 +1,8 @@
 ---
 machine:
   type: controlplane
+  certSANs:
+    - home-ops-00.internal
   nodeLabels:
     topology.kubernetes.io/zone: m
   install:
