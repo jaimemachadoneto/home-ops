@@ -47,6 +47,11 @@ spec:
               - /bin/sh
               - -c
               - |
+                if [ -f /repository/kopia.repository.f ] || [ -f /repository/kopia.repository ]; then
+                  echo "Kopia repository already exists, skipping initialization"
+                  exit 0
+                fi
+
                 if ! kopia repository connect filesystem \
                   --path=/repository \
                   --config-file=/config/repository.config \
@@ -60,7 +65,7 @@ spec:
                     --override-hostname=volsync.system.svc.cluster.local \
                     --override-username=volsync
                 else
-                  echo "Kopia repository already exists"
+                  echo "Successfully connected to existing Kopia repository"
                 fi
         containers:
           app:
