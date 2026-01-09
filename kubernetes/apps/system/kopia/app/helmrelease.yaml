@@ -87,8 +87,7 @@ spec:
       repository:
         type: nfs
         path: /mnt/tank/backup/volsync
-        # TODO:fix this
-        server: gladius.bjw-s.internal
+        server: nas.jaimenet.internal
         globalMounts:
           - path: /repository
       tmpfs:
