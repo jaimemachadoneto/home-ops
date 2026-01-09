@@ -119,7 +119,7 @@ spec:
       repository:
         type: nfs
         path: /mnt/Data1/kubernetes
-        server: nas.jaimenet.internal
+        server: nas.internal
         globalMounts:
           - path: /repository
       tmpfs:

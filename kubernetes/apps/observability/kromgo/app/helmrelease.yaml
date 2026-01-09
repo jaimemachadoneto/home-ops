@@ -82,7 +82,7 @@ spec:
     route:
       app:
         hostnames:
-          - kromgo.bjw-s.dev
+          - kromgo.${SECRET_DOMAIN}
         parentRefs:
           - name: envoy-external
             namespace: network
