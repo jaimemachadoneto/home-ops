@@ -9,7 +9,7 @@ controller := `talosctl config info --output json | jq --raw-output '.endpoints[
 nodes := `talosctl config info -o yaml | yq -e '.nodes | join (" ")'`
 
 [private]
-default: talos kubernetes (kubeconfig "node") wait namespaces resources crds apps kubeconfig
+default: kubernetes (kubeconfig "node") wait namespaces resources crds apps kubeconfig
 
 [doc('Bootstrap cluster from maintenance mode (zero to cluster)')]
 create-from-maintenance:
@@ -55,17 +55,20 @@ create-from-maintenance:
   just log info "✅ Secrets validated in 1Password" "stage" "create-from-maintenance"
 
   # STEP 2: Discover nodes from templates
-  NODE_TEMPLATES=({{ talos_dir }}/nodes/*.yaml.j2)
+  NODES_DIR="{{ talos_dir }}/nodes"
+  if [ ! -d "$NODES_DIR" ]; then
+    just log fatal "Nodes directory not found: $NODES_DIR" "stage" "create-from-maintenance"
+  fi
+
+  mapfile -t NODE_TEMPLATES < <(find "$NODES_DIR" -maxdepth 1 -name "*.yaml.j2" -type f | sort)
+
   if [ ${#NODE_TEMPLATES[@]} -eq 0 ]; then
-    just log fatal "No node templates found in {{ talos_dir }}/nodes/" "stage" "create-from-maintenance"
+    just log fatal "No node templates found in $NODES_DIR" "stage" "create-from-maintenance"
   fi
 
   NODES=()
   NODE_NAMES=()
   for template in "${NODE_TEMPLATES[@]}"; do
-    if [[ "$template" == *"*.yaml.j2" ]]; then
-      just log fatal "No .yaml.j2 templates found" "stage" "create-from-maintenance"
-    fi
     node_name=$(basename "$template" .yaml.j2)
     NODE_NAMES+=("$node_name")
     # Extract IP from template
@@ -78,11 +81,11 @@ create-from-maintenance:
 
   # STEP 3: Generate admin talosconfig from 1Password (before applying to nodes)
   just log info "Generating admin talosconfig from 1Password" "stage" "create-from-maintenance"
-  just template {{ talos_dir }}/talosconfig.yaml.j2 > {{ justfile_dir() }}/talosconfig
+  just template {{ talos_dir }}/talosconfig.yaml.j2 > {{ justfile_dir() }}/../../talosconfig
 
   # Configure endpoints and nodes
-  talosctl config endpoint "${NODES[@]}"
-  talosctl config node "${NODE_NAMES[@]}"
+  talosctl config endpoint ${NODES[@]+"${NODES[@]}"}
+  talosctl config node ${NODE_NAMES[@]+"${NODE_NAMES[@]}"}
   just log info "✅ Talosconfig ready" "stage" "create-from-maintenance"
 
   # STEP 4: Apply configuration to all nodes
@@ -132,15 +135,24 @@ create-from-maintenance:
 
 [doc('Install Talos')]
 talos:
-  just log info "Running stage..." "stage" "$0"
-  for n in {{ nodes }}; do \
-    if ! op=$(just talos::apply-node "$n" --insecure 2>&1); then \
-      if [[ "$op" == *"certificate required"* ]]; then \
-        just log info "Talos already configured, skipping apply of config" "stage" "$0" "node" "$n"; \
-        continue; \
-      fi; \
-      just log fatal "Failed to apply Talos configuration" "stage" "$0" "node" "$n" "output" "$op"; \
-    fi; \
+  #!/usr/bin/env bash
+  set -euo pipefail
+  just log info "Running stage..." "stage" "talos"
+
+  NODES=({{ nodes }})
+  for n in "${NODES[@]}"; do
+    echo "Checking node: $n"
+    if ! output=$(just talos::apply-node "$n" --insecure 2>&1); then
+      if [[ "$output" == *"certificate required"* ]] || [[ "$output" == *"certificate"* ]]; then
+        just log info "Talos already configured, skipping" "stage" "talos" "node" "$n"
+        continue
+      fi
+      echo "ERROR: Failed to apply Talos configuration to $n"
+      echo "$output"
+      just log fatal "Failed to apply Talos configuration" "stage" "talos" "node" "$n"
+      exit 1
+    fi
+    just log info "Applied Talos config" "stage" "talos" "node" "$n"
   done
 
 [doc('Install Kubernetes')]
@@ -214,8 +226,9 @@ destroy-cluster:
   set -euo pipefail
 
   # Get nodes from talosconfig
-  if [ ! -f talosconfig ]; then
-    echo "❌ talosconfig not found"
+  TALOSCONFIG_PATH="{{ justfile_dir() }}/talosconfig"
+  if [ ! -f "$TALOSCONFIG_PATH" ]; then
+    echo "❌ talosconfig not found at $TALOSCONFIG_PATH"
     echo "Run: just setup-dev"
     exit 1
   fi
