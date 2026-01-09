@@ -71,8 +71,8 @@ create-from-maintenance:
   for template in "${NODE_TEMPLATES[@]}"; do
     node_name=$(basename "$template" .yaml.j2)
     NODE_NAMES+=("$node_name")
-    # Extract IP from template
-    node_ip=$(just template "$template" | yq -e '.machine.network.interfaces[] | select(.interface == "bond0") | .addresses[0]' | cut -d'/' -f1)
+    # Extract IP from template (first address from first interface)
+    node_ip=$(just template "$template" | yq -e '.machine.network.interfaces[0].addresses[0]' | cut -d'/' -f1)
     NODES+=("$node_ip")
     just log info "Discovered node" "name" "$node_name" "ip" "$node_ip"
   done
@@ -120,9 +120,37 @@ create-from-maintenance:
     just log fatal "Failed to bootstrap etcd" "stage" "create-from-maintenance"
   fi
 
-  # Wait for Kubernetes API
-  just log info "Waiting for Kubernetes API (30 seconds)" "stage" "create-from-maintenance"
-  sleep 30
+  # Wait for etcd cluster to form
+  just log info "Waiting for etcd cluster to form" "stage" "create-from-maintenance"
+  sleep 10
+
+  EXPECTED_MEMBERS=${#NODES[@]}
+  MAX_RETRIES=200
+  RETRY=0
+  until [ $(talosctl -n "${NODES[0]}" etcd members 2>/dev/null | grep -c "false$") -eq $EXPECTED_MEMBERS ] 2>/dev/null; do
+    RETRY=$((RETRY+1))
+    if [ $RETRY -gt $MAX_RETRIES ]; then
+      just log fatal "Timeout waiting for all etcd members to join" "stage" "create-from-maintenance" "expected" "$EXPECTED_MEMBERS"
+    fi
+    CURRENT_MEMBERS=$(talosctl -n "${NODES[0]}" etcd members 2>/dev/null | grep -c "false$" || echo "0")
+    just log info "Waiting for etcd members to join ($CURRENT_MEMBERS/$EXPECTED_MEMBERS)" "stage" "create-from-maintenance"
+    sleep 5
+  done
+  just log info "All etcd members joined" "stage" "create-from-maintenance"
+
+  # Wait for Kubernetes API to be healthy
+  just log info "Waiting for Kubernetes API to be healthy" "stage" "create-from-maintenance"
+  MAX_RETRIES=60
+  RETRY=0
+  until talosctl -n "${NODES[0]}" service kube-apiserver | grep -q "HEALTH   OK" 2>/dev/null; do
+    RETRY=$((RETRY+1))
+    if [ $RETRY -gt $MAX_RETRIES ]; then
+      just log fatal "Timeout waiting for Kubernetes API" "stage" "create-from-maintenance"
+    fi
+    just log info "Waiting for Kubernetes API (attempt $RETRY/$MAX_RETRIES)..." "stage" "create-from-maintenance"
+    sleep 5
+  done
+  just log info "Kubernetes API is healthy" "stage" "create-from-maintenance"
 
   # Fetch kubeconfig
   just log info "Fetching kubeconfig" "stage" "create-from-maintenance"
