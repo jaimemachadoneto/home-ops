@@ -38,8 +38,7 @@ spec:
       - --pihole-server=https://10.30.0.3
       - --ignore-ingress-tls-spec
       - --pihole-tls-skip-verify
-      - --ingress-class=internal-nginx
-      - --ingress-class=internal-nginx-com
+      - --gateway-name=envoy-internal
       - --pihole-api-version=6
     resources:
       requests:
