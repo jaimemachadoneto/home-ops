@@ -35,6 +35,28 @@ spec:
             runAsGroup: 2000
             runAsNonRoot: true
             runAsUser: 2000
+        initContainers:
+          init-repo:
+            image:
+              repository: ghcr.io/home-operations/kopia
+              tag: 0.22.3@sha256:eeebd12fd4b3a9c25b9f711fff32454f62e2d5e2d431ab6806ad21c52f414807
+            envFrom:
+              - secretRef:
+                  name: kopia-secret
+            command:
+              - /bin/sh
+              - -c
+              - |
+                if [ ! -f /repository/kopia.repository ]; then
+                  echo "Initializing Kopia repository..."
+                  kopia repository create filesystem \
+                    --path=/repository \
+                    --config-file=/config/repository.config \
+                    --override-hostname=volsync.system.svc.cluster.local \
+                    --override-username=volsync
+                else
+                  echo "Kopia repository already exists"
+                fi
         containers:
           app:
             image:
