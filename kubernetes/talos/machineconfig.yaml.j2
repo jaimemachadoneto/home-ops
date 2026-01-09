@@ -6,6 +6,10 @@ machine:
     {% if ENV.IS_CONTROLPLANE %}
     key: op://Home-Ops/talos/MACHINE_CA_KEY
     {% endif %}
+  certSANs:
+    - 127.0.0.1
+    - 10.30.60.50
+    - home-ops.internal
   features:
     apidCheckExtKeyUsage: true
     diskQuotaSupport: true
@@ -167,7 +171,7 @@ name: EPHEMERAL
 provisioning:
   diskSelector:
     match: system_disk
-  maxSize: 20GiB
+  maxSize: 60GiB
 ---
 apiVersion: v1alpha1
 kind: UserVolumeConfig
@@ -175,4 +179,4 @@ name: local-hostpath
 provisioning:
   diskSelector:
     match: system_disk
-  maxSize: 10GiB
+  maxSize: 100GiB
