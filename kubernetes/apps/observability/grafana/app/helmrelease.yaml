@@ -210,6 +210,8 @@ spec:
 
     route:
       main:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: envoy-int.${SECRET_DOMAIN}
         enabled: true
         hostnames:
           - grafana.${SECRET_DOMAIN}
