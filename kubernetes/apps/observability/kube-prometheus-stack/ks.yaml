@@ -21,3 +21,7 @@ spec:
   targetNamespace: observability
   timeout: 5m
   wait: false
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
