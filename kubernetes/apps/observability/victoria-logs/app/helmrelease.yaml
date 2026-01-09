@@ -15,12 +15,12 @@ spec:
       persistentVolume:
         enabled: true
         storageClassName: ceph-block
-        size: 20Gi
-      retentionPeriod: 14d
+        size: 10Gi
+      retentionPeriod: 7d
       route:
         enabled: true
         hostnames:
-          - victoria-logs.bjw-s.dev
+          - logs.${SECRET_DOMAIN}
         parentRefs:
           - name: envoy-internal
             namespace: network
