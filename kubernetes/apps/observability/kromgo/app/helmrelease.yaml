@@ -4,6 +4,10 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: kromgo
+  annotations:
+    gatus.home-operations.com/endpoint: |
+      conditions:
+        - "[STATUS] == 200"
 spec:
   chartRef:
     kind: OCIRepository
