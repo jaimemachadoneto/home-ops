@@ -157,6 +157,13 @@ spec:
 
       route:
         main:
+          annotations:
+            gethomepage.dev/enabled: "true"
+            gethomepage.dev/description: Logs
+            gethomepage.dev/group: Kubernetes
+            gethomepage.dev/icon: si-prometheus.svg
+            gethomepage.dev/name: Prometheus
+            gethomepage.dev/app: prometheus
           enabled: true
           hostnames:
             - prometheus.${SECRET_DOMAIN}

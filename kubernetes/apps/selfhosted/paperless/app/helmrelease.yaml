@@ -114,6 +114,13 @@ spec:
 
     route:
       app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: Paperless
+          gethomepage.dev/group: Apps
+          gethomepage.dev/icon: si-paperlessngx.svg
+          gethomepage.dev/name: Paperless
+          gethomepage.dev/app: paperless
         hostnames:
           - "paperless.${SECRET_DOMAIN}"
         parentRefs:

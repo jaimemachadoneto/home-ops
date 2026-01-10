@@ -73,6 +73,13 @@ spec:
 
     route:
       app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: FileBrowser
+          gethomepage.dev/group: Kubernetes
+          gethomepage.dev/icon: si-filedotio.svg
+          gethomepage.dev/name: FileBrowser
+          gethomepage.dev/app: filebrowser
         hostnames:
           - "filebrowser.${SECRET_DOMAIN}"
         parentRefs:
