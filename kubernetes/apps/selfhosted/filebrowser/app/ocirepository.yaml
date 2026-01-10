@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/source.toolkit.fluxcd.io/ocirepository_v1beta2.json
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: OCIRepository
+metadata:
+  name: filebrowser
+spec:
+  ignore: |
+    *.md
+    *.txt
+  insecure: false
+  interval: 12h
+  provider: generic
+  ref:
+    semver: 4.5.0
+  url: oci://ghcr.io/bjw-s-labs/helm/app-template
