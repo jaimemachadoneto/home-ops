@@ -95,7 +95,7 @@ spec:
           - "status.${SECRET_DOMAIN}"
         parentRefs:
           - name: envoy-internal
-            namespace: networking
+            namespace: network
         rules:
           - backendRefs:
               - name: *app
