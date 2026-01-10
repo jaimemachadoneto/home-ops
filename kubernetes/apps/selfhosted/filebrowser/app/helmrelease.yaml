@@ -109,4 +109,4 @@ spec:
         server: 10.30.10.11
         path: /mnt/Data1/kubernetes
         globalMounts:
-          - /data/kubernetes
+          - path: /data/kubernetes
