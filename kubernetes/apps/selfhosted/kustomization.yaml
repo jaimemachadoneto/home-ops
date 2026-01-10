@@ -10,3 +10,4 @@ resources:
   - ./namespace.yaml
   - ./paperless/ks.yaml
   - ./filebrowser/ks.yaml
+  - ./it-tools/ks.yaml
