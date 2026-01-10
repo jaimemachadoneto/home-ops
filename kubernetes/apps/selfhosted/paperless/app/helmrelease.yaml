@@ -119,9 +119,8 @@ spec:
             namespace: network
         rules:
           - backendRefs:
-              - name: paperless
+              - name: app
                 port: 8000
-                namespace: selfhosted
 
     persistence:
       data:
