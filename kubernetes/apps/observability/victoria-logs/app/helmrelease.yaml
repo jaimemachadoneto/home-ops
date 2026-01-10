@@ -25,6 +25,7 @@ spec:
           gethomepage.dev/icon: si-victoriametrics.svg
           gethomepage.dev/name: Logs
           gethomepage.dev/app: logs
+          gethomepage.dev/href: "https://logs.${SECRET_DOMAIN}/select/vmui/"
         enabled: true
         hostnames:
           - logs.${SECRET_DOMAIN}
