@@ -9,3 +9,4 @@ components:
 resources:
   - ./namespace.yaml
   - ./paperless/ks.yaml
+  - ./filebrowser/ks.yaml
