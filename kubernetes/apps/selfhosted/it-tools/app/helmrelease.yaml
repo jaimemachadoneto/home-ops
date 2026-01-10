@@ -37,6 +37,13 @@ spec:
 
     route:
       app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: IT Tools
+          gethomepage.dev/group: Apps
+          gethomepage.dev/icon: si-setuptools.svg
+          gethomepage.dev/name: IT Tools
+          gethomepage.dev/app: it-tools
         hostnames:
           - "it-tools.${SECRET_DOMAIN}"
         parentRefs:
