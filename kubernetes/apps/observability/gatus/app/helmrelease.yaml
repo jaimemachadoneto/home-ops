@@ -13,9 +13,8 @@ spec:
     controllers:
       gatus:
         annotations:
-          reloader.stakater.com/auto: "true"
-          configmap.reloader.stakater.com/reload:
-          secret.reloader.stakater.com/reload:
+          configmap.reloader.stakater.com/reload: gatus-configmap
+          secret.reloader.stakater.com/reload: gatus
 
         initContainers:
           init-config:
