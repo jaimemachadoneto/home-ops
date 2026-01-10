@@ -9,4 +9,4 @@ spec:
     - name: alertname
       value: NodeMemoryHighUtilization
     - name: instance
-      value: gladius.bjw-s.internal:9100
+      value: nas.internal:9100
