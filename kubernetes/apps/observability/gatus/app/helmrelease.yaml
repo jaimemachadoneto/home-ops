@@ -18,6 +18,9 @@ spec:
 
         initContainers:
           init-config:
+            envFrom: &envFrom
+              - secretRef:
+                  name: gatus-secret
             image:
               repository: ghcr.io/home-operations/gatus-sidecar
               tag: 0.0.12@sha256:83bf82d422e9b0529a8076cb584d557a12158d9d8a4c373b4d27afcb87a17569
@@ -42,9 +45,7 @@ spec:
               GATUS_CONFIG_PATH: /config
               GATUS_DELAY_START_SECONDS: 5
               CUSTOM_WEB_PORT: &port 80
-            envFrom:
-              - secretRef:
-                  name: gatus-secret
+            envFrom: *envFrom
             probes:
               liveness: &probes
                 enabled: true
