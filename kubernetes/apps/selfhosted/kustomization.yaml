@@ -8,4 +8,4 @@ components:
   - ../../components/sops
 resources:
   - ./namespace.yaml
-  - ./parperless/ks.yaml
+  - ./paperless/ks.yaml
