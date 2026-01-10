@@ -62,6 +62,13 @@ spec:
 
     route:
       app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: Paperless AI
+          gethomepage.dev/group: Apps
+          gethomepage.dev/icon: si-paperlessngx.svg
+          gethomepage.dev/name: PaperlessAI
+          gethomepage.dev/app: paperless-ai
         hostnames:
           - "paperless-ai.${SECRET_DOMAIN}"
         parentRefs:

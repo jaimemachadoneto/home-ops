@@ -212,6 +212,12 @@ spec:
       main:
         annotations:
           external-dns.alpha.kubernetes.io/target: envoy-int.${SECRET_DOMAIN}
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: Grafana
+          gethomepage.dev/group: Kubernetes
+          gethomepage.dev/icon: si-grafana.svg
+          gethomepage.dev/name: Grafana
+          gethomepage.dev/app: grafana
         enabled: true
         hostnames:
           - grafana.${SECRET_DOMAIN}
