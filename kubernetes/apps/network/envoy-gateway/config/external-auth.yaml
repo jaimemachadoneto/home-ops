@@ -77,7 +77,7 @@ spec:
       issuer: "https://sso.${SECRET_DOMAIN}/application/o/envoy-gateway/"
       authorizationEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/authorize/"
       tokenEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/token/"
-    clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRR1"
+    clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRRl"
     clientSecret:
       name: authentik-oidc-secret
     redirectURL: "https://ingress-ext-auth.${SECRET_DOMAIN}/oauth2/callback"
