@@ -12,7 +12,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: authentik
-        namespace: flux-system
+        namespace: selfhosted
       version: 2025.10.2
   install:
     remediation:
