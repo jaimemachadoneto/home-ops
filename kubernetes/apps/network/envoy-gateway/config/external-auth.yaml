@@ -5,7 +5,7 @@ kind: Gateway
 metadata:
   name: envoy-external-auth
   annotations:
-    external-dns.alpha.kubernetes.io/target: &hostname ingress-ext.${SECRET_DOMAIN}
+    external-dns.alpha.kubernetes.io/target: &hostname ingress-ext-auth.${SECRET_DOMAIN}
 spec:
   gatewayClassName: envoy
   infrastructure:
@@ -78,7 +78,7 @@ spec:
     clientID: "envoy-gateway"
     clientSecret:
       name: authentik-oidc-secret
-    redirectURL: "/oauth2/callback"
+    redirectURL: "https://ingress-ext.${SECRET_DOMAIN}/oauth2/callback"
     logoutPath: "/oauth2/logout"
     scopes:
       - openid
