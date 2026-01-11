@@ -79,7 +79,7 @@ spec:
     clientSecret:
       name: authentik-oidc-secret
       key: client-secret
-    redirectPath: "/oauth2/callback"
+    redirectURL: "/oauth2/callback"
     logoutPath: "/oauth2/logout"
     scopes:
       - openid
