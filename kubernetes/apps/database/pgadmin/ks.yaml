@@ -18,7 +18,8 @@ spec:
       namespace: rook-ceph
   sourceRef:
     kind: GitRepository
-    name: home-kubernetes
+    name: flux-system
+    namespace: flux-system
   postBuild:
     substitute:
       APP: *app
