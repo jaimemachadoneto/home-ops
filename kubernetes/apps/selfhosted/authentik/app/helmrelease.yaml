@@ -56,16 +56,24 @@ spec:
           enabled: true
           hostnames:
             - sso.${SECRET_DOMAIN}
+          annotations:
+            external-dns.alpha.kubernetes.io/target: ingress-ext.${SECRET_DOMAIN}
+            gethomepage.dev/enabled: "true"
+            gethomepage.dev/description: Authentik
+            gethomepage.dev/group: infrastructure
+            gethomepage.dev/icon: si-grafana.svg
+            gethomepage.dev/name: SSO
+            gethomepage.dev/app: authentik
           parentRefs:
             - group: gateway.networking.k8s.io
               kind: Gateway
               name: envoy-internal
-              namespace: networking
+              namespace: network
               sectionName: https
             - group: gateway.networking.k8s.io
               kind: Gateway
               name: envoy-external
-              namespace: networking
+              namespace: network
               sectionName: https
       metrics:
         serviceMonitor:
