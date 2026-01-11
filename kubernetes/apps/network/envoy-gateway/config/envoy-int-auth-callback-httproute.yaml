@@ -11,6 +11,7 @@ metadata:
 spec:
   hostnames:
     - envoy-int-auth.${SECRET_DOMAIN}
+    - sso.${SECRET_DOMAIN}
   parentRefs:
     - name: envoy-internal-auth
       namespace: network
