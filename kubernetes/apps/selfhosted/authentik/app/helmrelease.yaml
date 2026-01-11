@@ -1,0 +1,73 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: authentik
+spec:
+  chart:
+    spec:
+      chart: authentik
+      interval: 5m
+      sourceRef:
+        kind: HelmRepository
+        name: authentik
+        namespace: flux-system
+      version: 2025.10.2
+  install:
+    remediation:
+      retries: 3
+  interval: 25m
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+      strategy: rollback
+  values:
+    authentik:
+      redis:
+        db: 1
+        host: dragonfly.database.svc.cluster.local
+    global:
+      deploymentStrategy:
+        type: RollingUpdate
+      envFrom:
+        - secretRef:
+            name: *secret
+      podAnnotations:
+        secret.reloader.stakater.com/reload: &secret authentik-secret
+    prometheus:
+      rules:
+        enabled: false
+    server:
+      ingress:
+        annotations:
+          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          gethomepage.dev/app: authentik
+          gethomepage.dev/description: OIDC User Management
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: Infrastructure
+          gethomepage.dev/icon: authentik.png
+          gethomepage.dev/name: Authentik
+          gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_AUTHENTIK_TOKEN}}"
+          gethomepage.dev/widget.type: authentik
+          gethomepage.dev/widget.url: http://authentik-server.security
+          hajimari.io/icon: simple-icons:authentik
+        enabled: true
+        hosts:
+          - &host sso.${SECRET_DOMAIN}
+        ingressClassName: external-nginx
+        tls:
+          - hosts:
+              - *host
+      initContainers:
+        - envFrom:
+            - secretRef:
+                name: *secret
+          image: ghcr.io/rafaribe/postgres-init:16
+          name: init-db
+      metrics:
+        enabled: false
+        serviceMonitor:
+          enabled: false
+      replicas: 3
