@@ -1,20 +1,14 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: pgadmin
 spec:
+  chartRef:
+    kind: OCIRepository
+    name: pgadmin
   interval: 1h
-  chart:
-    spec:
-      chart: app-template
-      version: 3.7.3
-      interval: 30m
-      sourceRef:
-        kind: HelmRepository
-        name: bjw-s
-        namespace: flux-system
   maxHistory: 3
   install:
     createNamespace: true
@@ -60,23 +54,22 @@ spec:
           http:
             port: &port 80
 
-    ingress:
-      main:
+    route:
+      app:
         annotations:
-          external-dns.alpha.kubernetes.io/target: ingress-int.${SECRET_DOMAIN}
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Infrastructure
           gethomepage.dev/name: pgAdmin
           gethomepage.dev/icon: pgadmin.png
           gethomepage.dev/description: PostgreSQL Admin
-        className: internal-nginx
-        hosts:
-          - host: pgadmin.${SECRET_DOMAIN}
-            paths:
-              - path: /
-                service:
-                  identifier: main
-                  port: http
+        hostnames:
+          - "pgadmin.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+        rules:
+          - backendRefs:
+              - name: pgadmin
 
     persistence:
       config:
