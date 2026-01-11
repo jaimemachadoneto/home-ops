@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: authentik
   interval: 30m
-  path: ./kubernetes/apps/security/authentik/app
+  path: ./kubernetes/apps/selfhosted/authentik/app
   postBuild:
     substitute:
       APP: *app
@@ -23,6 +23,6 @@ spec:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: security
+  targetNamespace: selfhosted
   timeout: 5m
   wait: false
