@@ -38,8 +38,7 @@ spec:
       - --pihole-server=https://10.30.0.3
       - --ignore-ingress-tls-spec
       - --pihole-tls-skip-verify
-      - --gateway-name=envoy-internal
-      - --gateway-name=envoy-internal-auth
+      - --gateway-label-filter=app.kubernetes.io/name=envoy-gateway
       - --pihole-api-version=6
     resources:
       requests:
