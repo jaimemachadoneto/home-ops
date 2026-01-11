@@ -42,7 +42,7 @@ spec:
     server:
       ingress:
         annotations:
-          external-dns.alpha.kubernetes.io/target: external.${SECRET_DOMAIN}
+          external-dns.alpha.kubernetes.io/target: ingress-ext.${SECRET_DOMAIN}
           gethomepage.dev/app: authentik
           gethomepage.dev/description: OIDC User Management
           gethomepage.dev/enabled: "true"
@@ -56,7 +56,7 @@ spec:
         enabled: true
         hosts:
           - &host sso.${SECRET_DOMAIN}
-        ingressClassName: external-nginx
+        ingressClassName: envoy-external
         tls:
           - hosts:
               - *host
