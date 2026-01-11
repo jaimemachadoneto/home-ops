@@ -26,7 +26,6 @@ spec:
   values:
     authentik:
       redis:
-        db: 1
         host: dragonfly.database.svc.cluster.local
     global:
       deploymentStrategy:
@@ -36,38 +35,66 @@ spec:
             name: &secret authentik-secret
       podAnnotations:
         secret.reloader.stakater.com/reload: *secret
-    prometheus:
-      rules:
-        enabled: false
     server:
-      ingress:
-        annotations:
-          external-dns.alpha.kubernetes.io/target: ingress-ext.${SECRET_DOMAIN}
-          gethomepage.dev/app: authentik
-          gethomepage.dev/description: OIDC User Management
-          gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Infrastructure
-          gethomepage.dev/icon: authentik.png
-          gethomepage.dev/name: Authentik
-          gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_AUTHENTIK_TOKEN}}"
-          gethomepage.dev/widget.type: authentik
-          gethomepage.dev/widget.url: http://authentik-server.selfhosted
-          hajimari.io/icon: simple-icons:authentik
-        enabled: true
-        hosts:
-          - &host sso.${SECRET_DOMAIN}
-        ingressClassName: envoy-external
-        tls:
-          - hosts:
-              - *host
+      replicas: 1
+      pdb:
+        enabled: false
+        minAvailable: 1
+        maxUnavailable: 1
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
       initContainers:
         - envFrom:
             - secretRef:
                 name: *secret
           image: ghcr.io/rafaribe/postgres-init:16
           name: init-db
+      route:
+        main:
+          enabled: true
+          hostnames:
+            - sso.${SECRET_DOMAIN}
+          parentRefs:
+            - group: gateway.networking.k8s.io
+              kind: Gateway
+              name: envoy-internal
+              namespace: networking
+              sectionName: https
+            - group: gateway.networking.k8s.io
+              kind: Gateway
+              name: envoy-external
+              namespace: networking
+              sectionName: https
       metrics:
-        enabled: false
         serviceMonitor:
-          enabled: false
-      replicas: 3
+          enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          memory: 2Gi
+    worker:
+      replicas: 1
+      serviceAccount:
+        create: true
+      pdb:
+        enabled: false
+        minAvailable: 1
+        maxUnavailable: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 512Mi
+        limits:
+          memory: 1.5Gi
+    prometheus:
+      rules:
+        enabled: true
+
+    postgresql:
+      enabled: false
+    redis:
+      enabled: false
