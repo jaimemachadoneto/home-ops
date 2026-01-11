@@ -23,4 +23,4 @@ spec:
       backendRefs:
         - name: echo-server
           namespace: network
-          port: 80
+          port: 8080
