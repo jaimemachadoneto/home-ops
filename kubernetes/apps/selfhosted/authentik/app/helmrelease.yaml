@@ -74,6 +74,19 @@ spec:
               name: envoy-external
               namespace: network
               sectionName: https
+      extraEnv:
+        - name: DJANGO_SESSION_COOKIE_DOMAIN
+          value: ".${SECRET_DOMAIN}"
+        - name: DJANGO_CSRF_COOKIE_DOMAIN
+          value: ".${SECRET_DOMAIN}"
+        - name: DJANGO_SESSION_COOKIE_SAMESITE
+          value: "None"
+        - name: DJANGO_SESSION_COOKIE_SECURE
+          value: "true"
+        - name: DJANGO_CSRF_COOKIE_SAMESITE
+          value: "None"
+        - name: DJANGO_CSRF_COOKIE_SECURE
+          value: "true"
       metrics:
         serviceMonitor:
           enabled: true
