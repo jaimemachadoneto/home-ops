@@ -77,10 +77,10 @@ spec:
       issuer: "https://sso.${SECRET_DOMAIN}/application/o/envoy-gateway/"
       authorizationEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/authorize/"
       tokenEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/token/"
-    clientID: "envoy-gateway"
+    clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRR1"
     clientSecret:
       name: authentik-oidc-secret
-    redirectURL: "https://envoy-int.${SECRET_DOMAIN}/oauth2/callback"
+    redirectURL: "https://envoy-int-auth.${SECRET_DOMAIN}/oauth2/callback"
     logoutPath: "/oauth2/logout"
     scopes:
       - openid
