@@ -69,7 +69,6 @@ spec:
               kind: Gateway
               name: envoy-internal
               namespace: network
-              sectionName: https
             - group: gateway.networking.k8s.io
               kind: Gateway
               name: envoy-external
