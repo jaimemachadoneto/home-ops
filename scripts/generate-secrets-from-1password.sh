@@ -7,10 +7,10 @@ set -e
 echo "Fetching secrets from 1Password..."
 
 # Check if op is authenticated
-if ! op whoami &>/dev/null; then
-    echo "Error: Not authenticated to 1Password. Run 'eval \$(op signin)' first."
-    exit 1
-fi
+# if ! op whoami &>/dev/null; then
+#     echo "Error: Not authenticated to 1Password. Run 'eval \$(op signin)' first."
+#     exit 1
+# fi
 
 # Fetch all fields from the 1Password item
 echo "Retrieving secrets from Home-ops/talos..."

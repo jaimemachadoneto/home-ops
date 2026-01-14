@@ -21,3 +21,4 @@ spec:
         query: probe_success{instance=~"nas.internal:2049"}
         threshold: "1"
         ignoreNullValues: "0"
+        timeout: "10"
