@@ -24,6 +24,7 @@ spec:
       - "${SECRET_DOMAIN}"
     policy: sync
     provider: pihole
+    gatewayLabelFilter: gateway-type=internal
     env:
       - name: LOG_LEVEL
         value: *logLevel
@@ -38,7 +39,7 @@ spec:
       - --pihole-server=https://10.30.0.3
       - --ignore-ingress-tls-spec
       - --pihole-tls-skip-verify
-      - --gateway-name=envoy-internal
+      - --gateway-label-filter=gateway-type=internal
       - --pihole-api-version=6
     resources:
       requests:
