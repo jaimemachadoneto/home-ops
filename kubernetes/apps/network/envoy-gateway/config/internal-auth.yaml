@@ -33,6 +33,8 @@ spec:
           - kind: Secret
             name: home-ops-jmn-tls
 ---
+# SecurityPolicy applied to the Gateway itself
+# This protects ALL routes that use this gateway
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -61,7 +63,7 @@ spec:
 ---
 # HTTPRoute for the auth gateway hostname itself
 # This handles requests to envoy-int-auth.${SECRET_DOMAIN}
-# The OAuth filter will intercept /oauth2/callback before it reaches the backend
+# including the OAuth callback
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -74,14 +76,12 @@ spec:
     - name: envoy-internal-auth
       namespace: network
   rules:
-    # DO NOT add a specific match for /oauth2/callback
-    # Let Envoy's OAuth filter handle it automatically
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: echo-server  # Only used for non-OAuth paths
+        - name: echo-server  # A simple backend for non-OAuth paths
           namespace: network
           port: 8080
 ---
