@@ -62,31 +62,31 @@ spec:
     name: envoy-external-auth
   type: JSONPatch
 ---
-# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: SecurityPolicy
-metadata:
-  name: envoy-external-auth
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: envoy-external-auth
-  oidc:
-    provider:
-      issuer: "https://sso.${SECRET_DOMAIN}/application/o/envoy-gateway/"
-      authorizationEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/authorize/"
-      tokenEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/token/"
-    clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRRl"
-    clientSecret:
-      name: authentik-oidc-secret
-    redirectURL: "https://ingress-ext-auth.${SECRET_DOMAIN}/oauth2/callback"
-    logoutPath: "/oauth2/logout"
-    scopes:
-      - openid
-      - profile
-      - email
----
+# # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: SecurityPolicy
+# metadata:
+#   name: envoy-external-auth
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: Gateway
+#     name: envoy-external-auth
+#   oidc:
+#     provider:
+#       issuer: "https://sso.${SECRET_DOMAIN}/application/o/envoy-gateway/"
+#       authorizationEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/authorize/"
+#       tokenEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/token/"
+#     clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRRl"
+#     clientSecret:
+#       name: authentik-oidc-secret
+#     redirectURL: "https://ingress-ext-auth.${SECRET_DOMAIN}/oauth2/callback"
+#     logoutPath: "/oauth2/logout"
+#     scopes:
+#       - openid
+#       - profile
+#       - email
+# ---
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
