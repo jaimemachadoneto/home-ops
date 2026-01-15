@@ -99,6 +99,7 @@ spec:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: headlamp
+    namespace: observability
   oidc:
     provider:
       issuer: "https://sso.jaimenet.com/application/o/envoy-gateway/"
