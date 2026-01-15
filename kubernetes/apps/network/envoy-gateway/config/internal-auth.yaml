@@ -1,7 +1,5 @@
-
 ---
-# Gateway for handling OAuth callbacks
-# This gateway should NOT have OIDC protection itself
+# Gateway that provides OAuth authentication for all routes through it
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -23,31 +21,30 @@ spec:
       port: 80
       allowedRoutes:
         namespaces:
-          from: Same
+          from: All  # Changed to All so services in other namespaces can use it
     - name: https
       protocol: HTTPS
       port: 443
       allowedRoutes:
         namespaces:
-          from: All
+          from: All  # Changed to All
       tls:
         certificateRefs:
           - kind: Secret
             name: home-ops-jmn-tls
 ---
-# SecurityPolicy should be on the gateway/routes you want to PROTECT
-# NOT on the auth callback gateway itself
-# Apply this to services that need authentication
+# SecurityPolicy applied to the Gateway itself
+# This protects ALL routes that use this gateway
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: oidc-auth-policy
-  namespace: network  # or the namespace of your protected service
+  name: envoy-internal-auth
+  namespace: network
 spec:
   targetRef:
     group: gateway.networking.k8s.io
-    kind: HTTPRoute  # or Gateway if you want to protect all routes
-    name: your-protected-service-route  # Change to your actual route name
+    kind: Gateway
+    name: envoy-internal-auth  # Apply to the gateway itself
   oidc:
     provider:
       issuer: "https://sso.${SECRET_DOMAIN}/application/o/envoy-gateway/"
@@ -62,58 +59,35 @@ spec:
       - openid
       - profile
       - email
-    cookieDomain: ".${SECRET_DOMAIN}"  # Add this!
+    cookieDomain: "${SECRET_DOMAIN}"  # No leading dot
 ---
-# HTTPRoute for OAuth callback - should NOT route to a backend
-# Instead, remove this HTTPRoute entirely and let Envoy handle it internally
-# The SecurityPolicy's redirectURL will automatically create the callback endpoint
----
-# Example: Protecting a service with OAuth
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: protected-service-example
-  namespace: network
-spec:
-  hostnames:
-    - myapp.${SECRET_DOMAIN}
-  parentRefs:
-    - name: envoy-internal  # Your main internal gateway
-      namespace: network
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: your-actual-service
-          namespace: network
-          port: 8080
----
-# Apply SecurityPolicy to the HTTPRoute above
+# EnvoyPatchPolicy for compression (keep your existing one)
 apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: SecurityPolicy
+kind: EnvoyPatchPolicy
 metadata:
-  name: protected-service-auth
+  name: envoy-internal-auth
   namespace: network
 spec:
+  jsonPatches:
+    - type: type.googleapis.com/envoy.config.listener.v3.Listener
+      name: network/envoy-internal-auth/https
+      operation: &operation
+        op: add
+        jsonPath: ..filters[*].typed_config.http_filters[?(@.name=="envoy.filters.http.compressor.zstd")].typed_config
+        value:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.compressor.v3.Compressor
+          choose_first: true
+          compressor_library:
+            name: envoy.compression.zstd.compressor
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.compression.zstd.compressor.v3.Zstd
+          response_direction_config:
+            remove_accept_encoding_header: true
+    - type: type.googleapis.com/envoy.config.listener.v3.Listener
+      name: network/envoy-internal-auth/https-quic
+      operation: *operation
   targetRef:
     group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: protected-service-example  # Match the HTTPRoute name above
-  oidc:
-    provider:
-      issuer: "https://sso.${SECRET_DOMAIN}/application/o/envoy-gateway/"
-      authorizationEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/authorize/"
-      tokenEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/token/"
-    clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRRl"
-    clientSecret:
-      name: authentik-oidc-secret
-    redirectURL: "https://envoy-int-auth.${SECRET_DOMAIN}/oauth2/callback"
-    logoutPath: "/oauth2/logout"
-    scopes:
-      - openid
-      - profile
-      - email
-    cookieDomain: ".${SECRET_DOMAIN}"
----
+    kind: Gateway
+    name: envoy-internal-auth
+  type: JSONPatch
