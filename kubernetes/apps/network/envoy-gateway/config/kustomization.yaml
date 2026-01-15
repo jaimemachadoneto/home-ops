@@ -7,8 +7,8 @@ resources:
   - ./certificate.yaml
   - ./envoy.yaml
   - ./external.yaml
-  - ./external-auth.yaml
+  # - ./external-auth.yaml
   - ./internal.yaml
   - ./internal-auth.yaml
-  - ./envoy-ext-auth-callback-httproute.yaml
+  # - ./envoy-ext-auth-callback-httproute.yaml
   - ./podmonitor.yaml
