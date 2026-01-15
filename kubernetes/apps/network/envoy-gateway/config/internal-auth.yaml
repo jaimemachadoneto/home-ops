@@ -1,9 +1,12 @@
+
 ---
-# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/gateway_v1.json
+# Gateway for handling OAuth callbacks
+# This gateway should NOT have OIDC protection itself
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: envoy-internal-auth
+  namespace: network
   labels:
     gateway-type: internal
   annotations:
@@ -13,7 +16,7 @@ spec:
   infrastructure:
     annotations:
       external-dns.alpha.kubernetes.io/hostname: *hostname
-      lbipam.cilium.io/ips: 10.30.6.45 # Same IP as envoy-internal
+      lbipam.cilium.io/ips: 10.30.6.45
   listeners:
     - name: http
       protocol: HTTP
@@ -32,46 +35,19 @@ spec:
           - kind: Secret
             name: home-ops-jmn-tls
 ---
-# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.envoyproxy.k8s.io/envoypatchpolicy_v1alpha1.json
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: EnvoyPatchPolicy
-metadata:
-  name: envoy-internal-auth
-spec:
-  jsonPatches:
-    - type: type.googleapis.com/envoy.config.listener.v3.Listener
-      name: network/envoy-internal-auth/https
-      operation: &operation
-        op: add
-        jsonPath: ..filters[*].typed_config.http_filters[?(@.name=="envoy.filters.http.compressor.zstd")].typed_config
-        value:
-          "@type": type.googleapis.com/envoy.extensions.filters.http.compressor.v3.Compressor
-          choose_first: true
-          compressor_library:
-            name: envoy.compression.zstd.compressor
-            typed_config:
-              "@type": type.googleapis.com/envoy.extensions.compression.zstd.compressor.v3.Zstd
-          response_direction_config:
-            remove_accept_encoding_header: true
-    - type: type.googleapis.com/envoy.config.listener.v3.Listener
-      name: network/envoy-internal-auth/https-quic
-      operation: *operation
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: envoy-internal-auth
-  type: JSONPatch
----
-# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+# SecurityPolicy should be on the gateway/routes you want to PROTECT
+# NOT on the auth callback gateway itself
+# Apply this to services that need authentication
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: envoy-internal-auth
+  name: oidc-auth-policy
+  namespace: network  # or the namespace of your protected service
 spec:
   targetRef:
     group: gateway.networking.k8s.io
-    kind: Gateway
-    name: envoy-internal-auth
+    kind: HTTPRoute  # or Gateway if you want to protect all routes
+    name: your-protected-service-route  # Change to your actual route name
   oidc:
     provider:
       issuer: "https://sso.${SECRET_DOMAIN}/application/o/envoy-gateway/"
@@ -86,6 +62,58 @@ spec:
       - openid
       - profile
       - email
-    # Ensure the session cookie set by the identity provider is usable for the
-    # gateway callback. These attributes mirror Authentik's cookie settings
-    # so the browser will send the cookie on redirect back to the callback.
+    cookieDomain: ".${SECRET_DOMAIN}"  # Add this!
+---
+# HTTPRoute for OAuth callback - should NOT route to a backend
+# Instead, remove this HTTPRoute entirely and let Envoy handle it internally
+# The SecurityPolicy's redirectURL will automatically create the callback endpoint
+---
+# Example: Protecting a service with OAuth
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: protected-service-example
+  namespace: network
+spec:
+  hostnames:
+    - myapp.${SECRET_DOMAIN}
+  parentRefs:
+    - name: envoy-internal  # Your main internal gateway
+      namespace: network
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: your-actual-service
+          namespace: network
+          port: 8080
+---
+# Apply SecurityPolicy to the HTTPRoute above
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: protected-service-auth
+  namespace: network
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: protected-service-example  # Match the HTTPRoute name above
+  oidc:
+    provider:
+      issuer: "https://sso.${SECRET_DOMAIN}/application/o/envoy-gateway/"
+      authorizationEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/authorize/"
+      tokenEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/token/"
+    clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRRl"
+    clientSecret:
+      name: authentik-oidc-secret
+    redirectURL: "https://envoy-int-auth.${SECRET_DOMAIN}/oauth2/callback"
+    logoutPath: "/oauth2/logout"
+    scopes:
+      - openid
+      - profile
+      - email
+    cookieDomain: ".${SECRET_DOMAIN}"
+---
