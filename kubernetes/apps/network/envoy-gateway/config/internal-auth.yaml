@@ -55,10 +55,6 @@ spec:
       name: authentik-oidc-secret
     redirectURL: "https://headlamp.${SECRET_DOMAIN}/oauth2/callback"
     logoutPath: "/oauth2/logout"
-    scopes:
-      - openid
-      - profile
-      - email
     cookieDomain: "${SECRET_DOMAIN}"  # No leading dot
 ---
 # HTTPRoute for the auth gateway hostname itself
