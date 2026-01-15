@@ -76,9 +76,9 @@ spec:
               sectionName: https
       extraEnv:
         - name: DJANGO_SESSION_COOKIE_DOMAIN
-          value: ".${SECRET_DOMAIN}"
+          value: "${SECRET_DOMAIN}"
         - name: DJANGO_CSRF_COOKIE_DOMAIN
-          value: ".${SECRET_DOMAIN}"
+          value: "${SECRET_DOMAIN}"
         - name: DJANGO_SESSION_COOKIE_SAMESITE
           value: "None"
         - name: DJANGO_SESSION_COOKIE_SECURE
