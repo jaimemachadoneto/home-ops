@@ -16,9 +16,9 @@ spec:
       namespace: network
   rules:
     - matches:
-        - path:
-            type: Exact
-            value: /oauth2/callback
+      - path:
+        type: PathPrefix
+        value: /oauth2/callback
       backendRefs:
         - name: echo-server
           namespace: network
