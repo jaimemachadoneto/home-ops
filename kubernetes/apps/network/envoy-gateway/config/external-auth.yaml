@@ -87,29 +87,3 @@ spec:
 #       - profile
 #       - email
 # ---
----
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: SecurityPolicy
-metadata:
-  name: headlamp-auth
-  namespace: observability
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: headlamp
-  oidc:
-    provider:
-      issuer: "https://sso.jaimenet.com/application/o/envoy-gateway/"
-      authorizationEndpoint: "https://sso.jaimenet.com/application/o/authorize/"
-      tokenEndpoint: "https://sso.jaimenet.com/application/o/token/"
-    clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRRl"
-    clientSecret:
-      name: authentik-oidc-secret
-      namespace: network
-    redirectURL: "https://headlamp.jaimenet.com/oauth2/callback"
-    logoutPath: "/oauth2/logout"
-    scopes:
-      - openid
-      - profile
-      - email
