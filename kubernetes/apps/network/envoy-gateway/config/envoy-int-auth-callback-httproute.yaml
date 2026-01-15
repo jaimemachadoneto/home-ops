@@ -17,7 +17,7 @@ spec:
   rules:
     - matches:
       - path:
-        type: PathPrefix
+        type: Exact
         value: /oauth2/callback
       backendRefs:
         - name: echo-server
