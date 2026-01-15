@@ -53,7 +53,7 @@ spec:
     clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRRl"
     clientSecret:
       name: authentik-oidc-secret
-    redirectURL: "https://headlamp.${SECRET_DOMAIN}/oauth2/callback"
+    redirectURL: "https://envoy-int-auth.${SECRET_DOMAIN}/oauth2/callback"
     logoutPath: "/oauth2/logout"
     cookieDomain: "${SECRET_DOMAIN}"  # No leading dot
 ---
