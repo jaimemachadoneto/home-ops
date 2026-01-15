@@ -55,7 +55,7 @@ spec:
       name: authentik-oidc-secret
     redirectURL: "https://envoy-int-auth.${SECRET_DOMAIN}/oauth2/callback"
     logoutPath: "/oauth2/logout"
-    cookieDomain: "${SECRET_DOMAIN}"  # No leading dot
+    cookieDomain: "${SECRET_DOMAIN}"  # No leading do
 ---
 # HTTPRoute for the auth gateway hostname itself
 # This handles requests to envoy-int-auth.${SECRET_DOMAIN}
