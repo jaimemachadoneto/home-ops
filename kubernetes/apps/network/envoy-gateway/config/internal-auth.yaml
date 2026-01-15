@@ -33,61 +33,57 @@ spec:
           - kind: Secret
             name: home-ops-jmn-tls
 ---
-# SecurityPolicy applied to the Gateway itself
-# This protects ALL routes that use this gateway
-# apiVersion: gateway.envoyproxy.io/v1alpha1
-# kind: SecurityPolicy
-# metadata:
-#   name: envoy-internal-auth
-#   namespace: network
-# spec:
-#   targetRef:
-#     group: gateway.networking.k8s.io
-#     kind: Gateway
-#     name: envoy-internal-auth  # Apply to the gateway itself
-#   oidc:
-#     provider:
-#       issuer: "https://sso.${SECRET_DOMAIN}/application/o/envoy-gateway/"
-#       authorizationEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/authorize/"
-#       tokenEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/token/"
-#     clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRRl"
-#     clientSecret:
-#       name: authentik-oidc-secret
-#     redirectURL: "https://envoy-int-auth.${SECRET_DOMAIN}/oauth2/callback"
-#     logoutPath: "/oauth2/logout"
-#     scopes:
-#       - openid
-#       - profile
-#       - email
-#     cookieDomain: "${SECRET_DOMAIN}"  # No leading dot
-# ---
-# # HTTPRoute for the auth gateway hostname itself
-# # This handles requests to envoy-int-auth.${SECRET_DOMAIN}
-# # The OAuth filter will intercept /oauth2/callback before it reaches the backend
-# apiVersion: gateway.networking.k8s.io/v1
-# kind: HTTPRoute
-# metadata:
-#   name: envoy-int-auth-hostname
-#   namespace: network
-# spec:
-#   hostnames:
-#     - envoy-int-auth.${SECRET_DOMAIN}
-#   parentRefs:
-#     - name: envoy-internal-auth
-#       namespace: network
-#   rules:
-#     # DO NOT add a specific match for /oauth2/callback
-#     # Let Envoy's OAuth filter handle it automatically
-#     - matches:
-#         - path:
-#             type: PathPrefix
-#             value: /
-#       backendRefs:
-#         - name: echo-server  # Only used for non-OAuth paths
-#           namespace: network
-#           port: 8080
-# ---
-
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: envoy-internal-auth
+  namespace: network
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: envoy-internal-auth  # Apply to the gateway itself
+  oidc:
+    provider:
+      issuer: "https://sso.${SECRET_DOMAIN}/application/o/envoy-gateway/"
+      authorizationEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/authorize/"
+      tokenEndpoint: "https://sso.${SECRET_DOMAIN}/application/o/token/"
+    clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRRl"
+    clientSecret:
+      name: authentik-oidc-secret
+    redirectURL: "https://envoy-int-auth.${SECRET_DOMAIN}/oauth2/callback"
+    logoutPath: "/oauth2/logout"
+    scopes:
+      - openid
+      - profile
+      - email
+    cookieDomain: "${SECRET_DOMAIN}"  # No leading dot
+---
+# HTTPRoute for the auth gateway hostname itself
+# This handles requests to envoy-int-auth.${SECRET_DOMAIN}
+# The OAuth filter will intercept /oauth2/callback before it reaches the backend
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: envoy-int-auth-hostname
+  namespace: network
+spec:
+  hostnames:
+    - envoy-int-auth.${SECRET_DOMAIN}
+  parentRefs:
+    - name: envoy-internal-auth
+      namespace: network
+  rules:
+    # DO NOT add a specific match for /oauth2/callback
+    # Let Envoy's OAuth filter handle it automatically
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: echo-server  # Only used for non-OAuth paths
+          namespace: network
+          port: 8080
 ---
 # EnvoyPatchPolicy for compression (keep your existing one)
 apiVersion: gateway.envoyproxy.io/v1alpha1
