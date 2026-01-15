@@ -10,7 +10,5 @@ resources:
   - ./external-auth.yaml
   - ./internal.yaml
   - ./internal-auth.yaml
-  - ./envoy-int-auth-callback-httproute.yaml
   - ./envoy-ext-auth-callback-httproute.yaml
   - ./podmonitor.yaml
-  - ./envoy-disable-oauth2-patch.yaml
