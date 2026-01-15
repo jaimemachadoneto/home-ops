@@ -53,7 +53,7 @@ spec:
     clientID: "XUzfQuGJXOB4vzKRCGzHc4d3EqR1MgXaLr8DfRRl"
     clientSecret:
       name: authentik-oidc-secret
-    redirectURL: "https://hwadlamp.${SECRET_DOMAIN}/oauth2/callback"
+    redirectURL: "https://headlamp.${SECRET_DOMAIN}/oauth2/callback"
     logoutPath: "/oauth2/logout"
     scopes:
       - openid
