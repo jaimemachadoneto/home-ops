@@ -86,3 +86,12 @@ spec:
       - openid
       - profile
       - email
+    # Ensure the session cookie set by the identity provider is usable for the
+    # gateway callback. These attributes mirror Authentik's cookie settings
+    # so the browser will send the cookie on redirect back to the callback.
+    sessionCookie:
+      name: authentik_session
+      domain: ".${SECRET_DOMAIN}"
+      path: "/"
+      secure: true
+      sameSite: None
