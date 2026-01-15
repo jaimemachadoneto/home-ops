@@ -60,10 +60,6 @@ spec:
       - profile
       - email
     cookieDomain: "${SECRET_DOMAIN}"  # No leading dot
-    # Add these optional fields for better compatibility
-    cookieSameSite: Lax  # Change from None to Lax for better compatibility
-    defaultTokenTTL: 600s
-    defaultRefreshTokenTTL: 604800s
 ---
 # HTTPRoute for the auth gateway hostname itself
 # This handles requests to envoy-int-auth.${SECRET_DOMAIN}
