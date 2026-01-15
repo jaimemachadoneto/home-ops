@@ -60,6 +60,34 @@ spec:
       - profile
       - email
     cookieDomain: "${SECRET_DOMAIN}"  # No leading dot
+    # Add these optional fields for better compatibility
+    cookieSameSite: Lax  # Change from None to Lax for better compatibility
+    defaultTokenTTL: 600s
+    defaultRefreshTokenTTL: 604800s
+---
+# HTTPRoute for the auth gateway hostname itself
+# This handles requests to envoy-int-auth.${SECRET_DOMAIN}
+# including the OAuth callback
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: envoy-int-auth-hostname
+  namespace: network
+spec:
+  hostnames:
+    - envoy-int-auth.${SECRET_DOMAIN}
+  parentRefs:
+    - name: envoy-internal-auth
+      namespace: network
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: echo-server  # A simple backend for non-OAuth paths
+          namespace: network
+          port: 8080
 ---
 # EnvoyPatchPolicy for compression (keep your existing one)
 apiVersion: gateway.envoyproxy.io/v1alpha1
@@ -91,27 +119,3 @@ spec:
     kind: Gateway
     name: envoy-internal-auth
   type: JSONPatch
----
-# HTTPRoute for the auth gateway hostname itself
-# This handles requests to envoy-int-auth.${SECRET_DOMAIN}
-# including the OAuth callback
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: envoy-int-auth-hostname
-  namespace: network
-spec:
-  hostnames:
-    - envoy-int-auth.${SECRET_DOMAIN}
-  parentRefs:
-    - name: envoy-internal-auth
-      namespace: network
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: echo-server  # A simple backend for non-OAuth paths
-          namespace: network
-          port: 8080
