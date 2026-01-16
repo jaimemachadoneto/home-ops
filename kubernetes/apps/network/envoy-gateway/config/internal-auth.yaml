@@ -114,7 +114,7 @@ spec:
       name: network/envoy-internal-auth/https
       operation:
         op: add
-        jsonPath: ..filters[*].typed_config.http_filters
+        jsonPath: ..filters[*].typed_config.http_filters[0]
         value:
           - name: envoy.filters.http.cors
             typed_config:
@@ -131,7 +131,7 @@ spec:
       name: network/envoy-internal-auth/https-quic
       operation:
         op: add
-        jsonPath: ..filters[*].typed_config.http_filters
+        jsonPath: ..filters[*].typed_config.http_filters[0]
         value:
           - name: envoy.filters.http.cors
             typed_config:
