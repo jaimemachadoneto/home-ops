@@ -38,7 +38,7 @@ spec:
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: envoy-internal-auth2
+  name: envoy-internal-auth
   namespace: network
 spec:
   targetRef:
