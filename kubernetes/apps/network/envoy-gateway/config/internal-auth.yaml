@@ -59,7 +59,6 @@ spec:
       - openid
       - profile
       - email
-
     cookieDomain: "${SECRET_DOMAIN}"  # No leading do
 ---
 # HTTPRoute for the auth gateway hostname itself
