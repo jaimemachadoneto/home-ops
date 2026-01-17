@@ -15,7 +15,7 @@ data:
         resolver 10.96.0.10 valid=30s;
 
         # Set upstream host at runtime so nginx does not require DNS at config parse
-        set $auth_upstream "authentik.selfhosted.svc.cluster.local";
+        set $auth_upstream "authentik-server.selfhosted.svc.cluster.local";
 
         # CORS headers applied at server level (allowed)
         add_header Access-Control-Allow-Origin $http_origin always;
