@@ -15,7 +15,7 @@ spec:
   hostnames:
     - headlamp.${SECRET_DOMAIN}
   parentRefs:
-    - name: envoy-internal
+    - name: envoy-internal-auth
       namespace: network
   rules:
     - backendRefs:
