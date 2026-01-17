@@ -64,6 +64,8 @@ spec:
       oidc:
         secret:
           create: false
+        externalSecret:
+          enable: true
           name: headlamp-oidc
     podAnnotations:
       reloader.stakater.com/auto: "true"
