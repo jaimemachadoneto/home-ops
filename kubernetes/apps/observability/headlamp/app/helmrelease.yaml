@@ -68,8 +68,7 @@ spec:
         externalSecret:
           enabled: true
           name: headlamp-oidc
-        # OIDC callback URL (must be registered in your IdP)
-        callbackURL: "https://headlamp.${SECRET_DOMAIN}/oidc-callback"
+
     podAnnotations:
       reloader.stakater.com/auto: "true"
     service:
