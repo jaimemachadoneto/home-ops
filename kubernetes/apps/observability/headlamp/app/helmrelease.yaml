@@ -61,6 +61,31 @@ spec:
       create: false
     config:
       pluginsDir: /build/plugins
+      oidc:
+        secret:
+          create: false
+          name: headlamp-oidc
+    env:
+      - name: OIDC_CLIENT_ID
+        valueFrom:
+          secretKeyRef:
+            name: headlamp-oidc
+            key: clientID
+      - name: OIDC_CLIENT_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: headlamp-oidc
+            key: clientSecret
+      - name: OIDC_ISSUER_URL
+        valueFrom:
+          secretKeyRef:
+            name: headlamp-oidc
+            key: issuerURL
+      - name: OIDC_SCOPES
+        valueFrom:
+          secretKeyRef:
+            name: headlamp-oidc
+            key: scopes
     podAnnotations:
       reloader.stakater.com/auto: "true"
     service:
