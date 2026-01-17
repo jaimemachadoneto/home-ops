@@ -11,13 +11,15 @@ data:
       server {
         listen 80;
 
+        # CORS headers applied at server level (allowed)
+        add_header Access-Control-Allow-Origin $http_origin always;
+        add_header Access-Control-Allow-Credentials "true" always;
+        add_header Access-Control-Allow-Methods "GET,POST,OPTIONS,PUT,DELETE" always;
+        add_header Access-Control-Allow-Headers "Authorization,Content-Type,Accept" always;
+        add_header Vary Origin always;
+
         # Respond to preflight requests
         if ($request_method = OPTIONS) {
-          add_header Access-Control-Allow-Origin $http_origin always;
-          add_header Access-Control-Allow-Credentials "true" always;
-          add_header Access-Control-Allow-Methods "GET,POST,OPTIONS,PUT,DELETE" always;
-          add_header Access-Control-Allow-Headers "Authorization,Content-Type,Accept" always;
-          add_header Vary Origin always;
           return 204;
         }
 
@@ -26,13 +28,6 @@ data:
           proxy_set_header X-Real-IP $remote_addr;
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Proto $scheme;
-
-          # Echo back the origin for CORS and allow credentials
-          add_header Access-Control-Allow-Origin $http_origin always;
-          add_header Access-Control-Allow-Credentials "true" always;
-          add_header Access-Control-Allow-Methods "GET,POST,OPTIONS,PUT,DELETE" always;
-          add_header Access-Control-Allow-Headers "Authorization,Content-Type,Accept" always;
-          add_header Vary Origin always;
 
           proxy_pass http://authentik:80;
         }
