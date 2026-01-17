@@ -161,6 +161,13 @@ spec:
 
     route:
       app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: Bookmark
+          gethomepage.dev/group: Apps
+          gethomepage.dev/icon: si-bookalope.svg
+          gethomepage.dev/name: Karakeep
+          gethomepage.dev/app: karakeep
         hostnames:
           - karakeep.${SECRET_DOMAIN}
         parentRefs:
