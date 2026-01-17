@@ -61,13 +61,6 @@ spec:
       create: false
     config:
       pluginsDir: /build/plugins
-      oidc:
-        secret:
-          create: false
-          name: headlamp-oidc
-        externalSecret:
-          enabled: true
-          name: headlamp-oidc
 
     podAnnotations:
       reloader.stakater.com/auto: "true"
