@@ -142,6 +142,13 @@ spec:
                 subPath: tmp
     route:
       app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: Kopia Backup Restore
+          gethomepage.dev/group: Kubernetes
+          gethomepage.dev/icon: si-googlecloudstorage.svg
+          gethomepage.dev/name: Kopia
+          gethomepage.dev/app: kopia
         hostnames:
           - kopia.${SECRET_DOMAIN}
         parentRefs:
