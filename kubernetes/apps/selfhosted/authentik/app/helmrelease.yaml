@@ -74,6 +74,12 @@ spec:
               name: envoy-external
               namespace: network
               sectionName: https
+          # Route requests to the proxy service which adds CORS headers
+          rules:
+            - backendRefs:
+                - name: authentik-proxy
+                  namespace: selfhosted
+                  port: 80
       # extraEnv:
       #   - name: DJANGO_SESSION_COOKIE_DOMAIN
       #     value: "${SECRET_DOMAIN}"
