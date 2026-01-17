@@ -19,6 +19,9 @@ spec:
     substitute:
       APP: karakeep
       VOLSYNC_CLAIM: karakeep-data
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository
