@@ -33,7 +33,8 @@ data:
           proxy_set_header Host sso.jaimenet.com;
           proxy_set_header X-Real-IP $remote_addr;
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header X-Forwarded-Proto https;
+          proxy_set_header X-Forwarded-Host sso.jaimenet.com;
 
           # Use runtime-resolved upstream variable
           proxy_pass http://$auth_upstream:80;
