@@ -66,22 +66,22 @@ spec:
           create: false
           name: headlamp-oidc
     env:
-      - name: OIDC_CLIENT_ID
+      - name: HEADLAMP_CONFIG_OIDC_CLIENT_ID
         valueFrom:
           secretKeyRef:
             name: headlamp-oidc
             key: clientID
-      - name: OIDC_CLIENT_SECRET
+      - name: HEADLAMP_CONFIG_OIDC_CLIENT_SECRET
         valueFrom:
           secretKeyRef:
             name: headlamp-oidc
             key: clientSecret
-      - name: OIDC_ISSUER_URL
+      - name: HEADLAMP_CONFIG_OIDC_IDP_ISSUER_URL
         valueFrom:
           secretKeyRef:
             name: headlamp-oidc
             key: issuerURL
-      - name: OIDC_SCOPES
+      - name: HEADLAMP_CONFIG_OIDC_SCOPES
         valueFrom:
           secretKeyRef:
             name: headlamp-oidc
@@ -109,3 +109,19 @@ spec:
         name: kubeconfig
         readOnly: true
         subPath: config
+    pluginsManager:
+      enabled: true
+      configContent: |
+        plugins:
+          - name: cert-manager
+            source: https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_cert-manager
+            version: 0.1.0
+          - name: flux
+            source: https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_flux
+            version: 0.5.0
+          - name: kompose
+            source: https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_kompose
+            version: 0.1.0-beta-1
+          - name: ai-assistant
+            source: https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_ai_assistant
+            version: 0.1.0-alpha
