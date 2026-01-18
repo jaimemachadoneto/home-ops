@@ -13,3 +13,5 @@ resources:
   - ./it-tools/ks.yaml
   - ./homepage/ks.yaml
   - ./authentik/ks.yaml
+  - ./karakeep/ks.yaml
+  - ./bichon/ks.yaml
