@@ -69,7 +69,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Budget
-          gethomepage.dev/group: Infrastructure
+          gethomepage.dev/group: Apps
           gethomepage.dev/icon: si-actualbudget.svg
           gethomepage.dev/name: Actual Budget
           gethomepage.dev/app: actual
