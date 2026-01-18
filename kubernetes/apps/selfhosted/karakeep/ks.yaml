@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: karakeep
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: karakeep
+  components:
+    - ../../../../components/volsync
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+  interval: 1h
+  path: "./kubernetes/apps/selfhosted/karakeep/app"
+  postBuild:
+    substitute:
+      APP: karakeep
+      VOLSYNC_CLAIM: karakeep-data
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: selfhosted
+  timeout: 5m
+  wait: false
