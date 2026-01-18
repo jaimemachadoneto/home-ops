@@ -17,3 +17,4 @@ resources:
   - ./bichon/ks.yaml
   - ./argus/ks.yaml
   - ./actual/ks.yaml
+  - ./atuin/ks.yaml
