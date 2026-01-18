@@ -1,0 +1,35 @@
+---
+machine:
+  type: worker
+  certSANs:
+    - home-ops-03.internal
+  nodeLabels:
+    topology.kubernetes.io/zone: m
+    gpu: intel
+    gpu.intel.com/i915: "true"
+  install:
+    disk: /dev/sda
+    image: factory.talos.dev/nocloud-installer/cb46201fc4fbbdbb2d858749954b5207bb1a168c63b04881a24fccdfccd587d7:v1.12.1
+    wipe: false
+  kernel:
+    modules:
+      - name: i915
+  kubelet:
+    extraArgs:
+      register-with-taints: "dedicated=gpu:PreferNoSchedule"
+  network:
+    hostname: home-ops-03
+    interfaces:
+      - deviceSelector:
+          hardwareAddr: bc:24:11:13:34:3e
+        addresses:
+          - 10.30.4.4/16
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 10.30.0.1
+        mtu: 1500
+        dhcp: false
+    nameservers:
+      - 10.30.0.3
+    disableSearchDomain: true
+
