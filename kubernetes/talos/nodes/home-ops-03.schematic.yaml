@@ -18,6 +18,7 @@ customization:
     officialExtensions:
       - siderolabs/i915
       - siderolabs/intel-ice-firmware
+      - siderolabs/qemu-guest-agent
       - siderolabs/intel-ucode
       - siderolabs/nfs-utils
       - siderolabs/nfsd
