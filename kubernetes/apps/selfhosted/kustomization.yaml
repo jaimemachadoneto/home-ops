@@ -15,3 +15,4 @@ resources:
   - ./authentik/ks.yaml
   - ./karakeep/ks.yaml
   - ./bichon/ks.yaml
+  - ./argus/ks.yaml
