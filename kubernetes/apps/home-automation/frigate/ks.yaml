@@ -15,8 +15,8 @@ spec:
   dependsOn:
     - name: intel-gpu-resource-driver
       namespace: kube-system
-    - name: multus-networks
-      namespace: network
+    # - name: multus-networks
+    #   namespace: network
     - name: rook-ceph-cluster
       namespace: rook-ceph
   interval: 1h
