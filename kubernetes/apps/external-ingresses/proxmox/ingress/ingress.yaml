@@ -51,6 +51,13 @@ kind: HTTPRoute
 metadata:
   name: proxmox-route
   namespace: external-ingresses
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: Proxmox
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: si-proxmox.svg
+    gethomepage.dev/name: Proxmox
+    gethomepage.dev/app: proxmox
 spec:
   parentRefs:
     - name: proxmox-gateway

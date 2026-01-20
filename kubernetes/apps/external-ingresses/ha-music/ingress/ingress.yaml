@@ -50,7 +50,7 @@ metadata:
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/description: HAMusic
-    gethomepage.dev/group: HomeAutomation
+    gethomepage.dev/group: Home Automation
     gethomepage.dev/icon: si-homeassistant.svg
     gethomepage.dev/name: HomeAssistant Music
     gethomepage.dev/app: hamusic

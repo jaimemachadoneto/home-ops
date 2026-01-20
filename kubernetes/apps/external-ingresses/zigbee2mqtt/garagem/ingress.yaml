@@ -50,7 +50,7 @@ metadata:
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/description: ZigbeeToMQTT_Garagem
-    gethomepage.dev/group: HomeAutomation
+    gethomepage.dev/group: Home Automation
     gethomepage.dev/icon: si-zigbee2mqtt.svg
     gethomepage.dev/name: zigbee2mqtt_Garagem
     gethomepage.dev/app: zigbee2mqtt
