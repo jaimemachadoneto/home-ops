@@ -50,7 +50,7 @@ metadata:
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/description: HA
-    gethomepage.dev/group: HomeAutomation
+    gethomepage.dev/group: Home Automation
     gethomepage.dev/icon: si-homeassistant.svg
     gethomepage.dev/name: HomeAssistant
     gethomepage.dev/app: ha
