@@ -12,3 +12,4 @@ resources:
   - ./internal-auth.yaml
   # - ./envoy-ext-auth-callback-httproute.yaml
   - ./podmonitor.yaml
+  - ./proxmox-health.yaml
