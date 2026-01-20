@@ -12,9 +12,14 @@ spec:
       app.kubernetes.io/name: *appname
   path: ./kubernetes/apps/external-ingresses/proxmox/ingress
   prune: true
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   sourceRef:
     kind: GitRepository
-    name: home-kubernetes
+    name: flux-system
+    namespace: flux-system
   wait: true
   interval: 31m
   retryInterval: 1m

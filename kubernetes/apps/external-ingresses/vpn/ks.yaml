@@ -11,9 +11,14 @@ spec:
       app.kubernetes.io/name: *app
   path: ./kubernetes/apps/external-ingresses/vpn/ingress
   prune: true
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   sourceRef:
     kind: GitRepository
-    name: home-kubernetes
+    name: flux-system
+    namespace: flux-system
   wait: true
   interval: 30m
   retryInterval: 1m
