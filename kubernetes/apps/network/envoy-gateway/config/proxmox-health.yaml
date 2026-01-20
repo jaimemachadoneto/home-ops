@@ -9,6 +9,7 @@ metadata:
 spec:
   jsonPatches:
     - type: type.googleapis.com/envoy.config.cluster.v3.Cluster
+      name: network/envoy-internal/cluster
       operation:
         op: add
         jsonPath: "..health_checks"
@@ -20,6 +21,7 @@ spec:
             http_health_check:
               path: "/"
     - type: type.googleapis.com/envoy.config.cluster.v3.Cluster
+      name: network/envoy-internal/cluster
       operation:
         op: add
         jsonPath: "..outlier_detection"
@@ -27,10 +29,11 @@ spec:
           consecutive_5xx: 3
           interval: 10s
           base_ejection_time: 30s
-    - type: type.googleapis.com/envoy.config.route.v3.Route
+    - type: type.googleapis.com/envoy.config.route.v3.RouteConfiguration
+      name: network/envoy-internal/http
       operation:
         op: add
-        jsonPath: "..route.action"
+        jsonPath: "..virtual_hosts[*].routes[*].route"
         value:
           retry_policy:
             retry_on: "5xx,connect-failure,refused-stream"
