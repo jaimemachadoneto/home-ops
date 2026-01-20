@@ -21,25 +21,6 @@ subsets:
     ports:
       - port: 10086
 ---
-# Gateway for vpn-ui (internal)
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: vpn-ui-gateway
-  namespace: external-ingresses
-spec:
-  gatewayClassName: internal-nginx
-  listeners:
-    - name: http
-      protocol: HTTP
-      port: 80
-      allowedRoutes:
-        namespaces:
-          from: Same
-        kinds:
-          - kind: HTTPRoute
-
----
 # HTTPRoute for vpn-ui
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -55,7 +36,8 @@ metadata:
     gethomepage.dev/app: wireguard
 spec:
   parentRefs:
-    - name: vpn-ui-gateway
+    - name: envoy-internal
+      namespace: network
   hostnames:
     - "vpn-ui.${SECRET_DOMAIN}"
   rules:
