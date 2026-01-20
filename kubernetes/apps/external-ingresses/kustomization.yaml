@@ -8,4 +8,4 @@ resources:
   - ./ha-music/ks.yaml
   - ./vpn/ks.yaml
   - ./dockge/ks.yaml
-  - ./zigbee2mqtt1/ks.yaml
+  - ./zigbee2mqtt/ks.yaml
