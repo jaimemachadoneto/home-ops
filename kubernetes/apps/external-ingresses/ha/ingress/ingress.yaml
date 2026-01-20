@@ -9,7 +9,7 @@ spec:
     - port: 80
       protocol: TCP
       targetPort: 8123
-      name: http
+      # name removed so controller matches EndpointSlice port by number
 ---
 apiVersion: v1
 kind: Endpoints
