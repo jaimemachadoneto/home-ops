@@ -9,7 +9,7 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *app
-  path: ./kubernetes/apps/external-ingresses/zigbee2mqtt1/ingress
+  path: ./kubernetes/apps/external-ingresses/zigbee2mqtt/garagem
   prune: true
   sourceRef:
     kind: GitRepository
