@@ -35,7 +35,7 @@ spec:
               ATUIN_DB_URI: sqlite:///config/atuin.db
               ATUIN_HOST: 0.0.0.0
               ATUIN_PORT: &port 8888
-              ATUIN_OPEN_REGISTRATION: true
+              #ATUIN_OPEN_REGISTRATION: true
             probes:
               liveness: &probes
                 enabled: true

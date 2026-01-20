@@ -1,0 +1,77 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zigbeetomqtt-one-proxy-service
+  namespace: external-ingresses
+spec:
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 8080
+      name: http
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: zigbeetomqtt-one-proxy-service # Must be equal to Service name for automatic mapping
+  namespace: external-ingresses
+subsets:
+  - addresses:
+      - ip: 10.30.10.18 # IP address of your external service that you would like to proxy requests to
+    ports:
+      - port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zigbeetomqtt-one-proxy-ingress
+  namespace: external-ingresses
+spec: {}
+---
+# Gateway for zigbee2mqtt (replaces Ingress)
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: zigbee-gateway
+  namespace: external-ingresses
+spec:
+  gatewayClassName: internal-nginx
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+        kinds:
+          - kind: HTTPRoute
+
+---
+# HTTPRoute for zigbee2mqtt
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: zigbee-route
+  namespace: external-ingresses
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: ZigbeeToMQTT_Garagem
+    gethomepage.dev/group: HomeAutomation
+    gethomepage.dev/icon: si-zigbee2mqtt.svg
+    gethomepage.dev/name: zigbee2mqtt_Garagem
+    gethomepage.dev/app: zigbee2mqtt
+spec:
+  parentRefs:
+    - name: zigbee-gateway
+  hostnames:
+    - "zigmqtt1.${SECRET_DOMAIN}"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: zigbeetomqtt-one-proxy-service
+          port: 80
+          weight: 1
