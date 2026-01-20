@@ -26,13 +26,6 @@ subsets:
     ports:
       - port: 8006
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: proxmox-proxy-ingress
-  namespace: external-ingresses
-spec: {}
----
 # Gateway for proxmox (replaces Ingress)
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway

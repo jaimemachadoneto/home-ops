@@ -22,13 +22,6 @@ subsets:
     ports:
       - port: 8123
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: homeassistant-proxy-ingress
-  namespace: external-ingresses
-spec: {}
----
 # Gateway exposing HTTP listener (replaces the Ingress)
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
