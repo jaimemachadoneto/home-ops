@@ -22,13 +22,6 @@ subsets:
     ports:
       - port: 5001
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: dockge-proxy-ingress
-  namespace: external-ingresses
-spec: {}
----
 # Gateway for dockge (replaces Ingress)
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
