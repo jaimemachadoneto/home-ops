@@ -40,6 +40,7 @@ spec:
       - --ignore-ingress-tls-spec
       - --pihole-tls-skip-verify
       - --gateway-label-filter=gateway-type=internal
+      - --ingress-class=internal-nginx
       - --pihole-api-version=6
     resources:
       requests:

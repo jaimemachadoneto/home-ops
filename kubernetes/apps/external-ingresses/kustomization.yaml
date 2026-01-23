@@ -8,8 +8,8 @@ components:
 resources:
   - ./namespace.yaml
   - ./proxmox/ks.yaml
-  - ./ha/ks.yaml
-  - ./ha-music/ks.yaml
-  - ./vpn/ks.yaml
-  - ./dockge/ks.yaml
-  - ./zigbee2mqtt/ks.yaml
+  #- ./ha/ks.yaml
+  # - ./ha-music/ks.yaml
+  # - ./vpn/ks.yaml
+  # - ./dockge/ks.yaml
+  # - ./zigbee2mqtt/ks.yaml
