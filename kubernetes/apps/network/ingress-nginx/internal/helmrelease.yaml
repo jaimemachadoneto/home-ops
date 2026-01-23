@@ -30,7 +30,7 @@ spec:
         type: LoadBalancer
         annotations:
           external-dns.alpha.kubernetes.io/hostname: "env-ingress-int.${SECRET_DOMAIN}"
-          io.cilium/lb-ipam-ips: 10.30.6.46
+          io.cilium/lb-ipam-ips: 10.30.6.48
 
       publishService:
         enabled: true
