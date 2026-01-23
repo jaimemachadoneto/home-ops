@@ -21,6 +21,7 @@ subsets:
       - ip: 10.30.3.10 # IP address of your external service that you would like to proxy requests to
     ports:
       - port: 5001
+        name: https
 
 ---
 # HTTPRoute for dockge
