@@ -49,5 +49,6 @@ spec:
             value: /
       backendRefs:
         - name: zigbeetomqtt-one-proxy-service
+          namespace: external-ingresses
           port: 80
           weight: 1
