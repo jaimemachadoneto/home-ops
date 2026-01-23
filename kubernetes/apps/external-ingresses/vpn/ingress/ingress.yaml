@@ -48,5 +48,6 @@ spec:
             value: /
       backendRefs:
         - name: vpn-ui-proxy-service
+          namespace: external-ingresses
           port: 10086
           weight: 1

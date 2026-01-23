@@ -53,6 +53,7 @@ spec:
             value: /
       backendRefs:
         - name: proxmox-proxy-service
+          namespace: external-ingresses
           port: 80
           weight: 1
 #  tls:
