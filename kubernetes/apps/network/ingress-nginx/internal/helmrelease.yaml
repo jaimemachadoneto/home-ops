@@ -83,7 +83,7 @@ spec:
             any: true
 
       extraArgs:
-        default-ssl-certificate: "home-ops-jmn-dev"
+        default-ssl-certificate: "network/home-ops-jmn-tls"
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
