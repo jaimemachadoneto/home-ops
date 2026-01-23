@@ -8,7 +8,6 @@ spec:
     - port: 10086
       protocol: TCP
       targetPort: 10086
-      name: https
 ---
 apiVersion: v1
 kind: Endpoints
