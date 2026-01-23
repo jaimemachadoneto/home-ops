@@ -46,7 +46,7 @@ metadata:
     nginx.ingress.kubernetes.io/session-cookie-name: "proxmox-route"
     nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
 spec:
-  ingressClassName: ingress-int
+  ingressClassName: internal-nginx
   rules:
     - host: proxmox.${SECRET_DOMAIN}
       http:
