@@ -10,6 +10,6 @@ resources:
   - ./proxmox/ks.yaml
   #- ./ha/ks.yaml
   # - ./ha-music/ks.yaml
-  # - ./vpn/ks.yaml
+  - ./vpn/ks.yaml
   # - ./dockge/ks.yaml
-  # - ./zigbee2mqtt/ks.yaml
+  - ./zigbee2mqtt/ks.yaml
