@@ -21,7 +21,6 @@ subsets:
   - ip: 10.30.3.1 # Proxmox node 1
   - ip: 10.30.3.2 # Proxmox node 2 (update with your actual IP)
   - ip: 10.30.3.3 # Proxmox node 3 (update with your actual IP)
-  - ip: 10.30.3.4
   ports:
   - port: 8006
 ---
