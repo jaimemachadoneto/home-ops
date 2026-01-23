@@ -9,7 +9,6 @@ spec:
     - port: 5001
       protocol: TCP
       targetPort: 5001
-      name: https
 ---
 apiVersion: v1
 kind: Endpoints
