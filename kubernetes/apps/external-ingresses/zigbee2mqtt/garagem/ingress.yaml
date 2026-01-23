@@ -21,6 +21,7 @@ subsets:
       - ip: 10.30.10.18 # IP address of your external service that you would like to proxy requests to
     ports:
       - port: 8080
+        name: http
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -33,13 +34,13 @@ metadata:
 spec:
   ingressClassName: internal-nginx
   rules:
-    - host: zigmqtt1.${SECRET_DOMAIN}
+    - host: zigmqtt-garagem.${SECRET_DOMAIN}
       http:
         paths:
           - path: /
             pathType: ImplementationSpecific
             backend:
               service:
-                name: zigbeetomqtt-one-proxy-service
+                name: zigbeetomqtt-garagem-proxy-service
                 port:
                   number: 80
