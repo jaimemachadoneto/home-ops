@@ -17,42 +17,31 @@ metadata:
   name: dockge-proxy-service # Must be equal to Service name for automatic mapping
   namespace: external-ingresses
 subsets:
-  - addresses:
-      - ip: 10.30.3.10 # IP address of your external service that you would like to proxy requests to
-    ports:
-      - port: 5001
-        name: https
-
+- addresses:
+  - ip: 10.30.3.10 # IP address of your external service that you would like to proxy requests to
+  ports:
+  - port: 5001
 ---
-# HTTPRoute for dockge
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: dockge-route
+  name: dockge-proxy-ingress
   namespace: external-ingresses
   annotations:
-    gethomepage.dev/enabled: "true"
-    gethomepage.dev/description: Dockge
-    gethomepage.dev/group: Infrastructure
-    gethomepage.dev/icon: si-docker.svg
-    gethomepage.dev/name: Dockge
-    gethomepage.dev/app: dockge
+    external-dns.alpha.kubernetes.io/target: env-ingress-int.${SECRET_DOMAIN}
 spec:
-  parentRefs:
-    - name: envoy-internal
-      namespace: network
-  hostnames:
-    - "dockge.${SECRET_DOMAIN}"
+  ingressClassName: internal-nginx
   rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: dockge-proxy-service
-          namespace: external-ingresses
-          port: 5001
-          weight: 1
+    - host: dockge.${SECRET_DOMAIN}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: dockge-proxy-service
+              port:
+                number: 5001
   # tls:
   # - hosts:
   #     - dockge.${SECRET_DOMAIN}
