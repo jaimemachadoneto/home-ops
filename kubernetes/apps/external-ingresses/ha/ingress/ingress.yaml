@@ -21,6 +21,7 @@ subsets:
       - ip: 10.30.10.17 # IP address of your external service that you would like to proxy requests to
     ports:
       - port: 8123
+        name: http
 ---
 # HTTPRoute for the ha host
 apiVersion: gateway.networking.k8s.io/v1
