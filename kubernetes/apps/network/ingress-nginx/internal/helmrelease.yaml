@@ -13,7 +13,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: int-ingress-nginx
-        namespace: flux-system
+        namespace: network
   values:
     fullnameOverride: nginx-internal
     controller:
