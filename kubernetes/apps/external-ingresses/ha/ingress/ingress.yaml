@@ -21,34 +21,25 @@ subsets:
       - ip: 10.30.10.17 # IP address of your external service that you would like to proxy requests to
     ports:
       - port: 8123
-        name: http
 ---
-# HTTPRoute for the ha host
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: ha-route
+  name: homeassistant-proxy-ingress
   namespace: external-ingresses
   annotations:
-    gethomepage.dev/enabled: "true"
-    gethomepage.dev/description: HA
-    gethomepage.dev/group: Home Automation
-    gethomepage.dev/icon: si-homeassistant.svg
-    gethomepage.dev/name: HomeAssistant
-    gethomepage.dev/app: ha
+    external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
-  parentRefs:
-    - name: envoy-internal
-      namespace: network
-  hostnames:
-    - "ha.${SECRET_DOMAIN}"
+  ingressClassName: external-nginx
   rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: homeassistant-proxy-service
-          namespace: external-ingresses
-          port: 80
-          weight: 1
+    - host: ha.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: homeassistant-proxy-service
+                port:
+                  number: 80

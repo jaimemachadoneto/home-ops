@@ -5,7 +5,6 @@ metadata:
   name: proxmox-proxy-service
   namespace: external-ingresses
 spec:
-  sessionAffinity: ClientIP
   ports:
     - port: 80
       protocol: TCP
@@ -18,44 +17,47 @@ metadata:
   name: proxmox-proxy-service # Must be equal to Service name for automatic mapping
   namespace: external-ingresses
 subsets:
-  - addresses:
-      - ip: 10.30.3.1 # Proxmox node 1
-      - ip: 10.30.3.2 # Proxmox node 2 (update with your actual IP)
-      - ip: 10.30.3.3 # Proxmox node 3 (update with your actual IP)
-      - ip: 10.30.3.4
-    ports:
-      - port: 8006
-        name: https
+- addresses:
+  - ip: 10.30.3.1 # Proxmox node 1
+  - ip: 10.30.3.2 # Proxmox node 2 (update with your actual IP)
+  - ip: 10.30.3.3 # Proxmox node 3 (update with your actual IP)
+  - ip: 10.30.3.4
+  ports:
+  - port: 8006
 ---
-# HTTPRoute for proxmox
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: proxmox-route
+  name: proxmox-proxy-ingress
   namespace: external-ingresses
   annotations:
-    gethomepage.dev/enabled: "true"
-    gethomepage.dev/description: Proxmox
-    gethomepage.dev/group: Infrastructure
-    gethomepage.dev/icon: si-proxmox.svg
-    gethomepage.dev/name: Proxmox
-    gethomepage.dev/app: proxmox
+    external-dns.alpha.kubernetes.io/target: "ingress-int.${SECRET_DOMAIN}"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/secure-backends: "false"
+    # Failover configuration
+    nginx.ingress.kubernetes.io/upstream-fail-timeout: "10s"
+    nginx.ingress.kubernetes.io/upstream-max-fails: "3"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "5"
+    nginx.ingress.kubernetes.io/proxy-next-upstream: "error timeout http_502 http_503 http_504"
+    # Session affinity - keep users connected to the same backend
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/affinity-mode: "persistent"
+    nginx.ingress.kubernetes.io/session-cookie-name: "proxmox-route"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
 spec:
-  parentRefs:
-    - name: envoy-internal
-      namespace: network
-  hostnames:
-    - "proxmox.${SECRET_DOMAIN}"
+  ingressClassName: internal-nginx
   rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - name: proxmox-proxy-service
-          namespace: external-ingresses
-          port: 80
-          weight: 1
+    - host: proxmox.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: proxmox-proxy-service
+                port:
+                  number: 80
 #  tls:
 #  - hosts:
 #      - proxmox.${SECRET_DOMAIN}
