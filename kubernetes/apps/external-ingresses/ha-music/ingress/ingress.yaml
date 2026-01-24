@@ -35,7 +35,6 @@ metadata:
     gethomepage.dev/group: Home Automation
     gethomepage.dev/icon: si-homeassistant.svg
     gethomepage.dev/name: HomeAssistant Music
-    gethomepage.dev/app: hamusic
 spec:
   parentRefs:
     - name: envoy-internal
