@@ -44,10 +44,3 @@ spec:
         ports:
           http:
             port: *port
-    route:
-      app:
-        hostnames:
-          - echo-server.${SECRET_DOMAIN}
-        parentRefs:
-          - name: envoy-internal
-            namespace: network
