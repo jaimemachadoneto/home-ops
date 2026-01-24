@@ -47,8 +47,8 @@ metadata:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/description: Docker
     gethomepage.dev/group: Infrastructure
-    gethomepage.dev:icon: si-docker.svg
-    gethomepage.dev:name: Docker
+    gethomepage.dev/icon: si-docker.svg
+    gethomepage.dev/name: Docker
 spec:
   hostnames:
     - dockge.${SECRET_DOMAIN}
