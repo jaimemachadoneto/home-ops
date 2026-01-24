@@ -16,8 +16,8 @@ spec:
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
-      # - kind: Secret
-      #   name: proxmox-secret
+      - kind: Secret
+        name: proxmox-secret
   sourceRef:
     kind: GitRepository
     name: flux-system
