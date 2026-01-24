@@ -22,32 +22,47 @@ subsets:
     ports:
       - port: 8080
         name: http
+
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
 metadata:
-  name: zigbeetomqtt-garagem-proxy-ingress
+  name: zigbeetomqtt-garagem-passthrough
+  namespace: external-ingresses
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: zigmqtt-garagem-httproute
+
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: zigmqtt-garagem-httproute
   namespace: external-ingresses
   annotations:
-    external-dns.alpha.kubernetes.io/target: "env-ingress-int.${SECRET_DOMAIN}"
-    nginx.ingress.kubernetes.io/rewrite-target: /
     gethomepage.dev/enabled: "true"
     gethomepage.dev/description: Zigbee Garagem
     gethomepage.dev/group: Home Automation
-    gethomepage.dev/icon: si-zigbee2mqtt.svg
+    gethomepage.dev:icon: si-zigbee2mqtt.svg
     gethomepage.dev/name: Zigbee Garagem
-    gethomepage.dev/app: zigbeegaragem
+    gethomepage.dev:app: zigbeegaragem
     gethomepage.dev/showStats: "false"
 spec:
-  ingressClassName: internal-nginx
+  hostnames:
+    - zigmqtt-garagem.${SECRET_DOMAIN}
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
   rules:
-    - host: zigmqtt-garagem.${SECRET_DOMAIN}
-      http:
-        paths:
-          - path: /
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: zigbeetomqtt-garagem-proxy-service
-                port:
-                  number: 80
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+      backendRefs:
+        - name: zigbeetomqtt-garagem-proxy-service
+          namespace: external-ingresses
+          port: 80
+          weight: 1
