@@ -30,6 +30,12 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/hostname: "env-external.${SECRET_DOMAIN}"
     nginx.ingress.kubernetes.io/rewrite-target: /
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: Homeassistant
+    gethomepage.dev/group: Home Automation
+    gethomepage.dev/icon: si-homeassistant.svg
+    gethomepage.dev/name: Homeassistant
+    gethomepage.dev/app: homeassistant
 spec:
   ingressClassName: external-nginx
   rules:
