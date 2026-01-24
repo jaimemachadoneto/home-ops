@@ -49,7 +49,6 @@ metadata:
     gethomepage.dev/group: Home Automation
     gethomepage.dev:icon: si-zigbee2mqtt.svg
     gethomepage.dev/name: Zigbee Garagem
-    gethomepage.dev:app: zigbeegaragem
     gethomepage.dev/showStats: "false"
 spec:
   hostnames:

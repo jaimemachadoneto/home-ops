@@ -49,7 +49,6 @@ metadata:
     gethomepage.dev/group: Infrastructure
     gethomepage.dev:icon: si-docker.svg
     gethomepage.dev:name: Docker
-    gethomepage.dev:app: docker
 spec:
   hostnames:
     - dockge.${SECRET_DOMAIN}
