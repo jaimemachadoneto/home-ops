@@ -27,30 +27,14 @@ subsets:
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
 metadata:
-  name: homeassistant-healthcheck
+  name: homeassistant-passthrough
   namespace: external-ingresses
 spec:
   targetRef:
     group: ''
     kind: Service
     name: homeassistant-proxy-service
-  healthCheck:
-    active:
-      type: HTTP
-      http:
-        path: /  # Home Assistant root path
-        expectedStatuses:
-          - 200
-          - 302
-          - 401  # Home Assistant redirects/auth pages
-      timeout: 5s
-      interval: 10s
-      unhealthyThreshold: 3
-      healthyThreshold: 1
-    passive:
-      unhealthyThreshold: 5
-      baseEjectionTime: 30s
-      interval: 10s
+  # No healthCheck section at all
 ---
 # apiVersion: networking.k8s.io/v1
 # kind: Ingress
