@@ -8,6 +8,7 @@ spec:
     - port: 10086
       protocol: TCP
       targetPort: 10086
+      name: http
 ---
 apiVersion: v1
 kind: Endpoints
@@ -19,6 +20,8 @@ subsets:
   - ip: 10.30.10.16 # IP address of your external service that you would like to proxy requests to
   ports:
   - port: 10086
+    name: http
+    protocol: TCP
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
