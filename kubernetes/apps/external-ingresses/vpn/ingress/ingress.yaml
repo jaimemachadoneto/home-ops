@@ -20,13 +20,25 @@ subsets:
   ports:
   - port: 10086
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
 metadata:
-  name: vpn-ui-proxy-ingress
+  name: vpn-ui-passthrough
+  namespace: external-ingresses
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: vpn-ui-httproute
+
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: vpn-ui-httproute
   namespace: external-ingresses
   annotations:
-    external-dns.alpha.kubernetes.io/target: env-ingress-int.${SECRET_DOMAIN}
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "Wireguard"
     gethomepage.dev/description: "Wireguard VPN UI"
@@ -34,15 +46,18 @@ metadata:
     gethomepage.dev/icon: "si-wireguard.svg"
     gethomepage.dev/href: "https://vpn-ui.${SECRET_DOMAIN}"
 spec:
-  ingressClassName: internal-nginx
+  hostnames:
+    - vpn-ui.${SECRET_DOMAIN}
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
   rules:
-    - host: vpn-ui.${SECRET_DOMAIN}
-      http:
-        paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: vpn-ui-proxy-service
-              port:
-                number: 10086
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+      backendRefs:
+        - name: vpn-ui-proxy-service
+          namespace: external-ingresses
+          port: 10086
+          weight: 1
