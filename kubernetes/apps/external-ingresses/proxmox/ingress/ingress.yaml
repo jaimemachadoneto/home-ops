@@ -37,6 +37,7 @@ spec:
     name: proxmox-proxy-service
   validation:
     # Skip validation - accept any certificate (including self-signed)
+    hostname: pve.proxmox.com
     caCertificateRefs: []  # Empty = skip validation
 ---
 # apiVersion: networking.k8s.io/v1
