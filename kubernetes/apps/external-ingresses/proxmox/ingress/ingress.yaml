@@ -49,7 +49,7 @@ metadata:
     gethomepage.dev/widget.url: "https://proxmox.${SECRET_DOMAIN}"  # Your Proxmox IP
     gethomepage.dev/widget.tokenid: "${PROXMOX_TOKENID}"
     gethomepage.dev/widget.tokensecret: "${PROXMOX_SECRET}"
-    gethomepage.dev/widget.node: "pve"  # Or your node name
+    gethomepage.dev/widget.node: "tiny"  # Or your node name
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "Proxmox"
     gethomepage.dev/description: "Proxmox Virtual Environment"
