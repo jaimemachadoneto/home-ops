@@ -117,3 +117,9 @@ spec:
         path: /mnt/Data1/kubernetes
         globalMounts:
           - path: /data/kubernetes
+      frigate:
+        type: nfs
+        path: /mnt/Data1/frigate
+        server: nas.internal
+        globalMounts:
+          - path: /media/frigate
