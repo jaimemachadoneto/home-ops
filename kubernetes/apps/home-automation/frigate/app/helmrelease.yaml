@@ -8,7 +8,7 @@ spec:
   chartRef:
     kind: OCIRepository
     name: frigate
-  interval: 30m
+  interval: 31m
   values:
     controllers:
       frigate:
