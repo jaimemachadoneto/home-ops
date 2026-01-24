@@ -20,7 +20,9 @@ subsets:
   - addresses:
       - ip: 10.30.10.17 # IP address of your external service that you would like to proxy requests to
     ports:
-      - port: 8123
+    - name: http
+      port: 8123
+      protocol: TCP
 
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
@@ -82,7 +84,11 @@ spec:
     - name: envoy-external
       namespace: network
   rules:
-    - backendRefs:
-        - name: homeassistant-proxy-service
-          namespace: external-ingresses
-          port: 8123
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+      backendRefs:
+      - name: homeassistant-proxy-service
+        port: 8123
+        weight: 1
