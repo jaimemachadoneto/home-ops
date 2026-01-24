@@ -6,7 +6,7 @@ metadata:
   namespace: external-ingresses
 spec:
   ports:
-    - port: 80
+    - port: 8123
       protocol: TCP
       targetPort: 8123
       name: http
@@ -21,6 +21,36 @@ subsets:
       - ip: 10.30.10.17 # IP address of your external service that you would like to proxy requests to
     ports:
       - port: 8123
+
+---
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: homeassistant-healthcheck
+  namespace: external-ingresses
+spec:
+  targetRef:
+    group: ''
+    kind: Service
+    name: homeassistant-proxy-service
+  healthCheck:
+    active:
+      type: HTTP
+      http:
+        path: /  # Home Assistant root path
+        expectedStatuses:
+          - 200
+          - 302
+          - 401  # Home Assistant redirects/auth pages
+      timeout: 5s
+      interval: 10s
+      unhealthyThreshold: 3
+      healthyThreshold: 1
+    passive:
+      unhealthyThreshold: 5
+      baseEjectionTime: 30s
+      interval: 10s
 ---
 # apiVersion: networking.k8s.io/v1
 # kind: Ingress
@@ -73,4 +103,4 @@ spec:
     - backendRefs:
         - name: homeassistant-proxy-service
           namespace: external-ingresses
-          port: 80
+          port: 8123
