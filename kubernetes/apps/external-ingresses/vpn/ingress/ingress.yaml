@@ -27,6 +27,12 @@ metadata:
   namespace: external-ingresses
   annotations:
     external-dns.alpha.kubernetes.io/target: env-ingress-int.${SECRET_DOMAIN}
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: Wireguard
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: si-wireguard.svg
+    gethomepage.dev/name: Wireguard
+    gethomepage.dev/app: wireguard
 spec:
   ingressClassName: internal-nginx
   rules:
