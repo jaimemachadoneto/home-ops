@@ -37,34 +37,6 @@ spec:
     name: homeasstant-httproute
   # No healthCheck = assume always healthy
 ---
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: homeassistant-proxy-ingress
-#   namespace: external-ingresses
-#   annotations:
-#     external-dns.alpha.kubernetes.io/hostname: "ingress-ext.${SECRET_DOMAIN}"
-#     nginx.ingress.kubernetes.io/rewrite-target: /
-#     gethomepage.dev/enabled: "true"
-#     gethomepage.dev/description: Homeassistant
-#     gethomepage.dev/group: Home Automation
-#     gethomepage.dev/icon: si-homeassistant.svg
-#     gethomepage.dev/name: Homeassistant
-#     gethomepage.dev/showStats: "false"
-# spec:
-#   ingressClassName: external-nginx
-#   rules:
-#     - host: ha.ext.${SECRET_DOMAIN}
-#       http:
-#         paths:
-#           - path: /
-#             pathType: ImplementationSpecific
-#             backend:
-#               service:
-#                 name: homeassistant-proxy-service
-#                 port:
-#                   number: 80
----
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
