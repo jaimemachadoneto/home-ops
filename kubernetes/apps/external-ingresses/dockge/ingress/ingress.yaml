@@ -28,6 +28,12 @@ metadata:
   namespace: external-ingresses
   annotations:
     external-dns.alpha.kubernetes.io/target: env-ingress-int.${SECRET_DOMAIN}
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: Docker
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: si-docker.svg
+    gethomepage.dev/name: Docker
+    gethomepage.dev/app: docker
 spec:
   ingressClassName: internal-nginx
   rules:

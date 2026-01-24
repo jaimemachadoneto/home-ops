@@ -44,6 +44,12 @@ metadata:
     nginx.ingress.kubernetes.io/affinity-mode: "persistent"
     nginx.ingress.kubernetes.io/session-cookie-name: "proxmox-route"
     nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: Proxmox
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: si-proxmox.svg
+    gethomepage.dev/name: Proxmox
+    gethomepage.dev/app: proxmox
 spec:
   ingressClassName: internal-nginx
   rules:
