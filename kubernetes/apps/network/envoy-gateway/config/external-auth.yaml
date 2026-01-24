@@ -7,7 +7,7 @@ metadata:
   labels:
     gateway-type: external
   annotations:
-    external-dns.alpha.kubernetes.io/target: &hostname ingress-ext-auth.${SECRET_DOMAIN}
+    external-dns.alpha.kubernetes.io/target: &hostname ingress-ext.${SECRET_DOMAIN}
 spec:
   gatewayClassName: envoy
   infrastructure:
