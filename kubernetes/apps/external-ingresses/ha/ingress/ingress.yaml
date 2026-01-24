@@ -23,7 +23,6 @@ subsets:
       - port: 8123
 
 ---
----
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
 metadata:
@@ -31,10 +30,10 @@ metadata:
   namespace: external-ingresses
 spec:
   targetRef:
-    group: ''
-    kind: Service
-    name: homeassistant-proxy-service
-  # No healthCheck section at all
+    group: gateway.networking.k8s.io  # Correct group
+    kind: HTTPRoute  # Target the HTTPRoute, not the Service
+    name: homeasstant-httproute
+  # No healthCheck = assume always healthy
 ---
 # apiVersion: networking.k8s.io/v1
 # kind: Ingress
