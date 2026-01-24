@@ -178,9 +178,9 @@ metadata:
   namespace: external-ingresses
   annotations:
     reloader.stakater.com/auto: "true"
-    # gethomepage.dev/widget.type: "proxmox"
-    # gethomepage.dev/widget.username: "${PROXMOX_TOKENID}"
-    # gethomepage.dev/widget.password: "${PROXMOX_SECRET}"
+    gethomepage.dev/widget.type: "proxmox"
+    gethomepage.dev/widget.username: "${PROXMOX_TOKENID}"
+    gethomepage.dev/widget.password: "${PROXMOX_SECRET}"
     gethomepage.dev/widget.url: "https://proxmox.${SECRET_DOMAIN}"
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "Proxmox"
