@@ -69,7 +69,6 @@ kind: HTTPRoute
 metadata:
   name: homeasstant-httproute
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
     gethomepage.dev/enabled: "true"
     gethomepage.dev/description: Homeassistant
     gethomepage.dev/group: Home Automation
