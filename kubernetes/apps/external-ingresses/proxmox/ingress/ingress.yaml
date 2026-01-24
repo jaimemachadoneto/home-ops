@@ -49,6 +49,12 @@ metadata:
     gethomepage.dev/widget.tokenid: "${PROXMOX_TOKENID}"
     gethomepage.dev/widget.tokensecret: "${PROXMOX_SECRET}"
     gethomepage.dev/widget.node: "pve"  # Or your node name
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Proxmox"
+    gethomepage.dev/description: "Proxmox Virtual Environment"
+    gethomepage.dev/group: "Infrastructure"
+    gethomepage.dev/icon: "si-proxmox.svg"
+
 spec:
   ingressClassName: internal-nginx
   rules:
