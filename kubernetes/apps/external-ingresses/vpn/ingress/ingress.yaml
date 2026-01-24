@@ -28,11 +28,11 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/target: env-ingress-int.${SECRET_DOMAIN}
     gethomepage.dev/enabled: "true"
-    gethomepage.dev/description: Wireguard
-    gethomepage.dev/group: Infrastructure
-    gethomepage.dev/icon: si-wireguard.svg
-    gethomepage.dev/name: Wireguard
-    gethomepage.dev/app: wireguard
+    gethomepage.dev/name: "Wireguard"
+    gethomepage.dev/description: "Wireguard VPN UI"
+    gethomepage.dev/group: "Infrastructure"
+    gethomepage.dev/icon: "si-wireguard.svg"
+    gethomepage.dev/href: "https://vpn-ui.${SECRET_DOMAIN}"
 spec:
   ingressClassName: internal-nginx
   rules:

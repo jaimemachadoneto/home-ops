@@ -49,7 +49,7 @@ metadata:
     gethomepage.dev/group: Infrastructure
     gethomepage.dev/icon: si-proxmox.svg
     gethomepage.dev/name: Proxmox
-    gethomepage.dev/app: proxmox
+    gethomepage.dev/widget.url: "http://service-url"
 spec:
   ingressClassName: internal-nginx
   rules:
