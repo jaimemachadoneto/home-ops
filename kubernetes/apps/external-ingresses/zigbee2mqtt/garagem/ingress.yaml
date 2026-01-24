@@ -22,6 +22,7 @@ subsets:
     ports:
       - port: 8080
         name: http
+        protocol: TCP
 
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
