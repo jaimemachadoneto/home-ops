@@ -35,7 +35,6 @@ metadata:
     gethomepage.dev/group: Home Automation
     gethomepage.dev/icon: si-homeassistant.svg
     gethomepage.dev/name: Homeassistant
-    gethomepage.dev/app: homeassistant
     gethomepage.dev/ping: "http://ha.${SECRET_DOMAIN}"
 spec:
   ingressClassName: external-nginx
