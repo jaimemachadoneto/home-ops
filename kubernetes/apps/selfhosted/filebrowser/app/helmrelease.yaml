@@ -122,4 +122,4 @@ spec:
         path: /mnt/Data1/frigate
         server: nas.internal
         globalMounts:
-          - path: /media/frigate
+          - path: /data/frigate
