@@ -6,7 +6,7 @@ metadata:
   namespace: external-ingresses
 spec:
   ports:
-    - port: 80
+    - port: 8095
       protocol: TCP
       targetPort: 8095
       name: http
@@ -20,34 +20,47 @@ subsets:
   - addresses:
       - ip: 10.30.10.17 # IP address of your external service that you would like to proxy requests to
     ports:
-      - port: 8095
-        name: http
+    - name: http
+      port: 8095
+      protocol: TCP
+
 ---
-# HTTPRoute for primary domain
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: homeassistant-music-passthrough
+  namespace: external-ingresses
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io  # Correct group
+    kind: HTTPRoute  # Target the HTTPRoute, not the Service
+    name: homeassistant-music-httproute
+  # No healthCheck = assume always healthy
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: ha-music-route
-  namespace: external-ingresses
+  name: homeassistant-music-httproute
   annotations:
     gethomepage.dev/enabled: "true"
-    gethomepage.dev/description: HAMusic
+    gethomepage.dev/description: Homeassistant-music
     gethomepage.dev/group: Home Automation
     gethomepage.dev/icon: si-homeassistant.svg
-    gethomepage.dev/name: HomeAssistant Music
+    gethomepage.dev/name: Homeassistant-music
+    gethomepage.dev/showStats: "false"
 spec:
-  parentRefs:
-    - name: envoy-internal
-      namespace: network
   hostnames:
-    - "ha-music.${SECRET_DOMAIN}"
+    - ha-music.${SECRET_DOMAIN}
+  parentRefs:
+    - name: envoy-external
+      namespace: network
   rules:
     - matches:
-        - path:
-            type: PathPrefix
-            value: /
+      - path:
+          type: PathPrefix
+          value: /
       backendRefs:
-        - name: homeassistant-music-proxy-service
-          namespace: external-ingresses
-          port: 80
-          weight: 1
+      - name: homeassistant-music-proxy-service
+        port: 8095
+        weight: 1
