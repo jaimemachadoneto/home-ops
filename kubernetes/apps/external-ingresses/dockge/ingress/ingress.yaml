@@ -9,6 +9,7 @@ spec:
     - port: 5001
       protocol: TCP
       targetPort: 5001
+      name: http
 ---
 apiVersion: v1
 kind: Endpoints
@@ -20,6 +21,8 @@ subsets:
   - ip: 10.30.3.10 # IP address of your external service that you would like to proxy requests to
   ports:
   - port: 5001
+    name: http
+    protocol: TCP
 
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
