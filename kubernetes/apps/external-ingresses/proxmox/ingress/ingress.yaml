@@ -25,6 +25,15 @@ subsets:
   - port: 8006
     name: https
 ---
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proxmox-dummy-ca
+  namespace: external-ingresses
+data:
+  ca.crt: ""  # Empty - effectively skips validation
+---
 apiVersion: gateway.networking.k8s.io/v1alpha3
 kind: BackendTLSPolicy
 metadata:
@@ -36,9 +45,11 @@ spec:
     kind: Service
     name: proxmox-proxy-service
   validation:
-    # Skip validation - accept any certificate (including self-signed)
-    hostname: pve.proxmox.com
-    caCertificateRefs: []  # Empty = skip validation
+    hostname: proxmox.jaimenet.com
+    caCertificateRefs:
+    - name: proxmox-dummy-ca
+      group: ''
+      kind: ConfigMap
 ---
 # apiVersion: networking.k8s.io/v1
 # kind: Ingress
