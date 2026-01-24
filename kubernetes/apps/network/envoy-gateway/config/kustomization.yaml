@@ -9,7 +9,7 @@ resources:
   - ./external.yaml
   # - ./external-auth.yaml
   - ./internal.yaml
-  - ./internal-auth.yaml
+  # - ./internal-auth.yaml
   # - ./envoy-ext-auth-callback-httproute.yaml
   - ./podmonitor.yaml
-  - ./proxmox-health.yaml
+  # - ./proxmox-health.yaml
