@@ -3,6 +3,8 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: ingress-nginx-external
+  annotations:
+    external-dns.alpha.kubernetes.io/target: &hostname ingress-ext.${SECRET_DOMAIN}
 spec:
   interval: 30m
   chart:
@@ -27,7 +29,6 @@ spec:
     controller:
       service:
         annotations:
-          external-dns.alpha.kubernetes.io/hostname: "env-external.${SECRET_DOMAIN}"
           io.cilium/lb-ipam-ips: 10.30.6.47
         externalTrafficPolicy: Cluster
       ingressClassResource:
