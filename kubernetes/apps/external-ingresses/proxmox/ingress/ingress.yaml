@@ -88,6 +88,7 @@ spec:
 # #      - proxmox.${SECRET_DOMAIN}
 # #    secretName: "${SECRET_DOMAIN/./-}-production-tls"
 ---
+---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
 metadata:
@@ -103,10 +104,9 @@ spec:
     consistentHash:
       type: SourceIP
   healthCheck:
-    # Active health checks with TLS
     active:
-      type: HTTPS
-      https:
+      type: HTTP  # Required field
+      http:       # Required when type is HTTP
         path: /
         expectedStatuses:
           - 200
@@ -116,12 +116,10 @@ spec:
       interval: 10s
       unhealthyThreshold: 2
       healthyThreshold: 1
-    # Passive health checks
     passive:
       splitExternalLocalOriginErrors: true
       consecutiveLocalOriginFailures: 2
-      consecutive5xxErrors: 3
-      baseEjectionTime: 7200s  # 2 hours
+      baseEjectionTime: 7200s
       interval: 5s
   timeout:
     tcp:
@@ -142,6 +140,11 @@ spec:
         - 504
     perRetry:
       timeout: 5s
+      backOff:
+        baseInterval: 500ms
+        maxInterval: 5s
+
+
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
