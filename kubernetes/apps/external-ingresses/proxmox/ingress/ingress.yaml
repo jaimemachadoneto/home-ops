@@ -25,181 +25,176 @@ subsets:
   - port: 8006
     name: https
 ---
----
-apiVersion: v1
-kind: ConfigMap
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: proxmox-dummy-ca
-  namespace: external-ingresses
-data:
-  ca.crt: ""  # Empty - effectively skips validation
----
-apiVersion: gateway.networking.k8s.io/v1alpha3
-kind: BackendTLSPolicy
-metadata:
-  name: proxmox-tls-policy
-  namespace: external-ingresses
-spec:
-  targetRefs:
-  - group: ''
-    kind: Service
-    name: proxmox-proxy-service
-  validation:
-    hostname: proxmox.jaimenet.com
-    caCertificateRefs:
-    - name: proxmox-dummy-ca
-      group: ''
-      kind: ConfigMap
----
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: proxmox-proxy-ingress
-#   namespace: external-ingresses
-#   annotations:
-#     reloader.stakater.com/auto: "true"
-#     external-dns.alpha.kubernetes.io/target: "env-ingress-int.${SECRET_DOMAIN}"
-#     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-#     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-#     nginx.ingress.kubernetes.io/secure-backends: "false"
-#     # Failover configuration
-#     nginx.ingress.kubernetes.io/upstream-fail-timeout: "10s"
-#     nginx.ingress.kubernetes.io/upstream-max-fails: "3"
-#     nginx.ingress.kubernetes.io/proxy-connect-timeout: "5"
-#     nginx.ingress.kubernetes.io/proxy-next-upstream: "error timeout http_502 http_503 http_504"
-#     # Session affinity - keep users connected to the same backend
-#     nginx.ingress.kubernetes.io/affinity: "cookie"
-#     nginx.ingress.kubernetes.io/affinity-mode: "persistent"
-#     nginx.ingress.kubernetes.io/session-cookie-name: "proxmox-route"
-#     nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
-#     gethomepage.dev/widget.type: "proxmox"
-#     gethomepage.dev/widget.url: "https://proxmox.${SECRET_DOMAIN}"  # Your Proxmox IP
-#     gethomepage.dev/widget.username: "${PROXMOX_TOKENID}"
-#     gethomepage.dev/widget.password: "${PROXMOX_SECRET}"
-#     gethomepage.dev/enabled: "true"
-#     gethomepage.dev/name: "Proxmox"
-#     gethomepage.dev/description: "Proxmox Virtual Environment"
-#     gethomepage.dev/group: "Infrastructure"
-#     gethomepage.dev/icon: "si-proxmox.svg"
-
-# spec:
-#   ingressClassName: internal-nginx
-#   rules:
-#     - host: proxmox.${SECRET_DOMAIN}
-#       http:
-#         paths:
-#           - path: /
-#             pathType: Prefix
-#             backend:
-#               service:
-#                 name: proxmox-proxy-service
-#                 port:
-#                   number: 80
-# #  tls:
-# #  - hosts:
-# #      - proxmox.${SECRET_DOMAIN}
-# #    secretName: "${SECRET_DOMAIN/./-}-production-tls"
----
----
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: BackendTrafficPolicy
-metadata:
-  name: proxmox-failover
-  namespace: external-ingresses
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: proxmox-httproute
-  loadBalancer:
-    type: ConsistentHash
-    consistentHash:
-      type: SourceIP
-  healthCheck:
-    active:
-      type: HTTP  # Required field
-      http:       # Required when type is HTTP
-        path: /
-        expectedStatuses:
-          - 200
-          - 302
-          - 401
-      timeout: 3s
-      interval: 10s
-      unhealthyThreshold: 2
-      healthyThreshold: 1
-    passive:
-      splitExternalLocalOriginErrors: true
-      consecutiveLocalOriginFailures: 2
-      baseEjectionTime: 7200s
-      interval: 5s
-  timeout:
-    tcp:
-      connectTimeout: 5s
-    http:
-      requestTimeout: 30s
-  retry:
-    numRetries: 2
-    retryOn:
-      triggers:
-        - connect-failure
-        - gateway-error
-        - reset
-        - retriable-status-codes
-      httpStatusCodes:
-        - 502
-        - 503
-        - 504
-    perRetry:
-      timeout: 5s
-      backOff:
-        baseInterval: 500ms
-        maxInterval: 5s
-
-
----
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: BackendTrafficPolicy
-metadata:
-  name: proxmox-passthrough
-  namespace: external-ingresses
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: proxmox-httproute
-
----
-# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: proxmox-httproute
+  name: proxmox-proxy-ingress
   namespace: external-ingresses
   annotations:
     reloader.stakater.com/auto: "true"
+    external-dns.alpha.kubernetes.io/target: "env-ingress-int.${SECRET_DOMAIN}"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/secure-backends: "false"
+    # Failover configuration
+    nginx.ingress.kubernetes.io/upstream-fail-timeout: "10s"
+    nginx.ingress.kubernetes.io/upstream-max-fails: "3"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "5"
+    nginx.ingress.kubernetes.io/proxy-next-upstream: "error timeout http_502 http_503 http_504"
+    # Session affinity - keep users connected to the same backend
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/affinity-mode: "persistent"
+    nginx.ingress.kubernetes.io/session-cookie-name: "proxmox-route"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
     gethomepage.dev/widget.type: "proxmox"
+    gethomepage.dev/widget.url: "https://proxmox.${SECRET_DOMAIN}"  # Your Proxmox IP
     gethomepage.dev/widget.username: "${PROXMOX_TOKENID}"
     gethomepage.dev/widget.password: "${PROXMOX_SECRET}"
-    gethomepage.dev/widget.url: "https://proxmox.${SECRET_DOMAIN}"
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "Proxmox"
-    gethomepage.dev/description: "Proxmox VirtualEnvironment"
+    gethomepage.dev/description: "Proxmox Virtual Environment"
     gethomepage.dev/group: "Infrastructure"
     gethomepage.dev/icon: "si-proxmox.svg"
+
 spec:
-  hostnames:
-    - proxmox.${SECRET_DOMAIN}
-  parentRefs:
-    - name: envoy-internal
-      namespace: network
+  ingressClassName: internal-nginx
   rules:
-    - matches:
-      - path:
-          type: PathPrefix
-          value: /
-      backendRefs:
-        - name: proxmox-proxy-service
-          namespace: external-ingresses
-          port: 80
-          weight: 1
+    - host: proxmox.${SECRET_DOMAIN}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: proxmox-proxy-service
+                port:
+                  number: 80
+
+# ---
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: BackendTrafficPolicy
+# metadata:
+#   name: proxmox-failover
+#   namespace: external-ingresses
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: HTTPRoute
+#     name: proxmox-httproute
+#   loadBalancer:
+#     type: ConsistentHash
+#     consistentHash:
+#       type: SourceIP
+#   healthCheck:
+#     active:
+#       type: HTTP  # Required field
+#       http:       # Required when type is HTTP
+#         path: /
+#         expectedStatuses:
+#           - 200
+#           - 302
+#           - 401
+#       timeout: 3s
+#       interval: 10s
+#       unhealthyThreshold: 2
+#       healthyThreshold: 1
+#     passive:
+#       splitExternalLocalOriginErrors: true
+#       consecutiveLocalOriginFailures: 2
+#       baseEjectionTime: 7200s
+#       interval: 5s
+#   timeout:
+#     tcp:
+#       connectTimeout: 5s
+#     http:
+#       requestTimeout: 30s
+#   retry:
+#     numRetries: 2
+#     retryOn:
+#       triggers:
+#         - connect-failure
+#         - gateway-error
+#         - reset
+#         - retriable-status-codes
+#       httpStatusCodes:
+#         - 502
+#         - 503
+#         - 504
+#     perRetry:
+#       timeout: 5s
+#       backOff:
+#         baseInterval: 500ms
+#         maxInterval: 5s
+
+
+# ---
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: BackendTrafficPolicy
+# metadata:
+#   name: proxmox-passthrough
+#   namespace: external-ingresses
+# spec:
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: HTTPRoute
+#     name: proxmox-httproute
+
+# ---
+# # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: HTTPRoute
+# metadata:
+#   name: proxmox-httproute
+#   namespace: external-ingresses
+#   annotations:
+#     reloader.stakater.com/auto: "true"
+#     gethomepage.dev/widget.type: "proxmox"
+#     gethomepage.dev/widget.username: "${PROXMOX_TOKENID}"
+#     gethomepage.dev/widget.password: "${PROXMOX_SECRET}"
+#     gethomepage.dev/widget.url: "https://proxmox.${SECRET_DOMAIN}"
+#     gethomepage.dev/enabled: "true"
+#     gethomepage.dev/name: "Proxmox"
+#     gethomepage.dev/description: "Proxmox VirtualEnvironment"
+#     gethomepage.dev/group: "Infrastructure"
+#     gethomepage.dev/icon: "si-proxmox.svg"
+# spec:
+#   hostnames:
+#     - proxmox.${SECRET_DOMAIN}
+#   parentRefs:
+#     - name: envoy-internal
+#       namespace: network
+#   rules:
+#     - matches:
+#       - path:
+#           type: PathPrefix
+#           value: /
+#       backendRefs:
+#         - name: proxmox-proxy-service
+#           namespace: external-ingresses
+#           port: 80
+#           weight: 1
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: proxmox-dummy-ca
+#   namespace: external-ingresses
+# data:
+#   ca.crt: ""  # Empty - effectively skips validation
+# ---
+# apiVersion: gateway.networking.k8s.io/v1alpha3
+# kind: BackendTLSPolicy
+# metadata:
+#   name: proxmox-tls-policy
+#   namespace: external-ingresses
+# spec:
+#   targetRefs:
+#   - group: ''
+#     kind: Service
+#     name: proxmox-proxy-service
+#   validation:
+#     hostname: proxmox.jaimenet.com
+#     caCertificateRefs:
+#     - name: proxmox-dummy-ca
+#       group: ''
+#       kind: ConfigMap
