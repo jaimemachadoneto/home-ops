@@ -47,9 +47,8 @@ metadata:
     nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
     gethomepage.dev/widget.type: "proxmox"
     gethomepage.dev/widget.url: "https://proxmox.${SECRET_DOMAIN}"  # Your Proxmox IP
-    gethomepage.dev/widget.tokenid: "${PROXMOX_TOKENID}"
-    gethomepage.dev/widget.tokensecret: "${PROXMOX_SECRET}"
-    gethomepage.dev/widget.node: "tiny"  # Or your node name
+    gethomepage.dev/widget.username: "${PROXMOX_TOKENID}"
+    gethomepage.dev/widget.password: "${PROXMOX_SECRET}"
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "Proxmox"
     gethomepage.dev/description: "Proxmox Virtual Environment"
