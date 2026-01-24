@@ -9,7 +9,7 @@ data:
   kubernetes.yaml: |
     mode: cluster
     gateway: true
-    ingress: false
+    ingress: true
     traefik: false
 
   settings.yaml: |
