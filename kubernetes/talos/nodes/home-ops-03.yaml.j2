@@ -16,7 +16,7 @@ machine:
       - name: i915
   kubelet:
     extraArgs:
-      register-with-taints: "dedicated=gpu:PreferNoSchedule"
+      register-with-taints: "dedicated=gpu:NoSchedule"
   network:
     hostname: home-ops-03
     interfaces:
