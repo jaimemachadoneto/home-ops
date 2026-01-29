@@ -8,7 +8,7 @@ spec:
   chartRef:
     kind: OCIRepository
     name: cloudnative-pg
-  interval: 30m
+  interval: 31m
   install:
     remediation:
       retries: 3
