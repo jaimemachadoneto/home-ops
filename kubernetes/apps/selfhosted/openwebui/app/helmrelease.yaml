@@ -33,7 +33,7 @@ spec:
               CORS_ALLOW_ORIGIN: https://ai.${SECRET_DOMAIN}
               # Ollama
               ENABLE_OLLAMA_API: true
-              OLLAMA_BASE_URL: https://ollama.${PRIVATE_DOMAIN}
+              OLLAMA_BASE_URL: http://10.30.3.10:11434
               ENABLE_OPENAI_API: false
               ENABLE_SIGNUP: false
               ENABLE_LOGIN_FORM: false
