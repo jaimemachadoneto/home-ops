@@ -10,22 +10,18 @@ spec:
       app.kubernetes.io/name: frigate
   components:
     - ../../../../components/gpu
-    - ../../../../components/volsync
+    # - ../../../../components/volsync
     - ../../../../components/keda/nas-nfs-scaler
   dependsOn:
     - name: intel-gpu-resource-driver
       namespace: kube-system
     # - name: multus-networks
     #   namespace: network
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
+    # - name: rook-ceph-cluster
+    #   namespace: rook-ceph
   interval: 1h
   path: "./kubernetes/apps/home-automation/frigate/app"
   postBuild:
-    substitute:
-      APP: frigate
-      VOLSYNC_CLAIM: frigate
-      VOLSYNC_CAPACITY: 5Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
