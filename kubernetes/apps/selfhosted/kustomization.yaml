@@ -19,3 +19,4 @@ resources:
   - ./actual/ks.yaml
   - ./atuin/ks.yaml
   - ./openwebui/ks.yaml
+  - ./searxng/ks.yaml

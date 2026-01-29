@@ -82,7 +82,7 @@ spec:
                 subPath: tmp
       config:
         enabled: true
-        existingClaim: "${PVC_CLAIM}"
+        existingClaim: openwebui-data
         globalMounts:
           - path: /app/backend/data
     route:
