@@ -84,7 +84,7 @@ spec:
                 port: *port
     persistence:
       data:
-        existingClaim: *app
+        existingClaim: paperless-gpt-data
         advancedMounts:
           paperless-gpt:
             app:
