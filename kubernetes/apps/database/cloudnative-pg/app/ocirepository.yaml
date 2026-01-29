@@ -9,4 +9,10 @@ spec:
   provider: generic
   ref:
     semver: 0.x
+  # Select the gzipped Helm chart layer so the source controller
+  # extracts the correct content instead of attempting to unpack
+  # non-gzip layers (fixes: "requires gzip-compressed body: gzip: invalid header").
+  layerSelector:
+    mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    operation: copy
   url: oci://ghcr.io/cloudnative-pg/charts/cloudnative-pg
