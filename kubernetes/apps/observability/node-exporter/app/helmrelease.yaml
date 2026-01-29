@@ -45,3 +45,13 @@ spec:
       limits:
         memory: 64M
     hostNetwork: false
+
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values:
+                    - home-ops-03
