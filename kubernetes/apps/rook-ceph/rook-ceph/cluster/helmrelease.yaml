@@ -66,12 +66,12 @@ spec:
             memory: 4Gi
       storage:
           # Restrict OSDs to the three control-plane/data nodes and avoid scheduling on home-ops-03
-          useAllNodes: true
-          # nodes:
-          #   - name: home-ops-00
-          #   - name: home-ops-01
-          #   - name: home-ops-02
-          # useAllDevices: false
+          useAllNodes: false
+          nodes:
+            - name: home-ops-00
+            - name: home-ops-01
+            - name: home-ops-02
+          useAllDevices: false
           devicePathFilter: /dev/sdb
           config:
             osdsPerDevice: "1"
