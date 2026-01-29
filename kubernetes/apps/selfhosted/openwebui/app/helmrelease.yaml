@@ -87,11 +87,14 @@ spec:
           - path: /app/backend/data
     route:
       app:
-        # annotations:
-        #   gethomepage.dev/enabled: "true"
-        #   gethomepage.dev/group: Selfhosted
-        #   gethomepage.dev/name: IT-Tools
-        hostnames: ["${HOSTNAME}"]
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: OpenWebUI
+          gethomepage.dev/group: Apps
+          gethomepage.dev/icon: si-openaigym.svg
+          gethomepage.dev/name: OpenWebUI
+          gethomepage.dev/app: openwebui
+        hostnames: ["https://ai.${SECRET_DOMAIN}"]
         parentRefs:
           - name: envoy-external
             namespace: network
