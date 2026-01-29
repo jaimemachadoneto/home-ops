@@ -16,6 +16,17 @@ spec:
           resourceClaims:
             - name: gpu
               resourceClaimTemplateName: frigate-gpu
+          tolerations:
+            - key: dedicated
+              operator: Equal
+              value: gpu
+              effect: NoSchedule
+            - key: dedicated
+              operator: Equal
+              value: gpu
+              effect: NoExecute
+          nodeSelector:
+            gpu: intel
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
