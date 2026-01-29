@@ -94,7 +94,8 @@ spec:
           gethomepage.dev/icon: si-openaigym.svg
           gethomepage.dev/name: OpenWebUI
           gethomepage.dev/app: openwebui
-        hostnames: ["https://ai.${SECRET_DOMAIN}"]
+        hostnames:
+          - "ai.${SECRET_DOMAIN}"
         parentRefs:
           - name: envoy-external
             namespace: network
