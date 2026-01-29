@@ -22,6 +22,8 @@ spec:
   interval: 1h
   path: "./kubernetes/apps/home-automation/frigate/app"
   postBuild:
+    substitute:
+      APP: frigate
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
