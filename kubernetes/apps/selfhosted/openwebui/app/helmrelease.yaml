@@ -89,10 +89,11 @@ spec:
                   failureThreshold: 3
             resources:
               requests:
-                cpu: 50m
-                memory: 128Mi
+                cpu: 200m
+                memory: 256Mi
               limits:
-                memory: 1Gi
+                cpu: 500m
+                memory: 2Gi
     service:
       app:
         controller: openwebui
