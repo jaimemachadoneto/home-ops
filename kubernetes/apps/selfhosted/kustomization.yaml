@@ -18,3 +18,4 @@ resources:
   - ./argus/ks.yaml
   - ./actual/ks.yaml
   - ./atuin/ks.yaml
+  - ./openwebui/ks.yaml
