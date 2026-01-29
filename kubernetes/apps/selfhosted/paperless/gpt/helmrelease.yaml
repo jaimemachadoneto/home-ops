@@ -28,7 +28,7 @@ spec:
               LLM_LANGUAGE: Spanish
               OCR_PROVIDER: llm
               VISION_LLM_PROVIDER: ollama
-              VISION_LLM_MODEL: llama3.2-vision:11b
+              VISION_LLM_MODEL: richardyoung/olmocr2:7b-q8
               OCR_LIMIT_PAGES: 5
               OCR_PROCESS_MODE: image
               PDF_SKIP_EXISTING_OCR: false
