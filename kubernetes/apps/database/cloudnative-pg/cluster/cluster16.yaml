@@ -29,26 +29,26 @@ spec:
   monitoring:
     enablePodMonitor: true
 
-  # backup:
-  #   retentionPolicy: 31d
-  #   barmanObjectStore: &barmanObjectStore
-  #     data:
-  #       compression: bzip2
-  #     wal:
-  #       compression: bzip2
-  #       maxParallel: 8
-  #     destinationPath: s3://cloudnative-pg/
-  #     endpointURL: http://10.30.10.11:9000
-  #     # Note: serverName version needs to be inclemented
-  #     # when recovering from an existing cnpg cluster
-  #     serverName: &currentCluster postgres16-v0
-  #     s3Credentials:
-  #       accessKeyId:
-  #         name: cloudnative-pg-secret
-  #         key: postgres_access_key
-  #       secretAccessKey:
-  #         name: cloudnative-pg-secret
-  #        key: postgres_secret_key
+  backup:
+    retentionPolicy: 31d
+    barmanObjectStore: &barmanObjectStore
+      data:
+        compression: bzip2
+      wal:
+        compression: bzip2
+        maxParallel: 8
+      destinationPath: s3://cloudnative/
+      endpointURL: http://nas.internal:9000
+      # Note: serverName version needs to be inclemented
+      # when recovering from an existing cnpg cluster
+      serverName: &currentCluster postgres16-v0
+      s3Credentials:
+        accessKeyId:
+          name: cloudnative-pg-secret
+          key: s3-key
+        secretAccessKey:
+          name: cloudnative-pg-secret
+          key: s3-secret
   bootstrap:
     initdb:
       database: app
