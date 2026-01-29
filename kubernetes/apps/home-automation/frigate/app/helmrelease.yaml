@@ -79,17 +79,23 @@ spec:
             port: 8555
             protocol: UDP
     persistence:
-      config:
-        existingClaim: frigate
+      # config:
+      #   existingClaim: frigate
       # config-file:
       #   type: secret
       #   name: frigate-secrets
       #   globalMounts:
       #     - path: /config/config.yaml
       #       subPath: config.yaml
+      config:
+        type: nfs
+        path: /mnt/Data1/frigate/config
+        server: nas.internal
+        globalMounts:
+          - path: /config
       media:
         type: nfs
-        path: /mnt/Data1/frigate
+        path: /mnt/Data1/frigate/data
         server: nas.internal
         globalMounts:
           - path: /media/frigate
