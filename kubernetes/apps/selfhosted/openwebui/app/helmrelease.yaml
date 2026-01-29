@@ -47,7 +47,7 @@ spec:
               ENABLE_WEBSOCKET_SUPPORT: true
               WEBSOCKET_MANAGER: redis
               # OIDC
-              ENABLE_OAUTH_SIGNUP: true
+              ENABLE_OAUTH_SIGNUP: false
               OAUTH_MERGE_ACCOUNTS_BY_EMAIL: true
               OAUTH_UPDATE_PICTURE_ON_LOGIN: true
               OAUTH_PROVIDER_NAME: Movishell
