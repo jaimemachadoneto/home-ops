@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rclone-move-one-drive-monica
+  namespace: selfhosted
+spec:
+  schedule: "*/1 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 0
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          activeDeadlineSeconds: 40
+          restartPolicy: OnFailure
+          terminationGracePeriodSeconds: 60
+          successfulJobsHistoryLimit: 0
+          failedJobsHistoryLimit: 0
+          containers:
+            - name: rclone
+              image: rclone/rclone:1.69.3
+              args:
+                - move
+                - /data/DocOnedrive/monica
+                - onedrive-monica:/AutoScan
+                - --delete-during
+                - --log-level=INFO
+                - --config=/config/rclone/rclone.conf
+                - --cache-dir=/vfsCache
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 200m
+                  memory: 1Gi
+              volumeMounts:
+                - name: rclone-config
+                  mountPath: /config/rclone
+                  readOnly: true
+                - name: vfs-cache
+                  mountPath: /vfsCache
+                - name: paperless
+                  mountPath: /data/Documents
+                  readOnly: true
+                - name: doc-one-drive
+                  mountPath: /data/DocOnedrive
+          volumes:
+            - name: rclone-config
+              persistentVolumeClaim:
+                claimName: rclone-data
+            - name: vfs-cache
+              emptyDir: {}
+            - name: paperless
+              nfs:
+                server: 10.30.10.11
+                path: /mnt/Data1/Documents
+            - name: doc-one-drive
+              nfs:
+                server: 10.30.10.11
+                path: /mnt/Data1/ScannedFiles
