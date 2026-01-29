@@ -35,7 +35,7 @@ spec:
               ENABLE_OLLAMA_API: true
               OLLAMA_BASE_URL: http://10.30.3.10:11434
               ENABLE_OPENAI_API: false
-              ENABLE_SIGNUP: true
+              ENABLE_SIGNUP: false
               ENABLE_LOGIN_FORM: true
               ENABLE_PERSISTENT_CONFIG: false
               WEBUI_SESSION_COOKIE_SAME_SITE: lax
