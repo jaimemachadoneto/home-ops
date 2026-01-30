@@ -48,8 +48,12 @@ spec:
                   mountPath: /data/DocOnedrive
           volumes:
             - name: rclone-config
-              persistentVolumeClaim:
-                claimName: rclone-data
+              secret:
+                secretName: rclone-config        # name of the Kubernetes Secret (created by ExternalSecret or kubectl)
+                items:
+                  - key: rclone.conf
+                    path: rclone.conf
+                defaultMode: 0440
             - name: vfs-cache
               emptyDir: {}
             - name: paperless

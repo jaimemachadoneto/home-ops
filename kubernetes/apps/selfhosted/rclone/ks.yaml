@@ -11,7 +11,7 @@ spec:
     labels:
       app.kubernetes.io/name: *appname
   components:
-    - ../../../../components/volsync
+    - ../../../../components/keda/nas-nfs-scaler
   interval: 10m
   path: ./kubernetes/apps/selfhosted/rclone/app
   dependsOn:
@@ -28,8 +28,6 @@ spec:
       APP: *appname
       APP_UID: "1000"
       APP_GID: "65542"
-      VOLSYNC_CLAIM: rclone-data
-      VOLSYNC_CAPACITY: 1Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
