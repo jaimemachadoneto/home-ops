@@ -13,3 +13,4 @@ resources:
   - ./vpn/ks.yaml
   - ./dockge/ks.yaml
   - ./zigbee2mqtt/ks.yaml
+  - ./ocr/ks.yaml
