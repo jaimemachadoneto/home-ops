@@ -25,7 +25,7 @@ spec:
                 - name: INPUT_DIR
                   value: "/data/in"
                 - name: OUTPUT_DIR
-                  value: "/data/out"
+                  value: "/data/out/incoming"
                 - name: OCR_SERVICE_URL
                   value: "https://ocr.${SECRET_DOMAIN}"
               volumeMounts:
