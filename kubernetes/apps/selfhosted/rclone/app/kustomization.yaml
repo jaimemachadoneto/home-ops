@@ -5,5 +5,5 @@ kind: Kustomization
 resources:
   #- ./syncDocumentsJaime.yaml
   # - ./syncDocumentsMonica.yaml
-  - ./syncPaperlessOcr.yaml
+  #- ./syncPaperlessOcr.yaml
   - ./externalsecret.yaml
