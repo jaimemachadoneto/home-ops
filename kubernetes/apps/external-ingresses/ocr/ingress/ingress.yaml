@@ -46,8 +46,9 @@ metadata:
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/description: OCR
-    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/group: Documents
     gethomepage.dev/name: ocr
+    gethomepage.dev/href: "https://ocr.${SECRET_DOMAIN}/history"
 spec:
   hostnames:
     - ocr.${SECRET_DOMAIN}
