@@ -1,0 +1,24 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: redirect-http-to-https
+  namespace: network
+  annotations:
+    gethomepage.dev/description: Redirect all HTTP to HTTPS at the gateway
+spec:
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: http
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            port: 443
+            statusCode: 301
