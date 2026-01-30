@@ -141,7 +141,7 @@ spec:
       nas:
         type: nfs
         server: 10.30.10.11
-        path: /mnt/Data1/Documents
+        path: /mnt/Data1/Documents/processed
         advancedMounts:
           paperless:
             app:

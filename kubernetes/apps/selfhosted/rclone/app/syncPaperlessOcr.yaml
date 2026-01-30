@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ocr-paperless-job
+  namespace: selfhosted
+spec:
+  schedule: "*/1 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 0
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          activeDeadlineSeconds: 40
+          restartPolicy: OnFailure
+          terminationGracePeriodSeconds: 60
+          successfulJobsHistoryLimit: 0
+          failedJobsHistoryLimit: 0
+
+          containers:
+            - name: ocr-worker
+              image: REPLACE_WITH_IMAGE
+              env:
+                - name: INPUT_DIR
+                  value: "/data/in"
+                - name: OUTPUT_DIR
+                  value: "/data/out"
+                - name: OCR_SERVICE_URL
+                  value: "https://ocr.${SECRET_DOMAIN}"
+              volumeMounts:
+                - name: data-in
+                  mountPath: /data/in
+                - name: data-out
+                  mountPath: /data/out
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+          volumes:
+            # Replace these with your PVCs or hostPath as appropriate
+            - name: data-out
+              type: nfs
+              server: 10.30.10.11
+              path: /mnt/Data1/Documents/processed
+            - name: data-in
+              type: nfs
+              server: 10.30.10.11
+              path: /mnt/Data1/Documents/pending
