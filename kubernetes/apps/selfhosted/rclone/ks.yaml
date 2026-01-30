@@ -14,9 +14,6 @@ spec:
     - ../../../../components/keda/nas-nfs-scaler
   interval: 10m
   path: ./kubernetes/apps/selfhosted/rclone/app
-  dependsOn:
-    - name: rook-ceph-cluster
-      namespace: rook-ceph
   prune: true
   sourceRef:
     kind: GitRepository
