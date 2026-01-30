@@ -11,3 +11,4 @@ resources:
   - ./internal.yaml
   # - ./internal-auth.yaml
   - ./podmonitor.yaml
+  - ./redirect-http-to-https.yaml
