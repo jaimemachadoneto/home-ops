@@ -15,8 +15,8 @@ spec:
           activeDeadlineSeconds: 40
           restartPolicy: OnFailure
           terminationGracePeriodSeconds: 60
-          successfulJobsHistoryLimit: 0
-          failedJobsHistoryLimit: 0
+          successfulJobsHistoryLimit: 1
+          failedJobsHistoryLimit: 1
 
           containers:
             - name: ocr-worker
