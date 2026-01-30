@@ -51,7 +51,7 @@ spec:
               secret:
                 secretName: rclone-secret       # name of the Kubernetes Secret (created by ExternalSecret or kubectl)
                 items:
-                  - key: rclone.conf
+                  - key: RCLONE_CONF
                     path: rclone.conf
                 defaultMode: 0440
             - name: vfs-cache
