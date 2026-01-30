@@ -42,11 +42,11 @@ spec:
                   memory: 256Mi
           volumes:
             # Replace these with your PVCs or hostPath as appropriate
-            - name: data-out
-              nfs:
-                server: 10.30.10.11
-                path: /mnt/Data1/Documents/processed
             - name: data-in
               nfs:
                 server: 10.30.10.11
                 path: /mnt/Data1/Documents/pending
+            - name: data-out
+              nfs:
+                server: 10.30.10.11
+                path: /mnt/Data1/Documents/processed
