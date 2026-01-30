@@ -23,7 +23,7 @@ spec:
               args:
                 - move
                 - /data/DocOnedrive/jaime
-                - OneDrive:/Onedrive-Jaime
+                - Onedrive-Jaime
                 - --delete-during
                 - --log-level=INFO
                 - --config=/config/rclone/rclone.conf
