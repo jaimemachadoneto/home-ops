@@ -20,7 +20,7 @@ spec:
 
           containers:
             - name: ocr-worker
-              image: REPLACE_WITH_IMAGE
+              image: ghcr.io/jaimemachado/rsync-docs:b3b0054d9de0defd3a59064206b1adaa94a163b9
               env:
                 - name: INPUT_DIR
                   value: "/data/in"
