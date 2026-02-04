@@ -139,9 +139,8 @@ spec:
             cpu: 100m
           limits:
             memory: 2000M
-        retention: 14d
-        #TODO: Review size
-        retentionSize: 10GB
+        retention: 7d
+        retentionSize: 8GB
         ruleSelectorNilUsesHelmValues: false
         scrapeConfigSelectorNilUsesHelmValues: false
         scrapeInterval: 1m # Must match interval in Grafana Helm chart
@@ -152,7 +151,6 @@ spec:
               storageClassName: ceph-block
               resources:
                 requests:
-                  #TODO: Review Size
                   storage: 11Gi
 
       route:
