@@ -3,24 +3,23 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: cross-seed
+  name: qbittorrent
 spec:
   commonMetadata:
     labels:
-      app.kubernetes.io/name: cross-seed
+      app.kubernetes.io/name: qbittorrent
   components:
     - ../../../../components/volsync
+    - ../../../../components/keda/nas-nfs-scaler
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
-    - name: qbittorrent
-      namespace: downloads
   interval: 1h
-  path: "./kubernetes/apps/downloads/cross-seed/app"
+  path: "./kubernetes/apps/downloads/qbittorrent/app"
   postBuild:
     substitute:
-      APP: cross-seed
-      VOLSYNC_CLAIM: cross-seed
+      APP: qbittorrent
+      VOLSYNC_CAPACITY: 2Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

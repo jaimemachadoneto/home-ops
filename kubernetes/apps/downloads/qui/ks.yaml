@@ -3,24 +3,21 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: cross-seed
+  name: qui
 spec:
   commonMetadata:
     labels:
-      app.kubernetes.io/name: cross-seed
+      app.kubernetes.io/name: qui
   components:
     - ../../../../components/volsync
   dependsOn:
     - name: rook-ceph-cluster
       namespace: rook-ceph
-    - name: qbittorrent
-      namespace: downloads
   interval: 1h
-  path: "./kubernetes/apps/downloads/cross-seed/app"
+  path: "./kubernetes/apps/downloads/qui/app"
   postBuild:
     substitute:
-      APP: cross-seed
-      VOLSYNC_CLAIM: cross-seed
+      APP: qui
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
