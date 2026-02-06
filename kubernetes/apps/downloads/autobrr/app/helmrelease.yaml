@@ -26,7 +26,7 @@ spec:
           app:
             image:
               repository: ghcr.io/autobrr/autobrr
-              tag: v1.58.0
+              tag: v1.71.0
             env:
               AUTOBRR__CHECK_FOR_UPDATES: "false"
               AUTOBRR__HOST: 0.0.0.0
@@ -40,13 +40,26 @@ spec:
             probes:
               liveness:
                 enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /api/healthz/liveness
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
               readiness:
                 enabled: true
-              startup:
-                enabled: true
+                custom: true
                 spec:
-                  failureThreshold: 30
-                  periodSeconds: 5
+                  httpGet:
+                    path: /api/healthz/readiness
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
             resources:
               requests:
                 cpu: 10m
@@ -86,5 +99,14 @@ spec:
             namespace: network
 
     persistence:
-      tmp:
+      config:
+        existingClaim: autobrr
+      tmpfs:
         type: emptyDir
+        advancedMounts:
+          autobrr:
+            app:
+              - path: /config/log
+                subPath: log
+              - path: /tmp
+                subPath: tmp
