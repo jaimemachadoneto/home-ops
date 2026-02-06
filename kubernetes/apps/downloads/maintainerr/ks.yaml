@@ -19,6 +19,9 @@ spec:
     substitute:
       APP: maintainerr
       VOLSYNC_CLAIM: maintainerr
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository

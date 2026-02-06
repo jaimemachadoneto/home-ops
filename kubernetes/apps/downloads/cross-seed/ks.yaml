@@ -17,6 +17,10 @@ spec:
       namespace: downloads
   interval: 1h
   path: "./kubernetes/apps/downloads/cross-seed/app"
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository
