@@ -19,6 +19,9 @@ spec:
     substitute:
       APP: mylar
       VOLSYNC_CLAIM: mylar
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository

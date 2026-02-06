@@ -19,6 +19,9 @@ spec:
     substitute:
       APP: pinchflat
       VOLSYNC_CLAIM: pinchflat
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository

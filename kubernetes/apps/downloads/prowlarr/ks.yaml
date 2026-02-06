@@ -19,6 +19,9 @@ spec:
     substitute:
       APP: prowlarr
       VOLSYNC_CLAIM: prowlarr-config
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository

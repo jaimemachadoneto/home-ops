@@ -19,6 +19,9 @@ spec:
     substitute:
       APP: recyclarr
       VOLSYNC_CLAIM: recyclarr
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository

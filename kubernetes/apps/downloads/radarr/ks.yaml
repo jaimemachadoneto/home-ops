@@ -19,6 +19,9 @@ spec:
     substitute:
       APP: radarr
       VOLSYNC_CLAIM: radarr-config
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository
