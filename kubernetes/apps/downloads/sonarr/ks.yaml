@@ -19,6 +19,9 @@ spec:
     substitute:
       APP: sonarr
       VOLSYNC_CLAIM: sonarr-config
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository

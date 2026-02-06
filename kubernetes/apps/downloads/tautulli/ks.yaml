@@ -19,6 +19,9 @@ spec:
     substitute:
       APP: tautulli
       VOLSYNC_CLAIM: tautulli
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
   prune: true
   sourceRef:
     kind: GitRepository
