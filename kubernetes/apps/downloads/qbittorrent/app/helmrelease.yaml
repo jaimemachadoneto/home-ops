@@ -41,12 +41,7 @@ spec:
               readiness:
                 enabled: true
               startup:
-                enabled: true
-                spec:
-                  failureThreshold: 30
-                  periodSeconds: 5
-                  timeoutSeconds: 5
-                  initialDelaySeconds: 10
+                enabled: false
             resources:
               requests:
                 cpu: 200m
