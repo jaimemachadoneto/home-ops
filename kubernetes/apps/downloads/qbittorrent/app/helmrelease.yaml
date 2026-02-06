@@ -36,10 +36,19 @@ spec:
               QBT_TORRENTING_PORT: 51478
             nameOverride: qbittorrent
             probes:
-              liveness:
+              liveness: &probes
                 enabled: true
-              readiness:
-                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *port
+                    host: 127.0.0.1
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 5
+              readiness: *probes
               startup:
                 enabled: false
             resources:
