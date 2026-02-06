@@ -110,6 +110,7 @@ spec:
           gethomepage.dev/app: sabnzbd
           gethomepage.dev/widget.type: sabnzbd
           gethomepage.dev/widget.url: "https://sabnzbd.${SECRET_DOMAIN}"
+          gethomepage.dev/widget.key: "{{NAMESPACE}}/sabnzbd-secret/api_key"
         hostnames:
           - sabnzbd.${SECRET_DOMAIN}
         parentRefs:
