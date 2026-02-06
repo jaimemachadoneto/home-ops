@@ -1,0 +1,90 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: autobrr
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: autobrr
+  interval: 30m
+  values:
+    controllers:
+      autobrr:
+        annotations:
+          secret.reloader.stakater.com/reload: autobrr-secret,autobrr-db-secret
+          configmap.reloader.stakater.com/reload: autobrr-configmap
+
+        pod:
+          securityContext:
+            runAsUser: 2000
+            runAsGroup: 2000
+            runAsNonRoot: true
+
+        containers:
+          app:
+            image:
+              repository: ghcr.io/autobrr/autobrr
+              tag: v1.58.0
+            env:
+              AUTOBRR__CHECK_FOR_UPDATES: "false"
+              AUTOBRR__HOST: 0.0.0.0
+              AUTOBRR__PORT: &port 7474
+              AUTOBRR__LOG_LEVEL: DEBUG
+            envFrom:
+              - secretRef:
+                  name: autobrr-secret
+              - secretRef:
+                  name: autobrr-db-secret
+            probes:
+              liveness:
+                enabled: true
+              readiness:
+                enabled: true
+              startup:
+                enabled: true
+                spec:
+                  failureThreshold: 30
+                  periodSeconds: 5
+            resources:
+              requests:
+                cpu: 10m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+
+    service:
+      app:
+        controller: autobrr
+        ports:
+          http:
+            port: *port
+
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: Release Automation
+          gethomepage.dev/group: Downloads
+          gethomepage.dev/icon: autobrr.png
+          gethomepage.dev/name: Autobrr
+          gethomepage.dev/app: autobrr
+          gethomepage.dev/widget.type: autobrr
+          gethomepage.dev/widget.url: "http://autobrr.downloads.svc.cluster.local:7474"
+          gethomepage.dev/widget.key: "$${AUTOBRR_API_KEY}"
+        hostnames:
+          - autobrr.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+
+    persistence:
+      tmp:
+        type: emptyDir
