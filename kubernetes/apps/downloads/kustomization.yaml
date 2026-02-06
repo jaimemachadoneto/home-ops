@@ -8,4 +8,17 @@ components:
   - ../../components/sops
 resources:
   - ./namespace.yaml
+  - ./autobrr/ks.yaml
+  - ./bazarr/ks.yaml
+  - ./cross-seed/ks.yaml
+  - ./maintainerr/ks.yaml
+  - ./mylar/ks.yaml
+  - ./overseerr/ks.yaml
+  - ./pinchflat/ks.yaml
+  - ./prowlarr/ks.yaml
+  - ./radarr/ks.yaml
+  - ./readarr/ks.yaml
+  - ./recyclarr/ks.yaml
   - ./sabnzbd/ks.yaml
+  - ./sonarr/ks.yaml
+  - ./tautulli/ks.yaml

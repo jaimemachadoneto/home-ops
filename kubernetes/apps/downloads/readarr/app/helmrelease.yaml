@@ -1,0 +1,108 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: readarr
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: readarr
+  interval: 30m
+  values:
+    defaultPodOptions:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - home-ops-00
+                - home-ops-02
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [10000]
+        seccompProfile: { type: RuntimeDefault }
+
+    controllers:
+      readarr:
+        labels:
+          nfsMount: "true"
+          postgres: "true"
+        annotations:
+          reloader.stakater.com/auto: "true"
+
+        initContainers:
+          init-db:
+            image:
+              repository: ghcr.io/onedr0p/postgres-init
+              tag: 16
+            envFrom:
+              - secretRef:
+                  name: readarr-db-secret
+
+        containers:
+          app:
+            image:
+              repository: lscr.io/linuxserver/readarr
+              tag: develop
+            env:
+              READARR__APP__INSTANCENAME: Readarr
+              READARR__APP__THEME: dark
+              READARR__AUTH__METHOD: External
+              READARR__AUTH__REQUIRED: DisabledForLocalAddresses
+              READARR__LOG__LEVEL: info
+              READARR__SERVER__PORT: &port 80
+              READARR__UPDATE__BRANCH: develop
+              TZ: Europe/Madrid
+            envFrom:
+              - secretRef:
+                  name: readarr-db-secret
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 1Gi
+
+    service:
+      app:
+        controller: readarr
+        ports:
+          http:
+            port: *port
+
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: eBook Downloads
+          gethomepage.dev/group: Downloads
+          gethomepage.dev/icon: readarr.png
+          gethomepage.dev/name: Readarr
+          gethomepage.dev/app: readarr
+          gethomepage.dev/widget.type: readarr
+          gethomepage.dev/widget.url: "http://readarr.downloads.svc.cluster.local:80"
+        hostnames:
+          - readarr.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+
+    persistence:
+      config:
+        existingClaim: readarr-config
+      tmp:
+        type: emptyDir
+      data:
+        type: nfs
+        server: nas.internal
+        path: /mnt/Data1/MediaServer
+        globalMounts:
+          - path: /data/nas-media

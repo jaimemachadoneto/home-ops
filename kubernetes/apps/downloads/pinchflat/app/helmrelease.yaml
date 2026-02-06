@@ -1,0 +1,111 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: pinchflat
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: pinchflat
+  interval: 30m
+  values:
+    defaultPodOptions:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - home-ops-00
+                - home-ops-02
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        supplementalGroups: [44]
+
+    controllers:
+      pinchflat:
+        annotations:
+          reloader.stakater.com/auto: "true"
+
+        containers:
+          app:
+            image:
+              repository: ghcr.io/kieraneglin/pinchflat
+              tag: v2025.6.6@sha256:bda3091e59af351e5e928930c680a6ebe2cde728949e36c11000b9827ee2ed51
+            env:
+              TZ: Europe/Madrid
+              TZ_DATA_DIR: /tmp/elixir_tz_data
+              PORT: &port 80
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthcheck
+                    port: *port
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness: *probes
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 8Gi
+
+    service:
+      app:
+        controller: pinchflat
+        ports:
+          http:
+            port: *port
+
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: YouTube Downloader
+          gethomepage.dev/group: Downloads
+          gethomepage.dev/icon: pinchflat.png
+          gethomepage.dev/name: Pinchflat
+          gethomepage.dev/app: pinchflat
+          gethomepage.dev/widget.type: pinchflat
+          gethomepage.dev/widget.url: "http://pinchflat.downloads.svc.cluster.local:80"
+        hostnames:
+          - pinchflat.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+
+    persistence:
+      config:
+        existingClaim: pinchflat
+      yt-dlp:
+        type: emptyDir
+        globalMounts:
+          - path: /etc/yt-dlp
+      media:
+        type: nfs
+        server: nas.internal
+        path: /mnt/Data1/MediaServer/Youtube
+        advancedMounts:
+          pinchflat:
+            app:
+              - path: /downloads
+                subPath: Library/YouTube
+      tmp:
+        type: emptyDir
