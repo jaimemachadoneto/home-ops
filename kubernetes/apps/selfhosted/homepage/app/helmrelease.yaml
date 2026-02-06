@@ -36,6 +36,9 @@ spec:
             env:
               TZ: ${TIMEZONE}
               HOMEPAGE_ALLOWED_HOSTS: homepage.${SECRET_DOMAIN}
+            envFrom:
+              - secretRef:
+                  name: homepage-secrets
             resources:
               requests:
                 memory: 10Mi
