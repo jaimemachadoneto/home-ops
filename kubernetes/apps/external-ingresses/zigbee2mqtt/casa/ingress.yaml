@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: zigbeetomqtt-garagem-proxy-service
+  name: zigbeetomqtt-casa-proxy-service
   namespace: external-ingresses
 spec:
   ports:
@@ -14,11 +14,11 @@ spec:
 apiVersion: v1
 kind: Endpoints
 metadata:
-  name: zigbeetomqtt-garagem-proxy-service # Must be equal to Service name for automatic mapping
+  name: zigbeetomqtt-casa-proxy-service # Must be equal to Service name for automatic mapping
   namespace: external-ingresses
 subsets:
   - addresses:
-      - ip: 10.30.210.202 # IP address of your external service that you would like to proxy requests to
+      - ip: 10.30.210.201 # IP address of your external service that you would like to proxy requests to
     ports:
       - port: 8080
         name: http
@@ -28,41 +28,41 @@ subsets:
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
 metadata:
-  name: zigbeetomqtt-garagem-passthrough
+  name: zigbeetomqtt-casa-passthrough
   namespace: external-ingresses
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
-    name: zigmqtt-garagem-httproute
+    name: zigmqtt-casa-httproute
 
 ---
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: zigmqtt-garagem-httproute
+  name: zigmqtt-casa-httproute
   namespace: external-ingresses
   annotations:
     gethomepage.dev/enabled: "true"
-    gethomepage.dev/description: Zigbee Garagem
+    gethomepage.dev/description: Zigbee casa
     gethomepage.dev/group: Home Automation
     gethomepage.dev/icon: si-zigbee2mqtt.svg
-    gethomepage.dev/name: Zigbee Garagem
+    gethomepage.dev/name: Zigbee casa
     gethomepage.dev/showStats: "false"
 spec:
   hostnames:
-    - zigmqtt-garagem.${SECRET_DOMAIN}
+    - zigmqtt-casa.${SECRET_DOMAIN}
   parentRefs:
     - name: envoy-internal
       namespace: network
   rules:
     - matches:
-      - path:
-          type: PathPrefix
-          value: /
+        - path:
+            type: PathPrefix
+            value: /
       backendRefs:
-        - name: zigbeetomqtt-garagem-proxy-service
+        - name: zigbeetomqtt-casa-proxy-service
           namespace: external-ingresses
           port: 80
           weight: 1
