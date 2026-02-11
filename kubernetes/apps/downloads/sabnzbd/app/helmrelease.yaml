@@ -102,7 +102,7 @@ spec:
     route:
       app:
         annotations:
-          gethomepage.dev/enabled: "true"
+          gethomepage.dev/enabled: "false"
           gethomepage.dev/description: Usenet Client
           gethomepage.dev/group: Downloads
           gethomepage.dev/icon: sabnzbd.png
