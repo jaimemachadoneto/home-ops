@@ -81,8 +81,7 @@ spec:
           gethomepage.dev/icon: tautulli.png
           gethomepage.dev/name: Tautulli
           gethomepage.dev/app: tautulli
-          gethomepage.dev/widget.type: tautulli
-          gethomepage.dev/widget.url: "http://tautulli.downloads.svc.cluster.local:8181"
+
         hostnames:
           - tautulli.${SECRET_DOMAIN}
         parentRefs:
