@@ -79,7 +79,7 @@ spec:
       nfs-nas-media:
         type: nfs
         server: nas.internal
-        path: /mnt/tank/media
+        path: /mnt/Data1/MediaServer/AudioBooks
         advancedMounts:
           audiobookshelf:
             app:
