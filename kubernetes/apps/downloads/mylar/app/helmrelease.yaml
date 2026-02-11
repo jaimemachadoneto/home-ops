@@ -62,8 +62,7 @@ spec:
           gethomepage.dev/icon: mylar.png
           gethomepage.dev/name: Mylar
           gethomepage.dev/app: mylar
-          gethomepage.dev/widget.type: mylar
-          gethomepage.dev/widget.url: "http://mylar.downloads.svc.cluster.local:8090"
+
         hostnames:
           - mylar.${SECRET_DOMAIN}
         parentRefs:

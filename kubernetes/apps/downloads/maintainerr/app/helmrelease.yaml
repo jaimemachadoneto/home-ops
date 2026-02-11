@@ -70,8 +70,7 @@ spec:
           gethomepage.dev/icon: maintainerr.png
           gethomepage.dev/name: Maintainerr
           gethomepage.dev/app: maintainerr
-          gethomepage.dev/widget.type: maintainerr
-          gethomepage.dev/widget.url: "http://maintainerr.downloads.svc.cluster.local:6246"
+
         hostnames:
           - maintainerr.${SECRET_DOMAIN}
         parentRefs:
