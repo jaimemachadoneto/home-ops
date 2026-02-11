@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: media
 components:
   - ../../components/flux-alerts
+  - ../../components/sops
 resources:
   - ./namespace.yaml
   - ./audiobookshelf/ks.yaml
