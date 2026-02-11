@@ -66,7 +66,7 @@ spec:
       nfs-nas-media:
         type: nfs
         server: nas.internal
-        path: /mnt/Data1/MediaServer
+        path: /mnt/Data1/MediaServer/Books
         advancedMounts:
           shelfmark:
             shelfmark:
