@@ -30,33 +30,35 @@ data:
       showSearchSuggestions: true
       hideVisitURL: true
     layout:
-      Home Automation:
+      G1:
         style: column
-        icon: home-assistant
-      LLM/Ai:
+        header: false
+        Home Automation:
+          style: column
+          icon: home-assistant
+        Apps:
+          style: column
+          icon: immich
+        Development:
+          style: column
+          icon: code-server
+        Kubernetes:
+          style: column
+          icon: kubernetes
+        Documents:
+          style: column
+        Infrastructure:
+          style: column
+      G2:
         style: column
-        icon: open-webui
-      Apps:
-        style: column
-        icon: immich
-      Development:
-        style: column
-        icon: code-server
-      Security:
-        style: column
-        icon: pocket-id
-      Social:
-        style: column
-        icon: mastodon
-      Media:
-        style: column
-        icon: jellyfin
-      Downloads:
-        style: column
-        icon: sonarr
-      Kubernetes:
-        style: column
-        icon: kubernetes
+        header: false
+        Media:
+          style: column
+          icon: jellyfin
+        Downloads:
+          style: row
+          columns: 6
+          icon: sonarr
 
   widgets.yaml: |
     - kubernetes:
