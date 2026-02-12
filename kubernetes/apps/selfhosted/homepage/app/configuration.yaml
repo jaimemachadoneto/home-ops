@@ -30,6 +30,7 @@ data:
       showSearchSuggestions: true
       hideVisitURL: true
     layout:
+      style: column
       G1:
         style: row
         header: false
