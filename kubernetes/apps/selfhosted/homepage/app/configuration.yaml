@@ -31,8 +31,9 @@ data:
       hideVisitURL: true
     layout:
       G1:
-        style: column
+        style: row
         header: false
+        column: 6
         Home Automation:
           style: column
           icon: home-assistant
