@@ -9,11 +9,8 @@ spec:
     - ip:
         address: 10.30.212.10
         port: 443
-  appProtocols:
-    - gateway.envoyproxy.io/wss
   tls:
     insecureSkipVerify: true
-    sni: 10.30.212.10
 
 ---
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
