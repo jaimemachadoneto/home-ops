@@ -7,7 +7,7 @@ metadata:
 spec:
   endpoints:
     - ip:
-        address: 10.30.212.10
+        address: 10.30.212.11
         port: 443
   tls:
     insecureSkipVerify: true
