@@ -12,7 +12,6 @@ spec:
   appProtocols:
     - gateway.envoyproxy.io/wss
   tls:
-    wellKnownCACertificates: System
     insecureSkipVerify: true
     sni: 10.30.212.10
 
