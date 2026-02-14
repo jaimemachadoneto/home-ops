@@ -46,7 +46,7 @@ metadata:
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/description: kasm
-    gethomepage.dev/group: Documents
+    gethomepage.dev/group: Development
     gethomepage.dev/name: kasm
     gethomepage.dev/href: "https://kasm.${SECRET_DOMAIN}/history"
 spec:
