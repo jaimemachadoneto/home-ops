@@ -1,40 +1,16 @@
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: kasm-proxy-service
-  namespace: external-ingresses
-spec:
-  ports:
-    - port: 443
-      protocol: TCP
-      targetPort: 443
-      name: https
----
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: kasm-proxy-service # Must be equal to Service name for automatic mapping
-  namespace: external-ingresses
-subsets:
-  - addresses:
-      - ip: 10.30.212.10 # IP address of your external service that you would like to proxy requests to
-    ports:
-      - port: 443
-        name: https
-        protocol: TCP
-
----
 apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: BackendTrafficPolicy
+kind: Backend
 metadata:
-  name: kasm-passthrough
+  name: kasm-backend
   namespace: external-ingresses
 spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: kasm-httproute
+  endpoints:
+    - ip:
+        address: 10.30.212.10
+        port: 443
+  tls:
+    insecureSkipVerify: true
 
 ---
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
@@ -61,7 +37,7 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: kasm-proxy-service
+        - group: gateway.envoyproxy.io
+          kind: Backend
+          name: kasm-backend
           namespace: external-ingresses
-          port: 443
-          weight: 1
