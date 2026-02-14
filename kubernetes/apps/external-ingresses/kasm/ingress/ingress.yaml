@@ -23,7 +23,7 @@ metadata:
     gethomepage.dev/description: kasm
     gethomepage.dev/group: Development
     gethomepage.dev/name: kasm
-    gethomepage.dev/href: "https://kasm.${SECRET_DOMAIN}/history"
+    gethomepage.dev/href: "https://kasm.${SECRET_DOMAIN}"
 spec:
   hostnames:
     - kasm.${SECRET_DOMAIN}
