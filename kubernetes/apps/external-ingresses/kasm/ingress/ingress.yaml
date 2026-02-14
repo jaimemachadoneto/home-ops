@@ -9,7 +9,7 @@ spec:
     - port: 443
       protocol: TCP
       targetPort: 443
-      name: http
+      name: https
 ---
 apiVersion: v1
 kind: Endpoints
@@ -21,7 +21,7 @@ subsets:
       - ip: 10.30.212.10 # IP address of your external service that you would like to proxy requests to
     ports:
       - port: 443
-        name: http
+        name: https
         protocol: TCP
 
 ---
@@ -31,13 +31,10 @@ metadata:
   name: kasm-passthrough
   namespace: external-ingresses
 spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: kasm-httproute
-  tls:
-    clientValidation:
-      optional: true
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: kasm-proxy-service
 
 ---
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
