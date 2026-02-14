@@ -31,10 +31,13 @@ metadata:
   name: kasm-passthrough
   namespace: external-ingresses
 spec:
-  targetRefs:
-    - group: ""
-      kind: Service
-      name: kasm-proxy-service
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: kasm-httproute
+  tls:
+    clientValidation:
+      optional: true
 
 ---
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
