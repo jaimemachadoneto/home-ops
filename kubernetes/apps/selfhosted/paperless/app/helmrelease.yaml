@@ -24,7 +24,7 @@ spec:
           app:
             image:
               repository: ghcr.io/paperless-ngx/paperless-ngx
-              tag: 2.15.2
+              tag: 2.20.7
             env:
               # Configure application
               PAPERLESS_SECRET_KEY:
@@ -90,7 +90,7 @@ spec:
           redis:
             image:
               repository: docker.io/valkey/valkey
-              tag: 8.0.2
+              tag: 9.0.2
             resources:
               requests:
                 cpu: 5m

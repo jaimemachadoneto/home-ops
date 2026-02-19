@@ -92,9 +92,7 @@ spec:
           gethomepage.dev/icon: prowlarr.png
           gethomepage.dev/name: Prowlarr
           gethomepage.dev/app: prowlarr
-          gethomepage.dev/widget.type: prowlarr
-          gethomepage.dev/widget.url: "http://prowlarr.downloads.svc.cluster.local:9696"
-          gethomepage.dev/widget.key: "$${PROWLARR_API_KEY}"
+
         hostnames:
           - prowlarr.${SECRET_DOMAIN}
         parentRefs:

@@ -83,8 +83,7 @@ spec:
           gethomepage.dev/icon: pinchflat.png
           gethomepage.dev/name: Pinchflat
           gethomepage.dev/app: pinchflat
-          gethomepage.dev/widget.type: pinchflat
-          gethomepage.dev/widget.url: "http://pinchflat.downloads.svc.cluster.local:80"
+
         hostnames:
           - pinchflat.${SECRET_DOMAIN}
         parentRefs:

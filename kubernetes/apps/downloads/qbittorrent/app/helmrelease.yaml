@@ -87,8 +87,7 @@ spec:
           gethomepage.dev/icon: qbittorrent.png
           gethomepage.dev/name: qBittorrent
           gethomepage.dev/app: qbittorrent
-          gethomepage.dev/widget.type: qbittorrent
-          gethomepage.dev/widget.url: "http://qbittorrent.downloads.svc.cluster.local:8080"
+
         hostnames:
           - qbittorrent.${SECRET_DOMAIN}
         parentRefs:
