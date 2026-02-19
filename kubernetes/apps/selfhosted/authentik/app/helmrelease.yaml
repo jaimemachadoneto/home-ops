@@ -13,7 +13,7 @@ spec:
         kind: HelmRepository
         name: authentik
         namespace: selfhosted
-      version: 2025.10.2
+      version: 2025.12.4
   install:
     remediation:
       retries: 3
