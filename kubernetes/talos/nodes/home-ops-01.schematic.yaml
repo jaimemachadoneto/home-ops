@@ -20,3 +20,4 @@ customization:
       - siderolabs/amdgpu
       - siderolabs/nfs-utils
       - siderolabs/nfsd
+      - siderolabs/qemu-guest-agent
