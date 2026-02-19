@@ -10,6 +10,17 @@ spec:
     name: qbittorrent
   interval: 30m
   values:
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+              - home-ops-00
+              - home-ops-02
     controllers:
       qbittorrent:
         annotations:
