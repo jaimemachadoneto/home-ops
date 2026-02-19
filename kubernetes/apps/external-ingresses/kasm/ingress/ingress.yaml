@@ -1,0 +1,42 @@
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: kasm-backend
+  namespace: external-ingresses
+spec:
+  endpoints:
+    - ip:
+        address: 10.30.212.10
+        port: 443
+  tls:
+    insecureSkipVerify: true
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: kasm-httproute
+  namespace: external-ingresses
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: kasm
+    gethomepage.dev/group: Development
+    gethomepage.dev/name: kasm
+    gethomepage.dev/href: "https://kasm.${SECRET_DOMAIN}"
+spec:
+  hostnames:
+    - kasm.${SECRET_DOMAIN}
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: gateway.envoyproxy.io
+          kind: Backend
+          name: kasm-backend
+          namespace: external-ingresses

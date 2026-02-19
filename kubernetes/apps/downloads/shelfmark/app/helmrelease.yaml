@@ -23,7 +23,7 @@ spec:
           shelfmark:
             image:
               repository: ghcr.io/calibrain/shelfmark
-              tag: v1.0.1@sha256:1efbbd45ea434cb4f5abde217e19c35280ea1de9eb2c0baa37e6b8cddac32fae
+              tag: v1.0.4@sha256:53e80dc62c1720d15ee59e44c8b98c4aea2a9a456fdd978e87e882c14eb55361
             command:
               - gunicorn
             args:
@@ -66,7 +66,7 @@ spec:
       nfs-nas-media:
         type: nfs
         server: nas.internal
-        path: /mnt/Data1/MediaServer
+        path: /mnt/Data1/MediaServer/Books
         advancedMounts:
           shelfmark:
             shelfmark:
