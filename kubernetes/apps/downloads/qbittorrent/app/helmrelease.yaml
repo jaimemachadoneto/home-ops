@@ -19,7 +19,6 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-              - home-ops-00
               - home-ops-02
     controllers:
       qbittorrent:
