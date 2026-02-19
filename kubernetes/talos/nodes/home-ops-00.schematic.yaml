@@ -20,3 +20,4 @@ customization:
       - siderolabs/intel-ice-firmware
       - siderolabs/intel-ucode
       - siderolabs/nfsd
+      - siderolabs/qemu-guest-agent
