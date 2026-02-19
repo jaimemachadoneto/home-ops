@@ -9,9 +9,7 @@ spec:
     labels:
       app.kubernetes.io/name: autobrr
   dependsOn:
-    - name: external-secrets-stores
-      namespace: external-secrets
-    - name: crunchy-postgres-operator
+    - name: cloudnative-pg
       namespace: database
   interval: 1h
   path: "./kubernetes/apps/downloads/autobrr/app"
