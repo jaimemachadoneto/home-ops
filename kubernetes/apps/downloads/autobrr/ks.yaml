@@ -5,6 +5,8 @@ kind: Kustomization
 metadata:
   name: autobrr
 spec:
+  components:
+    - ../../../../components/volsync
   commonMetadata:
     labels:
       app.kubernetes.io/name: autobrr
@@ -14,6 +16,9 @@ spec:
   interval: 1h
   path: "./kubernetes/apps/downloads/autobrr/app"
   postBuild:
+    substitute:
+      APP: autobrr
+      VOLSYNC_CLAIM: autobrr
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
