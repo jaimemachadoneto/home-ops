@@ -12,3 +12,19 @@ contexts:
     ca: op://Home-Ops/talos/MACHINE_CA_CRT
     crt: op://Home-Ops/talos/TALOSCONFIG_CLIENT_CRT
     key: op://Home-Ops/talos/TALOSCONFIG_CLIENT_KEY
+---
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+provisioning:
+  diskSelector:
+    match: system_disk
+  maxSize: 60GiB
+---
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: local-hostpath
+provisioning:
+  diskSelector:
+    match: system_disk
+  maxSize: 140GiB
