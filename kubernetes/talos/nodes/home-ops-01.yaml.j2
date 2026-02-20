@@ -34,11 +34,13 @@ provisioning:
   diskSelector:
     match: system_disk
   maxSize: 100GiB
+  grow: true
 ---
 apiVersion: v1alpha1
 kind: UserVolumeConfig
 name: local-hostpath
 provisioning:
   diskSelector:
-    match: system_disk
+    match: "!system_disk && disk.size < 200000000000u"
   maxSize: 140GiB
+  grow: true
