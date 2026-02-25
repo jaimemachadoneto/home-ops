@@ -219,6 +219,13 @@ spec:
                 subPath: mysql
     route:
       booklore:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: Book library
+          gethomepage.dev/group: Media
+          gethomepage.dev/icon: booklore.png
+          gethomepage.dev/name: Booklore
+          gethomepage.dev/app: booklore
         hostnames:
           - booklore.${SECRET_DOMAIN}
         parentRefs:
