@@ -87,6 +87,13 @@ spec:
                 subPath: Library
     route:
       app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: AudioBook library
+          gethomepage.dev/group: Media
+          gethomepage.dev/icon: audiobookshelf.png
+          gethomepage.dev/name: Audiobookshelf
+          gethomepage.dev/app: audiobookshelf
         hostnames:
           - audiobookshelf.${SECRET_DOMAIN}
         parentRefs:
