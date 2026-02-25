@@ -208,7 +208,7 @@ spec:
       tmpfs:
         type: emptyDir
         medium: Memory
-        sizeLimit: 100Mi
+        sizeLimit: 600Mi
         advancedMounts:
           booklore:
             booklore:
