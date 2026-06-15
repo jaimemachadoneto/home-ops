@@ -26,3 +26,9 @@ Kubernetes cluster stats:
 
 # Reference
 
+- [Storage Overview](docs/storage.md)
+- [Network Design (target-state)](docs/network.md)
+- [Homelab Context](docs/homelab-context.md)
+- [Quick Setup](docs/QUICK-SETUP.md)
+- [Fresh Clone Setup](docs/fresh-clone-setup.md)
+
