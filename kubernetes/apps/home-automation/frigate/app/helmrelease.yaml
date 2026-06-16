@@ -90,13 +90,13 @@ spec:
       config:
         type: nfs
         path: /mnt/Data1/frigate/config
-        server: nas.internal
+        server: nas.jaimenet.com
         globalMounts:
           - path: /config
       media:
         type: nfs
         path: /mnt/Data1/frigate/data
-        server: nas.internal
+        server: nas.jaimenet.com
         globalMounts:
           - path: /media/frigate
       cache:

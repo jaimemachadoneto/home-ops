@@ -67,7 +67,7 @@ spec:
       data:
         type: nfs
         path: /mnt/Data1/bichon
-        server: nas.internal
+        server: nas.jaimenet.com
     route:
       app:
         annotations:

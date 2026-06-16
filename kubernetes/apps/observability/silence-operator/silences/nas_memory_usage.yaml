@@ -9,4 +9,4 @@ spec:
     - name: alertname
       value: NodeMemoryHighUtilization
     - name: instance
-      value: nas.internal:9100
+      value: nas.jaimenet.com:9100

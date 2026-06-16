@@ -99,7 +99,7 @@ spec:
           - path: /etc/yt-dlp
       media:
         type: nfs
-        server: nas.internal
+        server: nas.jaimenet.com
         path: /mnt/Data1/MediaServer/Youtube
         advancedMounts:
           pinchflat:

@@ -165,7 +165,7 @@ spec:
                 subPath: mysql
       nfs-nas-media:
         type: nfs
-        server: nas.internal
+        server: nas.jaimenet.com
         path: /mnt/Data1/MediaServer/Books
         advancedMounts:
           booklore:
