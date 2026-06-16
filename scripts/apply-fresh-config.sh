@@ -4,7 +4,7 @@ set -euo pipefail
 # Script to apply fresh Talos configuration to nodes in installer mode
 # Run this after booting nodes from Talos installer media
 
-NODES=("10.30.4.1" "10.30.4.2" "10.30.4.3")
+NODES=("10.30.50.20" "10.30.50.21" "10.30.50.22")
 NODE_NAMES=("home-ops-00" "home-ops-01" "home-ops-02")
 
 cd "$(dirname "$0")/.."

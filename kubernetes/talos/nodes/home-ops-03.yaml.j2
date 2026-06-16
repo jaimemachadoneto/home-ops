@@ -23,14 +23,14 @@ machine:
       - deviceSelector:
           hardwareAddr: bc:24:11:13:34:3e
         addresses:
-          - 10.30.4.4/16
+          - 10.30.50.33/23
         routes:
           - network: 0.0.0.0/0
-            gateway: 10.30.0.1
+            gateway: 10.30.50.1
         mtu: 1500
         dhcp: false
     nameservers:
-      - 10.30.0.3
+      - 10.30.50.1
     disableSearchDomain: true
 
 ---

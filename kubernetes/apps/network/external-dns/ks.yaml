@@ -23,17 +23,17 @@ spec:
       - name: cluster-secrets
         kind: Secret
 ---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: &app externaldns-pihole
-  namespace: flux-system
+  name: externaldns-unifi
 spec:
   commonMetadata:
     labels:
-      app.kubernetes.io/name: *app
+      app.kubernetes.io/name: externaldns-unifi
   interval: 1h
-  path: ./kubernetes/apps/network/external-dns/pihole
+  path: "./kubernetes/apps/network/external-dns/unifi"
   prune: true
   sourceRef:
     kind: GitRepository
@@ -46,26 +46,3 @@ spec:
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
-# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-# apiVersion: kustomize.toolkit.fluxcd.io/v1
-# kind: Kustomization
-# metadata:
-#   name: externaldns-unifi
-# spec:
-#   commonMetadata:
-#     labels:
-#       app.kubernetes.io/name: externaldns-cloudflare
-#   interval: 1h
-#   path: "./kubernetes/apps/network/external-dns/unifi"
-#   prune: true
-#   sourceRef:
-#     kind: GitRepository
-#     name: flux-system
-#     namespace: flux-system
-#   targetNamespace: network
-#   timeout: 5m
-#   wait: false
-#   postBuild:
-#     substituteFrom:
-#       - name: cluster-secrets
-#         kind: Secret
