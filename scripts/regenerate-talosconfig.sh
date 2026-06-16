@@ -30,7 +30,7 @@ fi
 
 echo ""
 echo "Configuring endpoints and nodes..."
-talosctl config endpoint 10.30.4.1 10.30.4.2 10.30.4.3
+talosctl config endpoint 10.30.50.20 10.30.50.21 10.30.50.22
 talosctl config node home-ops-00 home-ops-01 home-ops-02
 
 echo ""
@@ -39,4 +39,4 @@ echo ""
 talosctl config info
 echo ""
 echo "Testing access:"
-talosctl -n 10.30.4.1 version --short 2>&1 | head -3
+talosctl -n 10.30.50.20 version --short 2>&1 | head -3

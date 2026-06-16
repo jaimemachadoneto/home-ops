@@ -15,16 +15,16 @@ machine:
       - deviceSelector:
           hardwareAddr: bc:24:11:83:a2:ff
         addresses:
-          - 10.30.4.1/16
+          - 10.30.50.20/23
         routes:
           - network: 0.0.0.0/0
-            gateway: 10.30.0.1
+            gateway: 10.30.50.1
         mtu: 1500
         dhcp: false
         vip:
-          ip: 10.30.60.50
+          ip: 10.30.50.30
     nameservers:
-      - 10.30.0.3
+      - 10.30.50.1
     disableSearchDomain: true
 ---
 apiVersion: v1alpha1

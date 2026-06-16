@@ -8,7 +8,7 @@ machine:
     {% endif %}
   certSANs:
     - 127.0.0.1
-    - 10.30.60.50
+    - 10.30.50.30
     - home-ops.internal
   features:
     apidCheckExtKeyUsage: true
@@ -64,7 +64,7 @@ machine:
     image: ghcr.io/siderolabs/kubelet:v1.35.1
     nodeIP:
       validSubnets:
-        - 10.30.0.0/16
+        - 10.30.50.0/23
   sysctls:
     fs.inotify.max_user_instances: "8192"
     fs.inotify.max_user_watches: "1048576"
@@ -90,7 +90,7 @@ cluster:
       runtime-config: admissionregistration.k8s.io/v1beta1=true
     certSANs:
       - 127.0.0.1 # KubePrism
-      - 10.30.60.50
+      - 10.30.50.30
       - home-ops.internal
     disablePodSecurityPolicy: true
   controllerManager:
@@ -101,7 +101,7 @@ cluster:
     disabled: true
   etcd:
     advertisedSubnets:
-      - 10.30.0.0/16
+      - 10.30.50.0/23
     ca:
       crt: op://Home-Ops/talos/CLUSTER_ETCD_CA_CRT
       key: op://Home-Ops/talos/CLUSTER_ETCD_CA_KEY
