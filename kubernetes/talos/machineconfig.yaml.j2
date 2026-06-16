@@ -9,7 +9,7 @@ machine:
   certSANs:
     - 127.0.0.1
     - 10.30.50.30
-    - home-ops.internal
+    - home-ops.jaimenet.com
   features:
     apidCheckExtKeyUsage: true
     diskQuotaSupport: true
@@ -91,7 +91,7 @@ cluster:
     certSANs:
       - 127.0.0.1 # KubePrism
       - 10.30.50.30
-      - home-ops.internal
+      - home-ops.jaimenet.com
     disablePodSecurityPolicy: true
   controllerManager:
     image: registry.k8s.io/kube-controller-manager:v1.35.1
@@ -141,7 +141,7 @@ cluster:
     key: op://Home-Ops/talos/CLUSTER_CA_KEY
     {% endif %}
   controlPlane:
-    endpoint: https://home-ops.internal:6443
+    endpoint: https://home-ops.jaimenet.com:6443
   clusterName: home-ops
   discovery:
     enabled: true

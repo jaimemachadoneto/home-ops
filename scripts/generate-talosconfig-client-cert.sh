@@ -19,7 +19,7 @@ TEMP_CONFIG=$(mktemp)
 talosctl gen config --with-secrets secrets.yaml \
     --output-types talosconfig \
     --force \
-    home-ops https://home-ops.internal:6443 \
+    home-ops https://home-ops.jaimenet.com:6443 \
     > /dev/null 2>&1
 
 mv talosconfig "$TEMP_CONFIG"

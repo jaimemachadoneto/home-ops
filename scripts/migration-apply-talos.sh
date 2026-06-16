@@ -13,10 +13,10 @@ TALOSCONFIG="$(pwd)/talosconfig"
 TALOS_DIR="kubernetes/talos"
 
 # Node name → old IP → new IP
-NODES=("home-ops-02" "home-ops-01" "home-ops-00")
-declare -A OLD_IP=( [home-ops-00]="10.30.4.1" [home-ops-01]="10.30.4.2" [home-ops-02]="10.30.4.3" )
-declare -A NEW_IP=( [home-ops-00]="10.30.50.20" [home-ops-01]="10.30.50.21" [home-ops-02]="10.30.50.22" )
-declare -A IS_CP=(  [home-ops-00]="true"        [home-ops-01]="true"        [home-ops-02]="true"        )
+NODES=(  "home-ops-00")
+declare -A OLD_IP=( [home-ops-00]="10.30.4.1" [home-ops-01]="10.30.4.2" )
+declare -A NEW_IP=( [home-ops-00]="10.30.50.20" [home-ops-01]="10.30.50.21" )
+declare -A IS_CP=(  [home-ops-00]="true"        [home-ops-01]="true"                )
 
 render_config() {
     local node="$1"

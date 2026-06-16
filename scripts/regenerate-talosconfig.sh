@@ -21,7 +21,7 @@ echo "Generating talosconfig with os:admin role..."
 if talosctl gen config --with-secrets secrets.yaml \
     --output-types talosconfig \
     --force \
-    home-ops https://home-ops.internal:6443; then
+    home-ops https://home-ops.jaimenet.com:6443; then
     echo "✅ Admin talosconfig generated"
 else
     echo "❌ Failed to generate talosconfig"
