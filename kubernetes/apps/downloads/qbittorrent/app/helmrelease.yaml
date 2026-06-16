@@ -82,7 +82,7 @@ spec:
       downloads:
         type: nfs
         path: /mnt/Data1/MediaServer
-        server: nas.internal
+        server: nas.jaimenet.com
         globalMounts:
           - path: /data/nas-media/Downloads/qbittorrent
             subPath: Downloads/qbittorrent

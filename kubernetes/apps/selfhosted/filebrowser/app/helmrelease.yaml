@@ -120,6 +120,6 @@ spec:
       frigate:
         type: nfs
         path: /mnt/Data1/frigate
-        server: nas.internal
+        server: nas.jaimenet.com
         globalMounts:
           - path: /data/frigate

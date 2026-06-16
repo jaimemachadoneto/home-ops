@@ -111,7 +111,7 @@ spec:
           - path: /qbittorrent
       media:
         type: nfs
-        server: nas.internal
+        server: nas.jaimenet.com
         path: /mnt/Data1/MediaServer
         advancedMounts:
           cross-seed:

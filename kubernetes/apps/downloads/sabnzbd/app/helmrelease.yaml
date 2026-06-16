@@ -123,7 +123,7 @@ spec:
               - path: /config
       media:
         type: nfs
-        server: nas.internal
+        server: nas.jaimenet.com
         path: /mnt/Data1/MediaServer
         globalMounts:
           - path: /data/nas-media

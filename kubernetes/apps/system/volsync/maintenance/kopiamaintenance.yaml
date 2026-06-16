@@ -56,7 +56,7 @@ spec:
               value: Object.spec.template.spec.volumes{
                 name: "repository",
                 nfs: Object.spec.template.spec.volumes.nfs{
-                  server: "nas.internal",
+                  server: "nas.jaimenet.com",
                   path: "/mnt/Data1/kubernetes"
                 }
               }

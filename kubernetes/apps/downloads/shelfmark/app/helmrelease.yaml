@@ -65,7 +65,7 @@ spec:
         existingClaim: shelfmark
       nfs-nas-media:
         type: nfs
-        server: nas.internal
+        server: nas.jaimenet.com
         path: /mnt/Data1/MediaServer/Books
         advancedMounts:
           shelfmark:
