@@ -58,9 +58,9 @@ spec:
               emptyDir: {}
             - name: paperless
               nfs:
-                server: 10.30.10.11
+                server: nas.jaimenet.com
                 path: /mnt/Data1/Documents
             - name: doc-one-drive
               nfs:
-                server: 10.30.10.11
+                server: nas.jaimenet.com
                 path: /mnt/Data1/ScannedFiles

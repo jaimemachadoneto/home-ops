@@ -95,25 +95,25 @@ spec:
         existingClaim: filebrowser
       mediadata:
         type: nfs
-        server: 10.30.10.11
+        server: nas.jaimenet.com
         path: /mnt/Data1/MediaServer
         globalMounts:
           - path: /data/MediaServer
       scannedfiles:
         type: nfs
-        server: 10.30.10.11
+        server: nas.jaimenet.com
         path: /mnt/Data1/ScannedFiles
         globalMounts:
           - path: /data/OnedriveScan
       paperless:
         type: nfs
-        server: 10.30.10.11
+        server: nas.jaimenet.com
         path: /mnt/Data1/Documents
         globalMounts:
           - path: /data/Paperless
       kopia:
         type: nfs
-        server: 10.30.10.11
+        server: nas.jaimenet.com
         path: /mnt/Data1/kubernetes
         globalMounts:
           - path: /data/kubernetes
