@@ -2,7 +2,7 @@
 
 > **Stack:** UniFi (UCG-Fiber) · 6 VLANs · Kubernetes · Cilium Gateway API · cert-manager · Let's Encrypt DNS-01 (Cloudflare) · Home Assistant (dual-homed: Services + IoT)
 
-> **Status: target-state design — not yet implemented.** This document describes a planned redesign of the home network and is **not** the cluster's current configuration. Today the cluster runs on a flat `10.30.0.0/16` network (e.g. nodes like `10.30.4.1`, gateway `10.30.0.1`, kube-api VIP `10.30.6.50`, Cilium LB pool `10.30.6.30-199`), IoT devices are on VLAN 303 (`10.1.3.0/24` via multus, see `kubernetes/apps/network/multus/networks/iot.yaml`), a VPN macvlan already exists (`kubernetes/apps/network/multus/networks/vpn.yaml`, gateway `10.30.212.1`), and ingress is handled by ingress-nginx (`kubernetes/apps/network/ingress-nginx/`) rather than Cilium Gateway API. Use this document as the reference target when planning the migration.
+> **Status: target-state design — not yet implemented.** This document describes a planned redesign of the home network and is **not** the cluster's current configuration. Today the cluster runs on a flat `10.30.0.0/16` network (e.g. nodes like `10.30.4.1`, gateway `10.30.0.1`, kube-api VIP `10.30.6.50`, Cilium LB pool `10.30.6.30-199`), IoT devices are on VLAN 303 (`10.1.3.0/24` via multus, see `kubernetes/apps/network/multus/networks/iot.yaml`), a VPN macvlan already exists (`kubernetes/apps/network/multus/networks/vpn.yaml`, gateway `10.30.50.50` / `vpntor.jaimenet.com`), and ingress is handled by ingress-nginx (`kubernetes/apps/network/ingress-nginx/`) rather than Cilium Gateway API. Use this document as the reference target when planning the migration.
 
 ---
 
@@ -82,7 +82,7 @@ How clients reach services:
 | 20 | IoT | 10.30.20.0/23 | 10.30.20.1 | 10.30.20.10–10.30.21.200 | Smart home, cameras, printers |
 | 30 | Media | 10.30.30.0/23 | 10.30.30.1 | 10.30.30.10–10.30.31.200 | TVs, Alexas, streaming sticks |
 | 40 | Guest | 10.30.40.0/23 | 10.30.40.1 | 10.30.40.10–10.30.41.200 | Visitor wifi, isolated |
-| 50 | Services | 10.30.50.0/23 | 10.30.50.1 | 10.30.50.50–10.30.51.150 | K8s, NAS, HA, Plex |
+| 50 | Services | 10.30.50.0/23 | 10.30.50.1 | 10.30.50.101–10.30.51.150 | K8s, NAS, HA, Plex |
 | 98 | Management | 10.30.2.0/23 | 10.30.2.1 | 10.30.2.10–10.30.3.1 | UCG, switches, APs, Proxmox |
 
 ### Reserved Static IPs
@@ -107,6 +107,9 @@ How clients reach services:
 | 10.30.50.6 | Plex VM |
 | 10.30.50.10–20 | Kubernetes control plane nodes |
 | 10.30.50.21–49 | Kubernetes worker nodes |
+| 10.30.50.50 | vpntor.jaimenet.com — VPN gateway for qbittorrent |
+| 10.30.50.51 | qbittorrent VPN interface (MAC: 2e:54:30:22:3f:74) |
+| 10.30.50.52–100 | Static IPs for other services (NAS, VMs, appliances) |
 | 10.30.50.200 | Cilium Gateway LoadBalancer IP |
 | 10.30.50.201–220 | Cilium LB IPAM pool (additional LB IPs) |
 
