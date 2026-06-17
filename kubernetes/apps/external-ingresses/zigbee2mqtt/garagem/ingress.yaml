@@ -18,7 +18,7 @@ metadata:
   namespace: external-ingresses
 subsets:
   - addresses:
-      - ip: 10.30.210.202 # IP address of your external service that you would like to proxy requests to
+      - ip: 10.30.50.10 # zigbee2mqtt garagem host
     ports:
       - port: 8080
         name: http
