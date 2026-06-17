@@ -19,7 +19,7 @@ spec:
   postBuild:
     substitute:
       APP: qbittorrent
-      VOLSYNC_CAPACITY: 2Gi
+      VOLSYNC_CAPACITY: 25Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
