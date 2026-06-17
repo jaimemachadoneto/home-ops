@@ -79,8 +79,6 @@ spec:
           defaultMode: 420
           secretName: headlamp-admin
     volumeMounts:
-      - mountPath: /build/plugins
-        name: headlamp-plugins
       - mountPath: /home/headlamp/.config/Headlamp/kubeconfigs/config
         name: kubeconfig
         readOnly: true
