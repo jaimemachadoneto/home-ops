@@ -18,6 +18,7 @@ spec:
         kind: Secret
       - kind: Secret
         name: proxmox-secret
+        optional: true
   sourceRef:
     kind: GitRepository
     name: flux-system
