@@ -10,6 +10,9 @@ spec:
     name: openwebui
   interval: 30m
   values:
+    defaultPodOptions:
+      securityContext:
+        fsGroup: 2000
     controllers:
       openwebui:
         annotations:
