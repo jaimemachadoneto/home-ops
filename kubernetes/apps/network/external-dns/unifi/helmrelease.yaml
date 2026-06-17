@@ -22,12 +22,12 @@ spec:
       webhook:
         image:
           repository: ghcr.io/kashalls/external-dns-unifi-webhook
-          tag: v0.8.2
+          tag: v0.10.4
         env:
           - name: LOG_LEVEL
             value: *logLevel
           - name: UNIFI_HOST
-            value: https://10.30.50.1
+            value: https://10.30.1.1
           - name: UNIFI_API_KEY
             valueFrom:
               secretKeyRef:
