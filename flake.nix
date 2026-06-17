@@ -95,7 +95,7 @@
             fi
             # Set environment variables
             export JUST_UNSTABLE=1
-            export KUBECONFIG="$(pwd)/kubeconfig"
+            #export KUBECONFIG="$(pwd)/kubeconfig"
             export SOPS_AGE_KEY_FILE="$(pwd)/age.key"
             export TALOSCONFIG="$(pwd)/talosconfig"
             export MINIJINJA_CONFIG_FILE="$(pwd)/.minijinja.toml"
