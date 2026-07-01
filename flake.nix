@@ -9,22 +9,31 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
+        target =
+          if pkgs.stdenv.isLinux then "linux"
+          else if pkgs.stdenv.isDarwin then "darwin"
+          else throw "Unsupported platform";
+
+        arch =
+          if pkgs.stdenv.isAarch64 then "arm64"
+          else if pkgs.stdenv.isx86_64 then "amd64"
+          else throw "Unsupported architecture";
+
+        talosctlHash = {
+          darwin-arm64 = "sha256-Wnc2RTyWUsHhiZ3565BaPmQO3uz8UTueYG5EwsPsBTE=";
+          darwin-amd64 = "sha256-XygnK3f8lODzFFBiYzBQUYRs3EZM8zqX/RCQKOKvtUk=";
+          linux-arm64 = "sha256-Tbunq8pPwW0CKxOo6zuA0lE4J8/t6xobC1TfSNrWjmY=";
+          linux-amd64 = "sha256-EaJ0XPkrAWtHg6z161a/w5Su3mGpdt0Xtej20JOX4io=";
+        }."${target}-${arch}";
+
         # Fetch latest talosctl from GitHub
         talosctl-latest = pkgs.stdenv.mkDerivation rec {
           pname = "talosctl";
           version = "1.12.0";
 
           src = pkgs.fetchurl {
-            url = "https://github.com/siderolabs/talos/releases/download/v${version}/talosctl-${
-              if pkgs.stdenv.isLinux then "linux"
-              else if pkgs.stdenv.isDarwin then "darwin"
-              else throw "Unsupported platform"
-            }-${
-              if pkgs.stdenv.isAarch64 then "arm64"
-              else if pkgs.stdenv.isx86_64 then "amd64"
-              else throw "Unsupported architecture"
-            }";
-            sha256 = "sha256-EaJ0XPkrAWtHg6z161a/w5Su3mGpdt0Xtej20JOX4io=";  # Leave empty initially
+              url = "https://github.com/siderolabs/talos/releases/download/v${version}/talosctl-${target}-${arch}";
+            sha256 = talosctlHash;
           };
 
           dontUnpack = true;
@@ -49,6 +58,7 @@
           buildInputs = with pkgs; [
             # Python
             python312
+            makejinja
             # Kubernetes tools
             kubectl
             kubernetes-helm
@@ -75,24 +85,9 @@
             # CLI utilities
             jq
             yq-go
-            # Python packages (via pip)
-            python312Packages.pip
-            python312Packages.virtualenv
             minijinja
           ];
           shellHook = ''
-            # Create Python virtual environment if it doesn't exist
-            if [ ! -d .venv ]; then
-              echo "Creating Python virtual environment..."
-              python -m venv .venv
-            fi
-            # Activate virtual environment
-            source .venv/bin/activate
-            # Install makejinja if not present
-            if ! command -v makejinja &> /dev/null; then
-              echo "Installing makejinja..."
-              pip install makejinja==2.8.2
-            fi
             # Set environment variables
             export JUST_UNSTABLE=1
             #export KUBECONFIG="$(pwd)/kubeconfig"
