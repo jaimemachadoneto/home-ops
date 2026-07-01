@@ -57,6 +57,8 @@ metadata:
     gethomepage.dev/group: "Infrastructure"
     gethomepage.dev/icon: "si-proxmox.svg"
 
+
+
 spec:
   ingressClassName: internal-nginx
   rules:
