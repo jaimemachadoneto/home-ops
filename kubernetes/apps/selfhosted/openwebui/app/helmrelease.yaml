@@ -39,6 +39,7 @@ spec:
               OLLAMA_BASE_URL: http://ai.local.jaimenet.com:11434
               ENABLE_OPENAI_API: false
               ENABLE_SIGNUP: false
+              ENABLE_INITIAL_ADMIN_SIGNUP: true
               ENABLE_LOGIN_FORM: true
               ENABLE_PERSISTENT_CONFIG: false
               WEBUI_SESSION_COOKIE_SAME_SITE: lax
