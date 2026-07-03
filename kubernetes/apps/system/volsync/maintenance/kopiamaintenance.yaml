@@ -40,7 +40,7 @@ spec:
   matchConditions:
     - name: has-kopia-maint-job-name-prefix
       expression: >
-        object.metadata.name.startsWith("kopia-maint-")
+        has(object.metadata.name) && object.metadata.name.startsWith("kopia-maint-")
     - name: repository-volume-does-not-exist
       expression: >
         !object.spec.template.spec.volumes.exists(item, item.name == "repository")
