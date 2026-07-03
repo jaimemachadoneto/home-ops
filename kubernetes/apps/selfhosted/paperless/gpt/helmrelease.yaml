@@ -22,7 +22,7 @@ spec:
               TZ: Europe/Madrid
               PAPERLESS_BASE_URL: http://paperless.selfhosted.svc.cluster.local:8000
               PAPERLESS_PUBLIC_URL: https://paperless.${SECRET_DOMAIN}
-              OLLAMA_HOST: http://10.30.3.10:11434
+              OLLAMA_HOST: http://ai.local.jaimenet.com:11434
               LLM_PROVIDER: ollama
               LLM_MODEL: qwen3:8b
               LLM_LANGUAGE: Spanish
