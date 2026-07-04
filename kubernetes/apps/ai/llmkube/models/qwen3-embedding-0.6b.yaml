@@ -1,0 +1,82 @@
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen3-embedding-0.6b
+spec:
+  source: hf://Qwen/Qwen3-Embedding-0.6B-GGUF
+  files:
+    - Qwen3-Embedding-0.6B-Q8_0.gguf
+  format: gguf
+  quantization: Q8_0
+  hardware:
+    # CPU-only for now. To move this onto an Nvidia GPU later:
+    #  1. install the nvidia-device-plugin (or k8s-dra-driver) so a
+    #     `nvidia.com/gpu` deviceClass/resource exists in the cluster
+    #  2. add a ResourceClaimTemplate component (mirrors
+    #     kubernetes/components/gpu but with deviceClassName: gpu.nvidia.com)
+    #  3. set accelerator: nvidia, gpu.enabled: true, and re-add a
+    #     `resourceClaims` entry pointing at that template below
+    #  4. switch the InferenceService image tag from `server` to
+    #     `server-cuda` (see qwen3-embedding InferenceService below)
+    accelerator: cpu
+    gpu:
+      enabled: false
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen3-embedding-0.6b
+spec:
+  modelRef: qwen3-embedding-0.6b
+  runtime: llamacpp
+  # CPU build. Swap to ghcr.io/ggml-org/llama.cpp:server-cuda when an
+  # Nvidia GPU + device plugin are available (and bump `layers` to 99
+  # in the Model above to offload).
+  image: ghcr.io/ggml-org/llama.cpp:server
+  replicas: 1
+  priority: normal
+  contextSize: 32768
+  parallelSlots: 2
+  batchSize: 4096
+  uBatchSize: 4096
+  extraArgs:
+    - --alias
+    - qwen3-embedding
+    - --embeddings
+    - --pooling
+    - last
+    - --cont-batching
+    # Adjust thread counts to match your node's actual core count
+    - --threads
+    - "4"
+    - --threads-batch
+    - "8"
+    - --mmap
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  resources:
+    cpu: "1"
+    memory: 2Gi
+  probeOverrides:
+    startup:
+      httpGet:
+        path: /health
+        port: 8080
+      periodSeconds: 10
+      failureThreshold: 360
+    liveness:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      failureThreshold: 6
+    readiness:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      failureThreshold: 6
