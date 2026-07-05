@@ -15,3 +15,4 @@ resources:
   - ./zigbee2mqtt/ks.yaml
   - ./ocr/ks.yaml
   - ./kasm/ks.yaml
+  - ./vpn-streaming-casal/ks.yaml
