@@ -50,7 +50,7 @@ metadata:
     gethomepage.dev/href: "https://vpn-streaming-casal.${SECRET_DOMAIN}"
 spec:
   hostnames:
-    - vpn-streaming.${SECRET_DOMAIN}
+    - vpn-streaming-casal.${SECRET_DOMAIN}
   parentRefs:
     - name: envoy-internal
       namespace: network
