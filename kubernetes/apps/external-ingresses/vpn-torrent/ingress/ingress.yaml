@@ -1,57 +1,56 @@
----
 apiVersion: v1
 kind: Service
 metadata:
-  name: dockge-proxy-service
+  name: vpn-torrent-proxy-service
   namespace: external-ingresses
 spec:
   ports:
-    - port: 5001
+    - port: 8080
       protocol: TCP
-      targetPort: 5001
+      targetPort: 8080
       name: http
 ---
 apiVersion: v1
 kind: Endpoints
 metadata:
-  name: dockge-proxy-service # Must be equal to Service name for automatic mapping
+  name: vpn-torrent-proxy-service # Must be equal to Service name for automatic mapping
   namespace: external-ingresses
 subsets:
 - addresses:
-  - ip: 10.30.50.13 # IP address of your external service that you would like to proxy requests to
+  - ip: 10.30.50.50 # IP address of your external service that you would like to proxy requests to
   ports:
-  - port: 5001
+  - port: 8080
     name: http
     protocol: TCP
-
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
 metadata:
-  name: dockge-passthrough
+  name: vpn-torrent-passthrough
   namespace: external-ingresses
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
-    name: dockge-httproute
+    name: vpn-torrent-httproute
 
 ---
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: dockge-httproute
+  name: vpn-torrent-httproute
   namespace: external-ingresses
   annotations:
     gethomepage.dev/enabled: "true"
-    gethomepage.dev/description: Docker
-    gethomepage.dev/group: Infrastructure
-    gethomepage.dev/icon: si-docker.svg
-    gethomepage.dev/name: Docker
+    gethomepage.dev/name: "VPN Torrent"
+    gethomepage.dev/description: "VPN Torrent"
+    gethomepage.dev/group: "Infrastructure"
+    gethomepage.dev/icon: "si-qbittorrent.svg"
+    gethomepage.dev/href: "https://vpn-torrent.${SECRET_DOMAIN}"
 spec:
   hostnames:
-    - dockge.${SECRET_DOMAIN}
+    - vpn-torrent.${SECRET_DOMAIN}
   parentRefs:
     - name: envoy-internal
       namespace: network
@@ -61,7 +60,7 @@ spec:
           type: PathPrefix
           value: /
       backendRefs:
-        - name: dockge-proxy-service
+        - name: vpn-torrent-proxy-service
           namespace: external-ingresses
-          port: 5001
+          port: 8080
           weight: 1

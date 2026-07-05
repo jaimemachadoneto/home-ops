@@ -16,3 +16,5 @@ resources:
   - ./ocr/ks.yaml
   - ./kasm/ks.yaml
   - ./vpn-streaming-casal/ks.yaml
+  - ./vpn-tv-escritorio/ks.yaml
+  - ./vpn-torrent/ks.yaml

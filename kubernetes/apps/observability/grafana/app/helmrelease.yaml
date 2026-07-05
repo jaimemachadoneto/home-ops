@@ -75,10 +75,10 @@ spec:
           datasource:
             - name: DS_PROMETHEUS
               value: Prometheus
-          url: https://grafana.com/api/dashboards/1860/revisions/42/download
+          url: https://grafana.com/api/dashboards/1860/revisions/45/download
         prometheus:
           datasource: Prometheus
-          url: https://grafana.com/api/dashboards/19105/revisions/8/download
+          url: https://grafana.com/api/dashboards/19105/revisions/9/download
         smartctl-exporter:
           datasource:
             - name: DS_PROMETHEUS
@@ -104,7 +104,7 @@ spec:
       kubernetes:
         kubernetes-api-server:
           datasource: Prometheus
-          url: https://grafana.com/api/dashboards/15761/revisions/20/download
+          url: https://grafana.com/api/dashboards/15761/revisions/21/download
         kubernetes-coredns:
           datasource: Prometheus
           url: https://grafana.com/api/dashboards/15762/revisions/22/download
@@ -113,13 +113,13 @@ spec:
           url: https://grafana.com/api/dashboards/15757/revisions/43/download
         kubernetes-namespaces:
           datasource: Prometheus
-          url: https://grafana.com/api/dashboards/15758/revisions/44/download
+          url: https://grafana.com/api/dashboards/15758/revisions/46/download
         kubernetes-nodes:
           datasource: Prometheus
           url: https://grafana.com/api/dashboards/15759/revisions/40/download
         kubernetes-pods:
           datasource: Prometheus
-          url: https://grafana.com/api/dashboards/15760/revisions/37/download
+          url: https://grafana.com/api/dashboards/15760/revisions/39/download
         kubernetes-volumes:
           datasource: Prometheus
           url: https://grafana.com/api/dashboards/11454/revisions/14/download
