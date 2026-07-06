@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ssh *)"
+      "Bash(ssh *)",
+      "Bash(kubectl get *)",
+      "Bash(kubectl describe *)",
+      "Bash(kubectl logs *)",
+      "Bash(python3 -m json.tool)"
     ]
   }
 }
