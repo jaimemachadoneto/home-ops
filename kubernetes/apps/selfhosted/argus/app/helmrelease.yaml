@@ -36,7 +36,7 @@ spec:
           app:
             image:
               repository: ghcr.io/release-argus/argus
-              tag: 0.29.3@sha256:cde2addd5a4e7a0eeaf053901a22faff8c79002e81aeae8199538a390ca4d006
+              tag: 0.32.0@sha256:7f8f1feb5017e848d7cf376d36947f819ddf06475969bfaa33ac8f3933542dea
             envFrom:
               - secretRef:
                   name: argus-secret
