@@ -15,7 +15,7 @@ spec:
     githubConfigUrl: https://github.com/jaimemachadoneto
     githubConfigSecret: actions-runner-controller-secret
 
-    minRunners: 0
+    minRunners: 1
     maxRunners: 6
 
     containerMode:
