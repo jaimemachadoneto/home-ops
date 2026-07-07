@@ -10,7 +10,7 @@ spec:
     - ^eth.*
   nodeSelector:
     matchLabels:
-      kubernetes.io/os: linux
+      node-role.kubernetes.io/control-plane: ""
 ---
 apiVersion: v1
 kind: Service
