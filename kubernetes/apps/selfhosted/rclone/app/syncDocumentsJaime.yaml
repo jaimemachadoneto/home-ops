@@ -19,7 +19,7 @@ spec:
           failedJobsHistoryLimit: 0
           containers:
             - name: rclone
-              image: rclone/rclone:1.73.1
+              image: rclone/rclone:1.74.4
               args:
                 - move
                 - /data/DocOnedrive/jaime
