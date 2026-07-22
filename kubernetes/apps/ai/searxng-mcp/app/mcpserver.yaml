@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: searxng-mcp
+spec:
+  alias: web_search
+  # Spins up a small HTTP bridge in front of the existing SearXNG instance
+  # (kubernetes/apps/selfhosted/searxng), which already has JSON output enabled.
+  # NOTE: verify the exposed port/env vars against whichever mcp-searxng image
+  # tag you pin below (docs vary slightly between forks of this project).
+  workload:
+    image: overtlids/mcp-searxng-enhanced:latest
+    port: 8000
+    env:
+      - name: SEARXNG_ENGINE_API_BASE_URL
+        value: http://searxng.selfhosted.svc.cluster.local:8080/search
+    volumes:
+      - name: tmp
+        emptyDir: {}
+    volumeMounts:
+      - name: tmp
+        mountPath: /tmp
