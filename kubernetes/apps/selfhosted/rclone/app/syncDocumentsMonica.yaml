@@ -25,6 +25,7 @@ spec:
                 - /data/DocOnedrive/monica
                 - onedrive-monica:/AutoScan
                 - --delete-during
+                - --min-age=1m
                 - --log-level=INFO
                 - --config=/config/rclone/rclone.conf
                 - --cache-dir=/vfsCache

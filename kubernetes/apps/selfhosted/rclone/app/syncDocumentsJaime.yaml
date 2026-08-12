@@ -25,6 +25,7 @@ spec:
                 - /data/DocOnedrive/jaime
                 - Onedrive-Jaime:/AutoScan
                 - --delete-during
+                - --min-age=1m
                 - --log-level=INFO
                 - --config=/config/rclone/rclone.conf
                 - --cache-dir=/vfsCache
