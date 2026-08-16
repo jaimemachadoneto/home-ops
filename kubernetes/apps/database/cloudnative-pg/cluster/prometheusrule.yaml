@@ -65,3 +65,13 @@ spec:
           for: 1m
           labels:
             severity: warning
+        - alert: PGVolumeSpaceLow
+          annotations:
+            description: PVC {{ $labels.persistentvolumeclaim }} in {{ $labels.namespace }} has less than 20% disk space available. If this reaches 0, PostgreSQL will crash-loop.
+            summary: A postgres16 PVC is running low on disk space
+          expr: |-
+            kubelet_volume_stats_available_bytes{namespace="database", persistentvolumeclaim=~"postgres16-.*"}
+              / kubelet_volume_stats_capacity_bytes{namespace="database", persistentvolumeclaim=~"postgres16-.*"} < 0.20
+          for: 15m
+          labels:
+            severity: warning
