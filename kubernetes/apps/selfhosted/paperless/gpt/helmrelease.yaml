@@ -72,7 +72,7 @@ spec:
           gethomepage.dev/name: Paperless GPT
           gethomepage.dev/icon: paperless.png
           gethomepage.dev/description: AI Setup for Paperless
-          gethomepage.dev/siteMonitor: http://paperless-gpt.ai:8080
+          gethomepage.dev/siteMonitor: http://paperless-gpt.selfhosted.svc.cluster.local:8080
         hostnames:
           - paperless-gpt.${SECRET_DOMAIN}
         parentRefs:
