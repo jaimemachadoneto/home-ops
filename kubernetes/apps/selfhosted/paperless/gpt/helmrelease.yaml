@@ -38,7 +38,7 @@ spec:
               AUTO_GENERATE_TAGS: false
               AUTO_TAG: ai-auto
               AUTO_OCR_TAG: ai-ocr
-              MANUAL_TAG: ai
+              MANUAL_TAG: process
             envFrom:
               - secretRef:
                   name: paperless-gpt-secret
