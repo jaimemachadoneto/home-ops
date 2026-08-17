@@ -43,7 +43,9 @@ metadata:
   name: renovate-jmn-job
   namespace: renovate
 spec:
-  discoveryFilter: jaimemachado/*, jaimemachadoneto/*
+  discoveryFilters:
+    - jaimemachado/*
+    - jaimemachadoneto/*
   extraEnv:
     - name: LOG_LEVEL
       value: debug
