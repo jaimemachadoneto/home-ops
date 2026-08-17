@@ -45,6 +45,8 @@ spec:
                 cpu: 10m
               limits:
                 memory: 200Mi
+        pod:
+          automountServiceAccountToken: true
 
     serviceAccount:
       homepage: {}
