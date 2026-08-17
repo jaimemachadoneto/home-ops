@@ -22,7 +22,7 @@ spec:
             env:
               TZ: ${TIMEZONE}
               PAPERLESS_API_URL: http://paperless.selfhosted.svc.cluster.local:8000/api
-              TAGS: AI
+              TAGS: process
             envFrom:
               - secretRef:
                   name: paperless-ai-secret
