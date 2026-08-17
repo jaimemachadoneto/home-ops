@@ -31,7 +31,7 @@ spec:
               repository: ghcr.io/open-webui/open-webui
               tag: v0.8.3@sha256:205e9cf23b66553643b065afcdeffb7f86b35bf36e0ce643dc56946a911954b7
             env:
-              TZ: ${CONFIG_TIMEZONE}
+              TZ: ${TIMEZONE}
               WEBUI_URL: https://ai.${SECRET_DOMAIN}
               CORS_ALLOW_ORIGIN: https://ai.${SECRET_DOMAIN}
               # Ollama
