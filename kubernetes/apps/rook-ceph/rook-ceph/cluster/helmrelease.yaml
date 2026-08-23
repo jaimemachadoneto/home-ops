@@ -151,6 +151,7 @@ spec:
           allowVolumeExpansion: true
           volumeBindingMode: Immediate
           parameters:
+            mounter: fuse
             csi.storage.k8s.io/provisioner-secret-name: rook-csi-cephfs-provisioner
             csi.storage.k8s.io/provisioner-secret-namespace: "{{ .Release.Namespace }}"
             csi.storage.k8s.io/controller-expand-secret-name: rook-csi-cephfs-provisioner
