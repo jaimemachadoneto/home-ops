@@ -20,7 +20,7 @@ spec:
     namespace: flux-system
   timeout: 5m
   wait: false
-  postBuild:
-    substituteFrom:
-      - name: cluster-secrets
-        kind: Secret
+  # No postBuild.substituteFrom: this app doesn't reference ${SECRET_DOMAIN}
+  # or any other cluster-secrets variable, and the healthcheck script below
+  # is full of literal ${...} bash expansions that Flux's envsubst-based
+  # substitution would otherwise try (and fail) to resolve.
