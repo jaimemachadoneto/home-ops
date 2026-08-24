@@ -11,11 +11,13 @@ spec:
   interval: 1h
   path: "./kubernetes/apps/kube-system/l2-announce-healthcheck/app"
   prune: true
+  # No targetNamespace: this app's manifests span kube-system (the CronJob
+  # and its Lease RBAC) and network (RBAC to read Services there), each
+  # namespaced explicitly on the resource itself.
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  targetNamespace: kube-system
   timeout: 5m
   wait: false
   postBuild:

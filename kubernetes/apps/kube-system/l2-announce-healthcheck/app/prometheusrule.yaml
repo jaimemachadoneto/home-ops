@@ -4,6 +4,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: l2-announce-healthcheck
+  namespace: kube-system
 spec:
   groups:
     - name: l2-announce-healthcheck.rules
