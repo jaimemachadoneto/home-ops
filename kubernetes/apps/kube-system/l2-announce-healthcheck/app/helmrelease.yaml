@@ -1,0 +1,101 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: l2-announce-healthcheck
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: l2-announce-healthcheck
+  interval: 30m
+  values:
+    serviceAccount:
+      l2-announce-healthcheck: {}
+
+    controllers:
+      l2-announce-healthcheck:
+        type: cronjob
+
+        cronjob:
+          schedule: "*/5 * * * *"
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 1
+          failedJobsHistory: 3
+
+        pod:
+          restartPolicy: Never
+          hostNetwork: true
+          automountServiceAccountToken: true
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values:
+                          - home-ops-03
+
+        containers:
+          app:
+            image:
+              repository: alpine/k8s
+              tag: 1.34.1@sha256:ec714df3813b5405292860f8a1c55c5727bf8c33c88992f1e981efad8065547f
+            env:
+              HOME: /tmp
+            command:
+              - /bin/bash
+              - -c
+              - |
+                set -uo pipefail
+
+                NAMESPACE="network"
+                EXIT_CODE=0
+
+                SERVICES=$(kubectl get svc -n "${NAMESPACE}" -o jsonpath='{range .items[?(@.spec.type=="LoadBalancer")]}{.metadata.name}{" "}{.status.loadBalancer.ingress[0].ip}{" "}{.spec.ports[0].port}{"\n"}{end}')
+
+                if [ -z "${SERVICES}" ]; then
+                  echo "No LoadBalancer services found in ${NAMESPACE}, nothing to check"
+                  exit 0
+                fi
+
+                while read -r svc ip port; do
+                  [ -z "${svc}" ] && continue
+
+                  reachable=false
+                  for attempt in 1 2; do
+                    if timeout 3 bash -c "echo > /dev/tcp/${ip}/${port}" 2>/dev/null; then
+                      reachable=true
+                      break
+                    fi
+                    sleep 2
+                  done
+
+                  if [ "${reachable}" = true ]; then
+                    echo "OK: ${svc} (${ip}:${port})"
+                    continue
+                  fi
+
+                  lease="cilium-l2announce-${NAMESPACE}-${svc}"
+                  echo "UNREACHABLE: ${svc} (${ip}:${port}) after 2 attempts - resetting Lease ${lease}"
+                  kubectl delete lease -n kube-system "${lease}" --ignore-not-found
+                  EXIT_CODE=1
+                done <<< "${SERVICES}"
+
+                exit "${EXIT_CODE}"
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities: { drop: ["ALL"] }
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 64Mi
+
+    persistence:
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

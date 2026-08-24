@@ -1,0 +1,48 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: l2-announce-healthcheck
+  namespace: kube-system
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: l2-announce-healthcheck
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: l2-announce-healthcheck
+subjects:
+  - kind: ServiceAccount
+    name: l2-announce-healthcheck
+    namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: l2-announce-healthcheck
+  namespace: network
+rules:
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: l2-announce-healthcheck
+  namespace: network
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: l2-announce-healthcheck
+subjects:
+  - kind: ServiceAccount
+    name: l2-announce-healthcheck
+    namespace: kube-system

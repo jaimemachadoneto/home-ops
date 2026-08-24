@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: l2-announce-healthcheck
+spec:
+  groups:
+    - name: l2-announce-healthcheck.rules
+      rules:
+        - alert: L2AnnounceHealthcheckRemediated
+          annotations:
+            summary: >-
+              L2 announcement healthcheck had to reset a Cilium Lease to
+              restore LAN reachability to a network-namespace LoadBalancer
+              IP. Investigate if this keeps recurring.
+          expr: |
+            kube_job_status_failed{namespace="kube-system", job_name=~"^l2-announce-healthcheck-.*"} == 1
+          for: 0m
+          labels:
+            severity: warning
