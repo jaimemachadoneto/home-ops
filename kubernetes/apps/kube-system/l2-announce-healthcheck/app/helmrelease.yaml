@@ -45,6 +45,7 @@ spec:
               tag: 1.34.1@sha256:ec714df3813b5405292860f8a1c55c5727bf8c33c88992f1e981efad8065547f
             env:
               HOME: /tmp
+              PUSHGATEWAY_URL: http://pushgateway.observability.svc.cluster.local:9091
             command:
               - /bin/bash
               - -c
@@ -73,15 +74,33 @@ spec:
                     sleep 2
                   done
 
+                  remediated=false
                   if [ "${reachable}" = true ]; then
                     echo "OK: ${svc} (${ip}:${port})"
-                    continue
+                  else
+                    lease="cilium-l2announce-${NAMESPACE}-${svc}"
+                    echo "UNREACHABLE: ${svc} (${ip}:${port}) after 2 attempts - resetting Lease ${lease}"
+                    kubectl delete lease -n kube-system "${lease}" --ignore-not-found
+                    remediated=true
+                    EXIT_CODE=1
                   fi
 
-                  lease="cilium-l2announce-${NAMESPACE}-${svc}"
-                  echo "UNREACHABLE: ${svc} (${ip}:${port}) after 2 attempts - resetting Lease ${lease}"
-                  kubectl delete lease -n kube-system "${lease}" --ignore-not-found
-                  EXIT_CODE=1
+                  up_value=0
+                  [ "${reachable}" = true ] && up_value=1
+
+                  metrics="# TYPE l2_announce_healthcheck_service_up gauge
+                l2_announce_healthcheck_service_up ${up_value}
+                "
+                  if [ "${remediated}" = true ]; then
+                    metrics+="# TYPE l2_announce_healthcheck_last_remediation_timestamp_seconds gauge
+                l2_announce_healthcheck_last_remediation_timestamp_seconds $(date +%s)
+                "
+                  fi
+
+                  if ! printf '%s' "${metrics}" | curl -sf --max-time 5 --data-binary @- \
+                      "${PUSHGATEWAY_URL}/metrics/job/l2-announce-healthcheck/service/${svc}" >/dev/null; then
+                    echo "WARN: failed to push metrics for ${svc} to pushgateway"
+                  fi
                 done <<< "${SERVICES}"
 
                 exit "${EXIT_CODE}"

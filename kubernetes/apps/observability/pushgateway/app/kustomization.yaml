@@ -5,6 +5,3 @@ kind: Kustomization
 resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
-  - ./rbac.yaml
-  - ./prometheusrule.yaml
-  - ./dashboard

@@ -16,6 +16,7 @@ resources:
   - ./kube-state-metrics/ks.yaml
   - ./kube-prometheus-stack/ks.yaml
   - ./node-exporter/ks.yaml
+  - ./pushgateway/ks.yaml
   - ./silence-operator/ks.yaml
   # - ./smartctl-exporter/ks.yaml
   # - ./unpoller/ks.yaml
