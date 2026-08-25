@@ -78,6 +78,14 @@ spec:
           webrtc-udp:
             port: 8555
             protocol: UDP
+    serviceMonitor:
+      frigate:
+        endpoints:
+          - port: http
+            scheme: http
+            path: /api/metrics
+            interval: 30s
+            scrapeTimeout: 10s
     persistence:
       # config:
       #   existingClaim: frigate
