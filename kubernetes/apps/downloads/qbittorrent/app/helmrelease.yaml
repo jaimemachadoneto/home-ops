@@ -79,13 +79,12 @@ spec:
           qbittorrent:
             app:
               - path: /config
-      downloads:
+      media:
         type: nfs
-        path: /mnt/Data1/MediaServer
         server: nas.jaimenet.com
+        path: /mnt/Data1/MediaServer
         globalMounts:
-          - path: /data/nas-media/Downloads/qbittorrent
-            subPath: Downloads/qbittorrent
+          - path: /data/nas-media
       tmp:
         type: emptyDir
     route:
