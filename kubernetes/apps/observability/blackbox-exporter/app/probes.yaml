@@ -11,7 +11,6 @@ spec:
   targets:
     staticConfig:
       static:
-        - pihole.internal
         - nas.jaimenet.com
 ---
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/probe_v1.json
