@@ -1,0 +1,14 @@
+---
+# The rook-ceph-cluster chart (v1.20+) doesn't expose a value to control
+# this, and its own default for the RBD driver is `snapshotPolicy: none`
+# (unlike CephFS, which defaults to `volumeSnapshot`) — so no snapshotter
+# sidecar gets deployed for RBD and every CSI VolumeSnapshot (what VolSync
+# depends on for all RBD-backed apps) stays stuck at readyToUse: false
+# forever. Server-Side Apply lets us own just this one field going forward
+# without fighting the chart for the rest of the spec.
+apiVersion: csi.ceph.io/v1
+kind: Driver
+metadata:
+  name: rook-ceph.rbd.csi.ceph.com
+spec:
+  snapshotPolicy: volumeSnapshot
