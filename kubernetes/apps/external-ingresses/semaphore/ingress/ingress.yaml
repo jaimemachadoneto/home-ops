@@ -1,17 +1,14 @@
 ---
-apiVersion: v1
-kind: Service
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
 metadata:
-  name: semaphore-proxy-service
+  name: semaphore-backend
   namespace: external-ingresses
 spec:
-  type: ExternalName
-  externalName: semaphore.local.jaimenet.com # Raspberry Pi 3B running Ansible Semaphore
-  ports:
-    - port: 3000
-      protocol: TCP
-      targetPort: 3000
-      name: http
+  endpoints:
+    - fqdn:
+        hostname: semaphore.local.jaimenet.com # Raspberry Pi 3B running Ansible Semaphore
+        port: 3000
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
@@ -48,7 +45,8 @@ spec:
           type: PathPrefix
           value: /
       backendRefs:
-        - name: semaphore-proxy-service
+        - group: gateway.envoyproxy.io
+          kind: Backend
+          name: semaphore-backend
           namespace: external-ingresses
-          port: 3000
           weight: 1
