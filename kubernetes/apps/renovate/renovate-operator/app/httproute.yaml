@@ -16,6 +16,7 @@ spec:
   parentRefs:
     - name: envoy-internal
       namespace: network
+      sectionName: https
   rules:
     - backendRefs:
         - name: renovate-operator
@@ -37,6 +38,7 @@ spec:
   parentRefs:
     - name: envoy-external
       namespace: network
+      sectionName: https
   rules:
     - backendRefs:
         - name: renovate-operator-webhook

@@ -88,4 +88,5 @@ spec:
         parentRefs:
           - name: envoy-internal
             namespace: network
+            sectionName: https
 

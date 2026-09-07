@@ -135,6 +135,7 @@ spec:
         parentRefs:
           - name: envoy-internal
             namespace: network
+            sectionName: https
 
         rules:
           - backendRefs:
@@ -153,6 +154,7 @@ spec:
         parentRefs:
           - name: envoy-internal
             namespace: network
+            sectionName: https
 
         rules:
           - backendRefs:
