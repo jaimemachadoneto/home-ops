@@ -33,6 +33,7 @@ metadata:
     gethomepage.dev/group: Infrastructure
     gethomepage.dev/icon: si-ansible.svg
     gethomepage.dev/name: Semaphore
+    gethomepage.dev/href: "https://semaphore.${SECRET_DOMAIN}"
 spec:
   hostnames:
     - semaphore.${SECRET_DOMAIN}
