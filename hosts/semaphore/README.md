@@ -112,3 +112,14 @@ cd /opt/doco-cd && docker compose up -d
 - `semaphore.env` must NOT live inside a directory owned by uid 1001 - if it
   does, the host-side `docker compose` (running as the SSH user) can't read
   it to populate `env_file`, and secrets silently come up empty.
+- doco-cd resolves `env_file:` paths itself, client-side, before talking to
+  the Docker daemon over the mounted socket - so absolute host paths
+  referenced in `docker-compose.yml` (like `/opt/semaphore/semaphore.env`)
+  must also exist at that *same path* inside doco-cd's own container, not
+  just on the host. Hence the `/opt/semaphore:/opt/semaphore:ro` mount in
+  `doco-cd/docker-compose.yml`.
+- doco-cd does NOT run with `cap_drop: ALL`, on purpose: without
+  `CAP_DAC_OVERRIDE` it can't read files it doesn't own (the deploy key,
+  `semaphore.env`), and loosening those files' permissions instead would
+  expose real secrets. Dropping caps buys little here anyway - the mounted
+  `docker.sock` is already root-equivalent on the host.

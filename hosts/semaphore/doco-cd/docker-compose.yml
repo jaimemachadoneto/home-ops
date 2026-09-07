@@ -13,10 +13,16 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/doco-cd/data:/data
+      # doco-cd resolves env_file: paths client-side before talking to the
+      # daemon, so absolute host paths referenced in hosts/semaphore's
+      # compose file (e.g. env_file: /opt/semaphore/semaphore.env) must also
+      # exist at that same path inside THIS container, not just on the host.
+      - /opt/semaphore:/opt/semaphore:ro
     secrets:
       - doco_cd_deploy_key
-    cap_drop:
-      - ALL
+    # NOT cap_drop: ALL - doco-cd needs to read host-owned files (deploy key,
+    # hosts/semaphore's env_file) it doesn't own. This buys little anyway:
+    # the mounted docker.sock is already root-equivalent on the host.
     healthcheck:
       test: ["CMD", "/doco-cd", "healthcheck"]
       start_period: 15s
