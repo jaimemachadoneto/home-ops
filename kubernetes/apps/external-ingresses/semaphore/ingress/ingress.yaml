@@ -1,0 +1,54 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: semaphore-proxy-service
+  namespace: external-ingresses
+spec:
+  type: ExternalName
+  externalName: semaphore.local.jaimenet.com # Raspberry Pi 3B running Ansible Semaphore
+  ports:
+    - port: 3000
+      protocol: TCP
+      targetPort: 3000
+      name: http
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: semaphore-passthrough
+  namespace: external-ingresses
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: semaphore-httproute
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: semaphore-httproute
+  namespace: external-ingresses
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: Ansible Semaphore
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: si-ansible.svg
+    gethomepage.dev/name: Semaphore
+spec:
+  hostnames:
+    - semaphore.${SECRET_DOMAIN}
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+  rules:
+    - matches:
+      - path:
+          type: PathPrefix
+          value: /
+      backendRefs:
+        - name: semaphore-proxy-service
+          namespace: external-ingresses
+          port: 3000
+          weight: 1

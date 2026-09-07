@@ -12,6 +12,7 @@ resources:
   - ./ha-music/ks.yaml
   - ./vpn/ks.yaml
   - ./dockge/ks.yaml
+  - ./semaphore/ks.yaml
   - ./zigbee2mqtt/ks.yaml
   - ./ocr/ks.yaml
   - ./kasm/ks.yaml
