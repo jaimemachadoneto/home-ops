@@ -1,0 +1,6 @@
+# Copied to /opt/doco-cd/data/poll-config.yml by install.sh.
+# No secrets here - auth comes from the mounted SSH deploy key.
+- url: git@github.com:jaimemachadoneto/home-ops.git
+  reference: main
+  interval: 5m
+  target: semaphore

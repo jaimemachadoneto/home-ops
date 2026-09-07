@@ -1,0 +1,29 @@
+---
+# Runs doco-cd itself: polls home-ops and redeploys hosts/semaphore whenever
+# .doco-cd.semaphore.yml's target changes on `main`. See ../README.md.
+services:
+  doco-cd:
+    container_name: doco-cd
+    image: ghcr.io/kimdre/doco-cd:latest
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Madrid
+      SSH_PRIVATE_KEY_FILE: /run/secrets/doco_cd_deploy_key
+      POLL_CONFIG_FILE: /data/poll-config.yml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/doco-cd/data:/data
+    secrets:
+      - doco_cd_deploy_key
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "/doco-cd", "healthcheck"]
+      start_period: 15s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+secrets:
+  doco_cd_deploy_key:
+    file: /opt/doco-cd/deploy_key

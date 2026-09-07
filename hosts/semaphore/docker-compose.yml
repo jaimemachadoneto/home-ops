@@ -1,0 +1,20 @@
+---
+services:
+  semaphore:
+    image: semaphoreui/semaphore:v2.19.12@sha256:3996804607ebb63690528185bb9adc3507ee896851098e4453975f2ce7f8b435
+    container_name: semaphore
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      SEMAPHORE_ADMIN: admin
+      SEMAPHORE_ADMIN_NAME: "Jaime Machado"
+      SEMAPHORE_ADMIN_EMAIL: "jaime.machado@gmail.com"
+      SEMAPHORE_DB_DIALECT: sqlite
+      SEMAPHORE_DB_HOST: /var/lib/semaphore/database.db
+    env_file:
+      - /opt/semaphore/semaphore.env
+    volumes:
+      - /opt/semaphore/data:/var/lib/semaphore
+      - /opt/semaphore/config:/etc/semaphore
+      - /opt/semaphore/tmp:/tmp/semaphore

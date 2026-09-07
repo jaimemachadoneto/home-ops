@@ -1,0 +1,9 @@
+[Unit]
+Description=Backup Semaphore data
+After=network-online.target mnt-semaphore\x2dbackup.mount
+Wants=mnt-semaphore\x2dbackup.mount
+
+[Service]
+Type=oneshot
+User=jaime
+ExecStart=/opt/semaphore/scripts/backup.sh

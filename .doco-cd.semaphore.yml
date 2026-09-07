@@ -1,0 +1,10 @@
+# Deploy config for doco-cd (https://doco.cd) running on the Semaphore
+# Raspberry Pi. Polled from hosts/semaphore/doco-cd/poll-config.yml with
+# target: semaphore. See hosts/semaphore/README.md.
+name: semaphore
+working_dir: hosts/semaphore
+compose_files:
+  - docker-compose.yml
+force_image_pull: true
+remove_orphans: true
+prune_images: true
