@@ -12,7 +12,7 @@ spec:
     type: Kubernetes
     kubernetes:
       envoyDeployment:
-        replicas: 2
+        replicas: 3
         container:
           imageRepository: mirror.gcr.io/envoyproxy/envoy
           resources:
@@ -20,6 +20,11 @@ spec:
               cpu: 100m
             limits:
               memory: 2Gi
+        pod:
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: DoNotSchedule
       envoyService:
         externalTrafficPolicy: Local
   shutdown:
