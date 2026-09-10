@@ -4,6 +4,10 @@ services:
     image: semaphoreui/semaphore:v2.19.12@sha256:3996804607ebb63690528185bb9adc3507ee896851098e4453975f2ce7f8b435
     container_name: semaphore
     restart: unless-stopped
+    labels:
+      # This stack is deployed by doco-cd from git, not from the copy of this
+      # file sitting in /opt/semaphore - edit it in the repo.
+      managed-by: doco-cd
     ports:
       - "3000:3000"
     environment:
