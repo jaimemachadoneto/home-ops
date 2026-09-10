@@ -1,9 +1,11 @@
 [Unit]
-Description=Backup Semaphore data
-After=network-online.target mnt-semaphore\x2dbackup.mount
-Wants=mnt-semaphore\x2dbackup.mount
+Description=Backup Semaphore database and config
+After=network-online.target
+
+# Deliberately no dependency on the NAS mount unit: the backup is still worth
+# taking locally when the NAS is down, and the script degrades to local-only.
 
 [Service]
 Type=oneshot
-User=jaime
+User=root
 ExecStart=/opt/semaphore/scripts/backup.sh

@@ -23,9 +23,10 @@ cluster follows automatically. That is how it survived the move off the Pi.
 
 > **This replaced a Raspberry Pi 3B** (`10.30.50.210`) that ran Semaphore as a
 > Docker container deployed by doco-cd. The Pi died. `docker-compose.yml`,
-> `install.sh`, `doco-cd/`, `scripts/` and `systemd/` in this directory belong
+> `install.sh`, `semaphore.env.example` and `doco-cd/` in this directory belong
 > to that superseded setup and are kept for reference - **they do not describe
-> the running instance.**
+> the running instance.** `scripts/` and `systemd/` have been brought forward
+> and do apply.
 
 ## Configuring it (provision.py)
 
@@ -116,11 +117,62 @@ After that the playbook above manages the host normally.
   (community.general 8.3.0, ansible.posix 1.5.4), which satisfies these
   playbooks. Move or copy the file to `collections/requirements.yml` if you
   ever need a version the distro package does not provide.
-- **No backups are configured on this instance.** The Pi had a nightly tar to
-  the NAS (`scripts/backup.sh` + `systemd/semaphore-backup.timer`); that has
-  not been reinstated here. Losing `access_key_encryption` from
-  `/opt/semaphore/config.json` makes every stored SSH key and secret in the
-  database unrecoverable, even with an intact copy of the database.
+- **The NAS export does not exist yet**, so backups are currently local-only -
+  see Backups below.
+
+## Backups
+
+`scripts/backup.sh` runs nightly via `systemd/semaphore-backup.timer` and
+archives the only two files Semaphore cannot be rebuilt without:
+
+- `database.sqlite` - projects, templates, schedules, and the encrypted keys
+- `config.json` - including `access_key_encryption`, which decrypts them
+
+They are useless apart: an intact database with a lost encryption key means
+every stored SSH key and secret is unrecoverable. The archive therefore holds
+both, and is written `0600` because it effectively contains those secrets.
+
+The database is snapshotted with SQLite's backup API rather than copied.
+Semaphore keeps it open in **WAL mode**, so a plain `cp` or `tar` of a live
+database can capture a torn set of pages and silently drop transactions still
+sitting in the `-wal`. Each snapshot is checked with `PRAGMA integrity_check`
+so a bad archive fails the backup loudly instead of surfacing during a restore.
+
+Retention is 14 days locally in `/opt/semaphore/backups` and 30 days on the
+NAS. The archives are ~26 KB, so this costs nothing.
+
+### The NAS export is missing
+
+`/mnt/Data1/semaphore` is **not currently exported** by the NAS - it went away
+with the Pi. Backups run local-only until it comes back, which the script
+reports as a warning rather than an error:
+
+    warning: /mnt/semaphore-backup not mounted, backup kept locally only
+
+Local-only backups do not protect against losing this container. To finish the
+setup, create the `/mnt/Data1/semaphore` export on the NAS admin UI with
+read-write access for `10.30.51.104`. The fstab entry and automount are already
+in place, so backups start reaching the NAS on the next run with no further
+changes here.
+
+### Restore
+
+```sh
+systemctl stop semaphore
+tar -xzf /opt/semaphore/backups/semaphore-<timestamp>.tar.gz -C /opt/semaphore
+systemctl start semaphore
+```
+
+The archive expands to `database.sqlite` and `config.json` exactly where they
+belong. Any `-wal`/`-shm` files left beside the old database can be deleted:
+the snapshot is self-contained and stale sidecars only confuse SQLite.
+
+Verify a restore rather than trusting it - check that the template list comes
+back:
+
+```sh
+python3 -c "import sqlite3;print([r[0] for r in sqlite3.connect('/opt/semaphore/database.sqlite').execute('select name from project__template')])"
+```
 
 ## Credentials
 
