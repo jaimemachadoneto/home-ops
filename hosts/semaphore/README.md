@@ -109,36 +109,32 @@ change cannot leave it quietly archiving something stale.
 Retention is 14 days locally in `/opt/semaphore/backups` and 30 days on the
 NAS. Archives are ~32 KB.
 
-### Getting backups onto the NAS
+### The NAS copy
 
-**Currently local-only**, which does not protect against losing the container.
-The blocker is not the NAS: an **unprivileged LXC cannot mount NFS at all**.
-The kernel refuses it from inside a user namespace regardless of the export's
-ACL - `tmpfs` mounts fine, `nfs` returns `Operation not permitted`. The old Pi
-could mount it because it was bare metal.
+Backups land on `nas.jaimenet.com:/mnt/Data1/Semaphore` (**capital S** - NFS
+paths are case-sensitive), exported read-write to `10.30.51.104`. Confirm the
+address the NAS actually sees with `ip route get 10.30.50.7`.
 
-To finish this, the container has to become privileged, on the PVE host:
+**This requires the LXC to be privileged**, and that is the reason it is. An
+unprivileged container cannot mount NFS at all: the kernel refuses it from
+inside a user namespace no matter what the export allows - `tmpfs` mounts fine,
+`nfs` returns `Operation not permitted`. The Pi could mount it because it was
+bare metal. Converting is not a toggle; it needs a dump and restore on the PVE
+host:
 
 ```sh
 vzdump <ctid> --compress zstd --storage <backup-storage>
-pct stop <ctid>
-pct destroy <ctid>
+pct stop <ctid> && pct destroy <ctid>
 pct restore <ctid> /path/to/vzdump-lxc-<ctid>-*.tar.zst \
     --unprivileged 0 --features nesting=1,mount=nfs
 pct start <ctid>
 ```
 
-`mount=nfs` only takes effect on a privileged container, and unprivileged →
-privileged is not a toggle - it requires the dump/restore above. Note this
-weakens isolation on a host that can reach the whole LAN; the alternative that
-keeps the container unprivileged is to mount the export on the PVE host and
-bind-mount it in with `pct set <ctid> -mp0 /mnt/pve/semaphore,mp=/mnt/semaphore-backup`.
-
-The NAS side is already correct: `/mnt/Data1/Semaphore` (**capital S** - NFS
-paths are case-sensitive) exported read-write to `10.30.51.104`. Confirm the
-address the NAS actually sees with `ip route get 10.30.50.7`. The fstab entry
-and automount are in place, so backups reach the NAS on the next run once the
-container can mount.
+Keep `nesting=1` or Docker stops working. The alternative that keeps the
+container unprivileged is to mount the export on the PVE host and bind-mount it
+in with `pct set <ctid> -mp0 /mnt/pve/semaphore,mp=/mnt/semaphore-backup`;
+worth revisiting, because privileged plus `apparmor=unconfined` is a lot of
+trust for a host holding SSH credentials to the whole fleet.
 
 ### Restore
 
@@ -185,6 +181,19 @@ curl -s -H "Authorization: Bearer <token>" localhost:3000/api/project/2/template
 - **`semaphore.env` must not live inside a directory owned by uid 1001** - the
   host-side `docker compose` reads it, and secrets silently come up empty if it
   cannot.
+- **A privileged LXC cannot load AppArmor profiles.** Docker tries to apply its
+  `docker-default` profile, `apparmor_parser` returns "Access denied. You need
+  policy admin privileges", and Docker then refuses to start *any* container -
+  it logs this and carries on to "Loading containers: done", so the daemon looks
+  healthy while nothing runs. Hence `security_opt: apparmor=unconfined` in the
+  compose file. This only became a problem after going privileged.
+- **systemd will not run automount units inside a container.** It reports
+  "unit type of ... .automount not supported on this system", so an
+  `x-systemd.automount` fstab entry silently does nothing - `autofs` being
+  present in `/proc/filesystems` is a red herring. The NFS share therefore uses
+  a plain `_netdev,nofail` entry, and `backup.sh` mounts it explicitly if it is
+  not already up. Without that the nightly backup finds nothing mounted and
+  quietly keeps every copy local while the NAS sits there available.
 - **Changing `SEMAPHORE_ACCESS_KEY_ENCRYPTION` orphans every stored key.** The
   database stays intact but its SSH keys and secrets become undecryptable. It
   was carried across the native → Docker migration for exactly this reason.

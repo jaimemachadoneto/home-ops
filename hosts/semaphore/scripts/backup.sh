@@ -64,6 +64,16 @@ chmod 600 "$STAGE_DIR/$ARCHIVE"
 # The NAS copy is best-effort: the mount is an automount, so a NAS outage (or a
 # missing export) must not fail the backup - the local copy still happened. The
 # timeout keeps a hung mount from stalling the timer indefinitely.
+#
+# Mount on demand if it is not up. systemd refuses automount units inside a
+# container ("unit type not supported on this system"), so x-systemd.automount
+# silently does nothing here and the share has to be mounted explicitly - an
+# unattended run would otherwise keep every backup local while the NAS sat
+# there perfectly available.
+if ! mountpoint -q "$NAS_DIR" 2>/dev/null; then
+  timeout 60 mount "$NAS_DIR" >/dev/null 2>&1 || true
+fi
+
 if timeout 60 mountpoint -q "$NAS_DIR" 2>/dev/null; then
   cp "$STAGE_DIR/$ARCHIVE" "$NAS_DIR/"
   find "$NAS_DIR" -maxdepth 1 -name 'semaphore-*.tar.gz' -mtime "+$NAS_KEEP_DAYS" -delete

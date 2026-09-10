@@ -4,6 +4,14 @@ services:
     image: semaphoreui/semaphore:v2.19.12@sha256:3996804607ebb63690528185bb9adc3507ee896851098e4453975f2ce7f8b435
     container_name: semaphore
     restart: unless-stopped
+    # The LXC is privileged (so it can mount the NFS backup share), and a
+    # privileged container cannot load AppArmor profiles - apparmor_parser
+    # returns "Access denied. You need policy admin privileges", and Docker
+    # then refuses to start any container at all. Opting out of the
+    # docker-default profile is the documented workaround for Docker inside
+    # LXC; it costs little here given the LXC is already privileged.
+    security_opt:
+      - apparmor=unconfined
     ports:
       - "3000:3000"
     environment:
