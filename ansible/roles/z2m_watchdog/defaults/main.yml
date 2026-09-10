@@ -14,14 +14,14 @@ z2m_watchdog_ha_discovery: true
 z2m_watchdog_ha_discovery_prefix: homeassistant
 
 # Seconds between health checks.
-z2m_watchdog_interval: 60
+z2m_watchdog_interval: 30
 
 # Consecutive failed checks before the watchdog takes any action.
 # 3 x 60s means roughly 3 minutes of sustained failure before a restart.
-z2m_watchdog_fail_threshold: 3
+z2m_watchdog_fail_threshold: 2
 
 # How many service restarts to try before escalating to a container reboot.
-z2m_watchdog_max_restarts: 2
+z2m_watchdog_max_restarts: 1
 
 # Never reboot more often than this (seconds). Guards against a boot loop when
 # the underlying problem is not fixed by rebooting.
