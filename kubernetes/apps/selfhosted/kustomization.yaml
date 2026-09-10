@@ -21,3 +21,4 @@ resources:
   - ./openwebui/ks.yaml
   - ./searxng/ks.yaml
   - ./rclone/ks.yaml
+  - ./bank-report/ks.yaml
