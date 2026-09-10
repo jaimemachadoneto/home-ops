@@ -212,6 +212,18 @@ $_dev}"
 \"device_class\":\"timestamp\",
 $_dev}"
 
+    # Exposed as its own timestamp entity, not just a JSON attribute, so Home
+    # Assistant can alarm on its age. Availability covers the watchdog dying;
+    # this covers it being alive but stuck, where the last will never fires.
+    _disco sensor last_check "{
+\"name\":\"Last check\",
+\"unique_id\":\"${_node}_last_check\",
+\"state_topic\":\"$STATE_TOPIC\",
+\"value_template\":\"{{ value_json.last_check_time if value_json.last_check_time else None }}\",
+\"device_class\":\"timestamp\",
+\"icon\":\"mdi:heart-pulse\",
+$_dev}"
+
     _disco sensor failures "{
 \"name\":\"Consecutive failures\",
 \"unique_id\":\"${_node}_failures\",
