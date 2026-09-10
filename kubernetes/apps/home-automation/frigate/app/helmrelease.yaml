@@ -13,6 +13,9 @@ spec:
     controllers:
       frigate:
         pod:
+          resourceClaims:
+            - name: gpu
+              resourceClaimTemplateName: frigate-gpu
           tolerations:
             - key: dedicated
               operator: Equal
@@ -22,16 +25,8 @@ spec:
               operator: Equal
               value: gpu
               effect: NoExecute
-          affinity:
-            nodeAffinity:
-              preferredDuringSchedulingIgnoredDuringExecution:
-                - weight: 100
-                  preference:
-                    matchExpressions:
-                      - key: gpu
-                        operator: In
-                        values:
-                          - intel
+          nodeSelector:
+            gpu: intel
         annotations:
           reloader.stakater.com/auto: "true"
         containers:
@@ -56,6 +51,8 @@ spec:
                   failureThreshold: 3
               readiness: *probes
             resources:
+              claims:
+                - name: gpu
               requests:
                 cpu: 200m
                 memory: 1Gi
