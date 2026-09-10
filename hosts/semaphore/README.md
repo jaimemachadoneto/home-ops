@@ -165,8 +165,18 @@ curl -s -H "Authorization: Bearer <token>" localhost:3000/api/project/2/template
 
 - **Playbooks run from the git remote, not your working tree.** Semaphore
   clones the repository at the configured branch, so unpushed work is not
-  there. A template failing with "playbook could not be found" almost always
-  means the change has not been pushed.
+  there. A template failing with "playbook could not be found" usually means
+  the change has not been pushed.
+- **...but a stale clone gives the identical error.** Semaphore keeps a
+  separate clone *per template* under `/opt/semaphore/tmp/project_<id>/`, and a
+  clone created by a run that failed can stay pinned at that old commit while
+  other templates sit at `main`. The tell is the **commit hash shown on the
+  task**: if it does not match `main`, the playbook is fine and the checkout is
+  old. Clear the caches and re-run - Semaphore re-clones on the next run:
+
+  ```sh
+  rm -rf /opt/semaphore/tmp/project_2/*
+  ```
 - **DNS gets reset on container restart.** Proxmox rewrites `/etc/resolv.conf`
   from the CT config each time the container starts. This container shipped
   pointing at `1.1.1.1` with an unrelated search domain, which cannot resolve
