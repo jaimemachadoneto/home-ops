@@ -141,19 +141,26 @@ so a bad archive fails the backup loudly instead of surfacing during a restore.
 Retention is 14 days locally in `/opt/semaphore/backups` and 30 days on the
 NAS. The archives are ~26 KB, so this costs nothing.
 
-### The NAS export is missing
+### The NAS export
 
-`/mnt/Data1/semaphore` is **not currently exported** by the NAS - it went away
-with the Pi. Backups run local-only until it comes back, which the script
-reports as a warning rather than an error:
+The share is `nas.jaimenet.com:/mnt/Data1/Semaphore` - **capital S**, and NFS
+paths are case-sensitive, so the fstab entry has to match exactly. It needs a
+read-write ACL for this container's address, `10.30.51.104`, granted on the NAS
+admin UI. The container is on a /23, so `10.30.50.x` and `10.30.51.x` are the
+same subnet; confirm the address with `ip route get 10.30.50.7`, which shows
+the source address the NAS actually sees.
 
-    warning: /mnt/semaphore-backup not mounted, backup kept locally only
+Two failure modes, easy to tell apart:
 
-Local-only backups do not protect against losing this container. To finish the
-setup, create the `/mnt/Data1/semaphore` export on the NAS admin UI with
-read-write access for `10.30.51.104`. The fstab entry and automount are already
-in place, so backups start reaching the NAS on the next run with no further
-changes here.
+- `mount.nfs4: Operation not permitted` - the export exists but this address is
+  not in its ACL.
+- `warning: /mnt/semaphore-backup not mounted, backup kept locally only` - the
+  script degraded gracefully; the local copy still happened.
+
+Local-only backups do not protect against losing this container, so treat the
+warning as something to fix rather than as steady state. The fstab entry and
+automount are already in place, so backups reach the NAS on the next run once
+the ACL is right, with no further changes here.
 
 ### Restore
 
