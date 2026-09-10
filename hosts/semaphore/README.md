@@ -2,47 +2,46 @@
 
 Ansible Semaphore, the UI/scheduler that runs the playbooks in `ansible/`.
 
-Currently an **Ubuntu 24.04 LXC container on Proxmox** (`semaphore`,
-`semaphore.local.jaimenet.com`, `10.30.51.104`), with Semaphore installed
-**natively** - no Docker - from the Proxmox community-scripts helper. It runs
-as a plain systemd unit:
+Runs as a **Docker container inside an unprivileged Proxmox LXC**
+(`semaphore`, `semaphore.local.jaimenet.com`, `10.30.51.104`, Ubuntu 24.04).
 
 | | |
 |---|---|
-| service | `systemctl status semaphore` |
-| binary | `/usr/bin/semaphore server --config /opt/semaphore/config.json` |
-| config | `/opt/semaphore/config.json` |
-| database | `/opt/semaphore/database.sqlite` (SQLite) |
-| version | 2.19.12 |
+| stack | `/opt/semaphore/docker-compose.yml` (copy of the one here) |
+| control | `cd /opt/semaphore && docker compose ps \| logs \| up -d` |
+| database | `/opt/semaphore/data/database.db` (SQLite, WAL) |
+| config | `/opt/semaphore/config/config.json` |
+| secrets | `/opt/semaphore/semaphore.env` |
+| version | pinned by tag+digest in `docker-compose.yml` so Renovate can bump it |
 
 Reachable at `https://semaphore.${SECRET_DOMAIN}` via the cluster's
 `envoy-internal` gateway (`kubernetes/apps/external-ingresses/semaphore/`).
 That `Backend` targets the **FQDN** `semaphore.local.jaimenet.com:3000` rather
-than an IP, so moving Semaphore to a new host only needs a DNS change - the
-cluster follows automatically. That is how it survived the move off the Pi.
+than an IP, so moving Semaphore only needs a DNS change - the cluster follows
+automatically. That is how it survived the move off the Pi.
 
-> **This replaced a Raspberry Pi 3B** (`10.30.50.210`) that ran Semaphore as a
-> Docker container deployed by doco-cd. The Pi died. `docker-compose.yml`,
-> `install.sh`, `semaphore.env.example` and `doco-cd/` in this directory belong
-> to that superseded setup and are kept for reference - **they do not describe
-> the running instance.** `scripts/` and `systemd/` have been brought forward
-> and do apply.
+> **History.** This ran on a Raspberry Pi 3B (`10.30.50.210`) until the Pi
+> died, was rebuilt as a native systemd install in this LXC, and was then moved
+> back onto Docker to regain the pinned-image/GitOps workflow. The native
+> install's leftover files are parked in
+> `/opt/semaphore/native-install-superseded/` on the host and can be deleted
+> once you are happy.
 
 ## Configuring it (provision.py)
 
 Semaphore keeps projects, repositories, inventories, templates and schedules in
-its own SQLite database, not in git - so a rebuilt instance comes up empty.
+its own database, not in git - so a rebuilt instance comes up empty.
 `provision.py` recreates that configuration over the REST API. It is
 idempotent: objects are looked up by name and only created when missing, so
 re-run it after adding a playbook.
 
-It needs an API token. Mint a short-lived one on the host - this avoids having
-to know or change the interactive admin password:
+It needs an API token. Mint a short-lived one - this avoids having to know or
+change the interactive admin password:
 
 ```sh
 ssh root@semaphore.local.jaimenet.com
-semaphore user token create --login admin --name provisioning --ttl 1h \
-    --config /opt/semaphore/config.json
+docker exec semaphore semaphore user token create --login admin \
+    --name provisioning --ttl 1h --config /etc/semaphore/config.json
 ```
 
 Then, from a checkout of this repo:
@@ -53,10 +52,9 @@ ssh root@semaphore.local.jaimenet.com "SEMAPHORE_TOKEN='<token>' python3 -" \
 ```
 
 Running it *on* the host means the SSH private key never leaves that machine.
-See the docstring for the full set of environment variables.
 
-What it creates: a `home-ops` project, an `ssh-root` key, the git repository,
-a `home-ops` inventory pointing at `ansible/inventory/hosts.yml`, a `default`
+What it creates: a `home-ops` project, an `ssh-root` key, the git repository, a
+`home-ops` inventory pointing at `ansible/inventory/hosts.yml`, a `default`
 environment, one template per playbook, and a nightly `z2m-watchdog` schedule.
 
 ### The environment matters
@@ -64,129 +62,144 @@ environment, one template per playbook, and a nightly `z2m-watchdog` schedule.
 The `default` environment sets `ANSIBLE_ROLES_PATH=ansible/roles`. Semaphore
 runs playbooks from the **repository root**, but this repo's `ansible.cfg`
 (which carries `roles_path`) lives under `ansible/` and is therefore never
-loaded. Without that variable, `roles: [z2m_watchdog]` does not resolve and
-the z2m-watchdog template fails with "the role was not found".
+loaded. Without that variable, `roles: [z2m_watchdog]` does not resolve and the
+z2m-watchdog template fails with "the role was not found".
 
 ## SSH identity
 
 Semaphore authenticates to managed hosts with its own keypair at
-`/root/.ssh/semaphore_ansible` on the Semaphore host, rather than borrowing a
-personal key. The private half is stored (encrypted) in Semaphore's database as
-the `ssh-root` key; the public half is authorized on managed hosts by:
+`/root/.ssh/semaphore_ansible` on the LXC, rather than borrowing a personal
+key. The private half is stored (encrypted) in Semaphore's database as the
+`ssh-root` key; the public half is authorized on managed hosts by:
 
 ```sh
 ansible-playbook playbooks/authorize-semaphore-key.yml
 ```
 
-Run that from a machine that already has root access to the targets. Hosts that
-are down, or that do not yet trust the key you are running as, are skipped -
-check the play recap and fix those by hand.
-
-For a host that does not yet trust any key you hold, install the key with a
-password instead. The repo's `.gitignore` excludes `*.pub`, so fetch the key
-from the Semaphore host rather than looking for it here (the same value is
-inlined in the playbook above):
+Run that from a machine that already has root access to the targets. For a host
+that trusts no key you hold, install it with a password instead - the
+`.gitignore` excludes `*.pub`, so take the key off the Semaphore host:
 
 ```sh
 ssh root@semaphore.local.jaimenet.com cat /root/.ssh/semaphore_ansible.pub > /tmp/sem.pub
 ssh-copy-id -i /tmp/sem.pub root@<host>
 ```
 
-After that the playbook above manages the host normally.
+## Backups
+
+`scripts/backup.sh` runs nightly via `systemd/semaphore-backup.timer` **on the
+LXC, not in the container**, and archives everything Semaphore cannot be
+rebuilt without:
+
+- `data/database.db` - projects, templates, schedules, encrypted keys
+- `config/config.json` - including `access_key_encryption`, which decrypts them
+- `semaphore.env` - the same key plus the admin password, as compose reads it
+
+The database and its encryption key are worthless apart, so they always travel
+together - and that makes the archive sensitive, so it is written `0600`.
+
+The database is snapshotted with SQLite's backup API rather than copied.
+Semaphore keeps it open in **WAL mode**, so a plain `cp` or `tar` of a live
+database can capture a torn set of pages and silently drop transactions still
+sitting in the `-wal`. Each snapshot is checked with `PRAGMA integrity_check`
+so a bad archive fails the backup loudly rather than during a restore. The
+script also refuses to run if the expected files are missing, so a layout
+change cannot leave it quietly archiving something stale.
+
+Retention is 14 days locally in `/opt/semaphore/backups` and 30 days on the
+NAS. Archives are ~32 KB.
+
+### Getting backups onto the NAS
+
+**Currently local-only**, which does not protect against losing the container.
+The blocker is not the NAS: an **unprivileged LXC cannot mount NFS at all**.
+The kernel refuses it from inside a user namespace regardless of the export's
+ACL - `tmpfs` mounts fine, `nfs` returns `Operation not permitted`. The old Pi
+could mount it because it was bare metal.
+
+To finish this, the container has to become privileged, on the PVE host:
+
+```sh
+vzdump <ctid> --compress zstd --storage <backup-storage>
+pct stop <ctid>
+pct destroy <ctid>
+pct restore <ctid> /path/to/vzdump-lxc-<ctid>-*.tar.zst \
+    --unprivileged 0 --features nesting=1,mount=nfs
+pct start <ctid>
+```
+
+`mount=nfs` only takes effect on a privileged container, and unprivileged →
+privileged is not a toggle - it requires the dump/restore above. Note this
+weakens isolation on a host that can reach the whole LAN; the alternative that
+keeps the container unprivileged is to mount the export on the PVE host and
+bind-mount it in with `pct set <ctid> -mp0 /mnt/pve/semaphore,mp=/mnt/semaphore-backup`.
+
+The NAS side is already correct: `/mnt/Data1/Semaphore` (**capital S** - NFS
+paths are case-sensitive) exported read-write to `10.30.51.104`. Confirm the
+address the NAS actually sees with `ip route get 10.30.50.7`. The fstab entry
+and automount are in place, so backups reach the NAS on the next run once the
+container can mount.
+
+### Restore
+
+```sh
+cd /opt/semaphore && docker compose down
+tar -xzf /opt/semaphore/backups/semaphore-<timestamp>.tar.gz -C /tmp/restore
+cp /tmp/restore/database.db  /opt/semaphore/data/
+cp /tmp/restore/config.json  /opt/semaphore/config/
+cp /tmp/restore/semaphore.env /opt/semaphore/
+chown -R 1001:1001 /opt/semaphore/data /opt/semaphore/config
+docker compose up -d
+```
+
+Delete any `-wal`/`-shm` beside the restored database: the snapshot is
+self-contained and stale sidecars only confuse SQLite. Then verify rather than
+trust - check the templates came back:
+
+```sh
+docker exec semaphore sh -c 'ls /var/lib/semaphore'
+curl -s -H "Authorization: Bearer <token>" localhost:3000/api/project/2/templates
+```
 
 ## Known gotchas
 
 - **Playbooks run from the git remote, not your working tree.** Semaphore
-  clones the repository at the configured branch, so uncommitted or unpushed
-  work simply is not there. A template failing with "playbook could not be
-  found" almost always means the change has not been pushed.
-- **DNS gets reset on container restart.** Proxmox rewrites
-  `/etc/resolv.conf` from the CT config each time the container starts. This
-  container shipped pointing at `1.1.1.1` with an unrelated search domain,
-  which cannot resolve any internal `*.jaimenet.com` name, so every playbook
-  failed to connect. The durable fix is on the PVE host:
+  clones the repository at the configured branch, so unpushed work is not
+  there. A template failing with "playbook could not be found" almost always
+  means the change has not been pushed.
+- **DNS gets reset on container restart.** Proxmox rewrites `/etc/resolv.conf`
+  from the CT config each time the container starts. This container shipped
+  pointing at `1.1.1.1` with an unrelated search domain, which cannot resolve
+  any internal `*.jaimenet.com` name, so every playbook failed to connect. The
+  durable fix is on the PVE host:
 
   ```sh
   pct set <ctid> --nameserver 10.30.50.1 --searchdomain jaimenet.com
   ```
 
 - **`ansible/requirements.yml` is not auto-installed.** Semaphore looks for
-  `requirements.yml` only at the repository root and under
-  `collections/`, `roles/`, and the playbook's own directory - not under
-  `ansible/`. Collections currently come from the distro `ansible` package
-  (community.general 8.3.0, ansible.posix 1.5.4), which satisfies these
-  playbooks. Move or copy the file to `collections/requirements.yml` if you
-  ever need a version the distro package does not provide.
-- **The NAS export does not exist yet**, so backups are currently local-only -
-  see Backups below.
+  `requirements.yml` only at the repository root and under `collections/`,
+  `roles/`, and the playbook's own directory - not under `ansible/`.
+  Collections come from the image. Move or copy the file to
+  `collections/requirements.yml` if you need a version the image lacks.
+- **`semaphore.env` must not live inside a directory owned by uid 1001** - the
+  host-side `docker compose` reads it, and secrets silently come up empty if it
+  cannot.
+- **Changing `SEMAPHORE_ACCESS_KEY_ENCRYPTION` orphans every stored key.** The
+  database stays intact but its SSH keys and secrets become undecryptable. It
+  was carried across the native → Docker migration for exactly this reason.
 
-## Backups
+## Not yet done
 
-`scripts/backup.sh` runs nightly via `systemd/semaphore-backup.timer` and
-archives the only two files Semaphore cannot be rebuilt without:
-
-- `database.sqlite` - projects, templates, schedules, and the encrypted keys
-- `config.json` - including `access_key_encryption`, which decrypts them
-
-They are useless apart: an intact database with a lost encryption key means
-every stored SSH key and secret is unrecoverable. The archive therefore holds
-both, and is written `0600` because it effectively contains those secrets.
-
-The database is snapshotted with SQLite's backup API rather than copied.
-Semaphore keeps it open in **WAL mode**, so a plain `cp` or `tar` of a live
-database can capture a torn set of pages and silently drop transactions still
-sitting in the `-wal`. Each snapshot is checked with `PRAGMA integrity_check`
-so a bad archive fails the backup loudly instead of surfacing during a restore.
-
-Retention is 14 days locally in `/opt/semaphore/backups` and 30 days on the
-NAS. The archives are ~26 KB, so this costs nothing.
-
-### The NAS export
-
-The share is `nas.jaimenet.com:/mnt/Data1/Semaphore` - **capital S**, and NFS
-paths are case-sensitive, so the fstab entry has to match exactly. It needs a
-read-write ACL for this container's address, `10.30.51.104`, granted on the NAS
-admin UI. The container is on a /23, so `10.30.50.x` and `10.30.51.x` are the
-same subnet; confirm the address with `ip route get 10.30.50.7`, which shows
-the source address the NAS actually sees.
-
-Two failure modes, easy to tell apart:
-
-- `mount.nfs4: Operation not permitted` - the export exists but this address is
-  not in its ACL.
-- `warning: /mnt/semaphore-backup not mounted, backup kept locally only` - the
-  script degraded gracefully; the local copy still happened.
-
-Local-only backups do not protect against losing this container, so treat the
-warning as something to fix rather than as steady state. The fstab entry and
-automount are already in place, so backups reach the NAS on the next run once
-the ACL is right, with no further changes here.
-
-### Restore
-
-```sh
-systemctl stop semaphore
-tar -xzf /opt/semaphore/backups/semaphore-<timestamp>.tar.gz -C /opt/semaphore
-systemctl start semaphore
-```
-
-The archive expands to `database.sqlite` and `config.json` exactly where they
-belong. Any `-wal`/`-shm` files left beside the old database can be deleted:
-the snapshot is self-contained and stale sidecars only confuse SQLite.
-
-Verify a restore rather than trusting it - check that the template list comes
-back:
-
-```sh
-python3 -c "import sqlite3;print([r[0] for r in sqlite3.connect('/opt/semaphore/database.sqlite').execute('select name from project__template')])"
-```
+`doco-cd` is **not** set up on this host, so the container does not
+auto-deploy: Renovate can open image-bump PRs, but applying one currently means
+`docker compose pull && docker compose up -d` by hand. `install.sh` and
+`doco-cd/` describe the Pi's arrangement and would need adapting.
 
 ## Credentials
 
-- Admin login: `admin`. The install-time password was written to
-  `/root/semaphore.creds`; it is stale if the password has since been changed
-  in the UI.
-- `access_key_encryption` in `/opt/semaphore/config.json` encrypts the stored
-  Ansible keys and secrets. Back it up somewhere other than this container.
-- API tokens: `semaphore user token list --login admin`. Prefer short-lived
-  tokens for automation over the admin password.
+- Admin login: `admin`, password in `/opt/semaphore/semaphore.env` (`0600`).
+- `SEMAPHORE_ACCESS_KEY_ENCRYPTION` in the same file decrypts the stored
+  Ansible keys. Back it up somewhere other than this container.
+- API tokens: `docker exec semaphore semaphore user token list --login admin`.
+  Prefer short-lived tokens for automation over the admin password.

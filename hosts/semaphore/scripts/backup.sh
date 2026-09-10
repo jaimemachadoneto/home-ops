@@ -2,13 +2,17 @@
 # Snapshot Semaphore's database and config, keeping recent copies locally and
 # on the NAS when its export is mounted.
 #
-# Everything Semaphore cannot be rebuilt without lives in two files:
-#   database.sqlite - projects, templates, schedules, and the encrypted keys
-#   config.json     - including access_key_encryption, which decrypts them
-# They are worthless apart, so they are always archived together.
+# Everything Semaphore cannot be rebuilt without:
+#   data/database.db  - projects, templates, schedules, and the encrypted keys
+#   config/config.json - including access_key_encryption, which decrypts them
+#   semaphore.env      - the same key plus the admin password, as compose reads it
+# The database and the key are worthless apart, so they are archived together.
 set -eu
 
 APP_DIR=/opt/semaphore
+DB_FILE="$APP_DIR/data/database.db"
+CONFIG_FILE="$APP_DIR/config/config.json"
+ENV_FILE="$APP_DIR/semaphore.env"
 STAGE_DIR="$APP_DIR/backups"
 NAS_DIR=/mnt/semaphore-backup
 LOCAL_KEEP_DAYS=14
@@ -21,6 +25,11 @@ trap 'rm -rf "$WORK"' EXIT
 
 mkdir -p "$STAGE_DIR"
 
+# The native install kept its database elsewhere. If the expected file is gone,
+# fail rather than quietly producing an archive of whatever is left behind.
+[ -f "$DB_FILE" ] || { echo "no database at $DB_FILE" >&2; exit 1; }
+[ -f "$CONFIG_FILE" ] || { echo "no config at $CONFIG_FILE" >&2; exit 1; }
+
 # Semaphore holds the database open in WAL mode, so simply copying the file
 # while the server runs can capture a torn set of pages, and any committed
 # transaction still sitting in the -wal would be missing from the copy.
@@ -29,7 +38,7 @@ mkdir -p "$STAGE_DIR"
 #
 # The integrity check afterwards means a corrupt archive fails the backup now,
 # loudly, rather than being discovered during a restore.
-python3 - "$APP_DIR/database.sqlite" "$WORK/database.sqlite" <<'PY'
+python3 - "$DB_FILE" "$WORK/database.db" <<'PY'
 import sqlite3
 import sys
 
@@ -45,9 +54,10 @@ if result != "ok":
     sys.exit("snapshot failed integrity check: %s" % result)
 PY
 
-cp "$APP_DIR/config.json" "$WORK/config.json"
+cp "$CONFIG_FILE" "$WORK/config.json"
+[ -f "$ENV_FILE" ] && cp "$ENV_FILE" "$WORK/semaphore.env"
 
-tar -czf "$STAGE_DIR/$ARCHIVE" -C "$WORK" database.sqlite config.json
+tar -czf "$STAGE_DIR/$ARCHIVE" -C "$WORK" .
 # The archive contains the key that decrypts every stored secret.
 chmod 600 "$STAGE_DIR/$ARCHIVE"
 
