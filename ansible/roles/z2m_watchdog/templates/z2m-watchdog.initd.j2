@@ -1,0 +1,24 @@
+#!/sbin/openrc-run
+# {{ ansible_managed }}
+
+name="Zigbee2MQTT Watchdog"
+description="Health-checks Zigbee2MQTT over MQTT and restarts or reboots when it wedges"
+
+command="/usr/local/bin/z2m-watchdog"
+command_args="daemon"
+command_background="yes"
+pidfile="/run/$RC_SVCNAME.pid"
+
+# Supervise the watchdog itself, and unlike the zigbee2mqtt service never give
+# up on it: respawn_max=0 means unlimited retries.
+supervisor="supervise-daemon"
+respawn_delay=10
+respawn_max=0
+
+output_log="/var/log/z2m-watchdog.log"
+error_log="/var/log/z2m-watchdog.log"
+
+depend() {
+	need net
+	after {{ z2m_watchdog_z2m_service }}
+}

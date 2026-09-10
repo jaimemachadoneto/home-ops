@@ -1,0 +1,527 @@
+#!/bin/sh
+# {{ ansible_managed }}
+#
+# Zigbee2MQTT watchdog.
+#
+# Zigbee2MQTT sometimes stops working while its process stays alive, so
+# "is it running" is not a useful health signal. Instead this asks Zigbee2MQTT
+# itself over MQTT (bridge/request/health_check) and waits for the answer,
+# which only arrives if the broker connection, the Node event loop and the
+# coordinator are all still working.
+#
+# On sustained failure it restarts the service, and only reboots the container
+# if restarting did not help.
+#
+# Usage: z2m-watchdog [daemon|check|discovery|state]
+
+set -u
+
+CONF=/etc/conf.d/z2m-watchdog
+# shellcheck disable=SC1090
+[ -r "$CONF" ] && . "$CONF"
+
+STATE_DIR=/var/lib/z2m-watchdog
+mkdir -p "$STATE_DIR"
+
+STATE_TOPIC="$TOPIC_ROOT/$HOST_ID/state"
+AVAIL_TOPIC="$TOPIC_ROOT/$HOST_ID/availability"
+CMD_TOPIC="$TOPIC_ROOT/$HOST_ID/command"
+
+MQTT_AUTH=""
+[ -n "${MQTT_USER:-}" ] && MQTT_AUTH="-u $MQTT_USER"
+[ -n "${MQTT_PASS:-}" ] && MQTT_AUTH="$MQTT_AUTH -P $MQTT_PASS"
+
+# ---------------------------------------------------------------- helpers ---
+
+now() { date +%s; }
+iso() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+log() {
+    _level=$1
+    shift
+    logger -t z2m-watchdog -p "daemon.$_level" -- "$*" 2>/dev/null
+    printf '%s %-7s %s\n' "$(iso)" "$_level" "$*"
+}
+
+state_get() {
+    # ${2-0} rather than ${2:-0} so an explicitly empty default stays empty
+    cat "$STATE_DIR/$1" 2>/dev/null || printf '%s' "${2-0}"
+}
+
+state_set() {
+    printf '%s' "$2" >"$STATE_DIR/$1"
+}
+
+uptime_seconds() {
+    cut -d. -f1 /proc/uptime 2>/dev/null || echo 99999
+}
+
+# word splitting on $MQTT_AUTH is intentional
+# shellcheck disable=SC2086
+mqtt_pub() { mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" $MQTT_AUTH "$@"; }
+# shellcheck disable=SC2086
+mqtt_sub() { mosquitto_sub -h "$MQTT_HOST" -p "$MQTT_PORT" $MQTT_AUTH "$@"; }
+
+json_escape() {
+    printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\t/ /g' | tr -d '\n\r'
+}
+
+# ----------------------------------------------------------------- probes ---
+
+# Is the OpenRC service in a "started" state? Catches the case where
+# supervise-daemon hit its respawn limit and gave up for good.
+service_running() {
+    rc-service "$Z2M_SERVICE" status >/dev/null 2>&1
+}
+
+# Distinguishes "Zigbee2MQTT is wedged" from "the broker is down". Without this
+# an outage on the broker would look identical to a broken Zigbee2MQTT and the
+# watchdog would restart (then reboot) a perfectly healthy container.
+broker_reachable() {
+    mqtt_pub -q 0 -t "$TOPIC_ROOT/$HOST_ID/ping" -m "$(now)" >/dev/null 2>&1
+}
+
+# The real check: ask Zigbee2MQTT for its health and wait for the reply.
+z2m_health_probe() {
+    _resp=$(mktemp)
+    mqtt_sub -q 1 -C 1 -W "$PROBE_TIMEOUT" \
+        -t "$Z2M_BASE_TOPIC/bridge/response/health_check" >"$_resp" 2>/dev/null &
+    _sub=$!
+
+    # give the subscriber a moment to connect before triggering the response
+    sleep 1
+    mqtt_pub -q 1 -t "$Z2M_BASE_TOPIC/bridge/request/health_check" -m '' >/dev/null 2>&1
+
+    wait "$_sub" 2>/dev/null
+    _out=$(cat "$_resp" 2>/dev/null)
+    rm -f "$_resp"
+
+    case "$_out" in
+        *'"healthy":true'*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+http_ok() {
+    curl -fsS -o /dev/null --max-time "$HTTP_TIMEOUT" \
+        "http://127.0.0.1:$FRONTEND_PORT/" >/dev/null 2>&1
+}
+
+# Sets PROBE_RESULT to healthy | unhealthy | inconclusive, and PROBE_REASON.
+probe() {
+    if ! service_running; then
+        PROBE_RESULT=unhealthy
+        PROBE_REASON="openrc service '$Z2M_SERVICE' is not running"
+        return
+    fi
+
+    if ! broker_reachable; then
+        PROBE_RESULT=inconclusive
+        PROBE_REASON="mqtt broker $MQTT_HOST:$MQTT_PORT unreachable - not blaming zigbee2mqtt"
+        return
+    fi
+
+    if ! z2m_health_probe; then
+        PROBE_RESULT=unhealthy
+        PROBE_REASON="no reply to $Z2M_BASE_TOPIC/bridge/request/health_check within ${PROBE_TIMEOUT}s"
+        return
+    fi
+
+    if [ "$HTTP_FATAL" = "true" ] && ! http_ok; then
+        PROBE_RESULT=unhealthy
+        PROBE_REASON="frontend on port $FRONTEND_PORT not responding"
+        return
+    fi
+
+    PROBE_RESULT=healthy
+    PROBE_REASON=""
+}
+
+# ------------------------------------------------------------- publishing ---
+
+publish_state() {
+    _status=$1
+    _reason=$(json_escape "${2:-}")
+    _pid=$(cat "/run/$Z2M_SERVICE.pid" 2>/dev/null || echo 0)
+
+    mqtt_pub -r -q 1 -t "$STATE_TOPIC" -m "{
+\"host\":\"$HOST_FQDN\",
+\"status\":\"$_status\",
+\"reason\":\"$_reason\",
+\"consecutive_failures\":$(state_get fails 0),
+\"restart_attempts\":$(state_get restart_attempts 0),
+\"restarts_total\":$(state_get restarts_total 0),
+\"reboots_total\":$(state_get reboots_total 0),
+\"last_action\":\"$(state_get last_action none)\",
+\"last_action_time\":\"$(state_get last_action_time '')\",
+\"last_check_time\":\"$(iso)\",
+\"host_uptime_seconds\":$(uptime_seconds),
+\"z2m_pid\":$_pid,
+\"z2m_base_topic\":\"$Z2M_BASE_TOPIC\"
+}" >/dev/null 2>&1
+}
+
+publish_availability() {
+    mqtt_pub -r -q 1 -t "$AVAIL_TOPIC" -m "$1" >/dev/null 2>&1
+}
+
+{% raw %}
+# Home Assistant MQTT discovery. Everything lands on one device so the sensors
+# and the two buttons group together in the UI.
+publish_discovery() {
+    [ "$HA_DISCOVERY" = "true" ] || return 0
+
+    _node="z2m_watchdog_$HOST_ID"
+    _dev="\"device\":{\"identifiers\":[\"$_node\"],\"name\":\"Z2M Watchdog $HOST_ID\",\"manufacturer\":\"home-ops\",\"model\":\"zigbee2mqtt-watchdog\",\"configuration_url\":\"http://$HOST_FQDN:$FRONTEND_PORT\"},\"availability_topic\":\"$AVAIL_TOPIC\""
+
+    _disco() {
+        mqtt_pub -r -q 1 -t "$HA_PREFIX/$1/$_node/$2/config" -m "$3" >/dev/null 2>&1
+    }
+
+    _disco binary_sensor problem "{
+\"name\":\"Problem\",
+\"unique_id\":\"${_node}_problem\",
+\"state_topic\":\"$STATE_TOPIC\",
+\"value_template\":\"{{ 'OFF' if value_json.status in ['healthy','starting'] else 'ON' }}\",
+\"json_attributes_topic\":\"$STATE_TOPIC\",
+\"device_class\":\"problem\",
+$_dev}"
+
+    _disco sensor status "{
+\"name\":\"Status\",
+\"unique_id\":\"${_node}_status\",
+\"state_topic\":\"$STATE_TOPIC\",
+\"value_template\":\"{{ value_json.status }}\",
+\"json_attributes_topic\":\"$STATE_TOPIC\",
+\"icon\":\"mdi:heart-pulse\",
+$_dev}"
+
+    _disco sensor last_action "{
+\"name\":\"Last action\",
+\"unique_id\":\"${_node}_last_action\",
+\"state_topic\":\"$STATE_TOPIC\",
+\"value_template\":\"{{ value_json.last_action }}\",
+\"icon\":\"mdi:history\",
+$_dev}"
+
+    _disco sensor last_action_time "{
+\"name\":\"Last action time\",
+\"unique_id\":\"${_node}_last_action_time\",
+\"state_topic\":\"$STATE_TOPIC\",
+\"value_template\":\"{{ value_json.last_action_time if value_json.last_action_time else None }}\",
+\"device_class\":\"timestamp\",
+$_dev}"
+
+    _disco sensor failures "{
+\"name\":\"Consecutive failures\",
+\"unique_id\":\"${_node}_failures\",
+\"state_topic\":\"$STATE_TOPIC\",
+\"value_template\":\"{{ value_json.consecutive_failures }}\",
+\"state_class\":\"measurement\",
+\"icon\":\"mdi:alert-circle-outline\",
+$_dev}"
+
+    _disco sensor restarts_total "{
+\"name\":\"Restarts\",
+\"unique_id\":\"${_node}_restarts_total\",
+\"state_topic\":\"$STATE_TOPIC\",
+\"value_template\":\"{{ value_json.restarts_total }}\",
+\"state_class\":\"total_increasing\",
+\"icon\":\"mdi:restart\",
+$_dev}"
+
+    _disco sensor reboots_total "{
+\"name\":\"Reboots\",
+\"unique_id\":\"${_node}_reboots_total\",
+\"state_topic\":\"$STATE_TOPIC\",
+\"value_template\":\"{{ value_json.reboots_total }}\",
+\"state_class\":\"total_increasing\",
+\"icon\":\"mdi:power-cycle\",
+$_dev}"
+
+    _disco button restart "{
+\"name\":\"Restart Zigbee2MQTT\",
+\"unique_id\":\"${_node}_restart\",
+\"command_topic\":\"$CMD_TOPIC\",
+\"payload_press\":\"restart_service\",
+\"icon\":\"mdi:restart\",
+$_dev}"
+
+    _disco button reboot "{
+\"name\":\"Reboot container\",
+\"unique_id\":\"${_node}_reboot\",
+\"command_topic\":\"$CMD_TOPIC\",
+\"payload_press\":\"reboot_host\",
+\"device_class\":\"restart\",
+\"icon\":\"mdi:power-cycle\",
+$_dev}"
+
+    _disco button check_now "{
+\"name\":\"Check now\",
+\"unique_id\":\"${_node}_check_now\",
+\"command_topic\":\"$CMD_TOPIC\",
+\"payload_press\":\"check_now\",
+\"icon\":\"mdi:heart-pulse\",
+$_dev}"
+
+    log info "published home assistant discovery under $HA_PREFIX/+/$_node/"
+}
+{% endraw %}
+
+# ------------------------------------------------------------- recoveries ---
+
+record_action() {
+    state_set last_action "$1"
+    state_set last_action_time "$(iso)"
+    state_set last_action_ts "$(now)"
+    state_set grace_until "$(( $(now) + ACTION_GRACE ))"
+}
+
+do_restart() {
+    _reason=$1
+    log err "restarting $Z2M_SERVICE: $_reason"
+    state_set restart_attempts "$(( $(state_get restart_attempts 0) + 1 ))"
+    state_set restarts_total "$(( $(state_get restarts_total 0) + 1 ))"
+    state_set fails 0
+    record_action restart
+    publish_state restarting "$_reason"
+
+    # A service that supervise-daemon marked as crashed will not come back from
+    # `restart` alone, so fall back to an explicit stop/start.
+    if ! rc-service "$Z2M_SERVICE" restart >/dev/null 2>&1; then
+        log warning "restart failed, trying stop+start"
+        rc-service "$Z2M_SERVICE" stop >/dev/null 2>&1
+        sleep 2
+        rc-service "$Z2M_SERVICE" start >/dev/null 2>&1
+    fi
+}
+
+# $1 reason, $2 "force" to bypass the cooldown (manual presses do)
+do_reboot() {
+    _reason=$1
+    _force=${2:-}
+
+    if [ "$ALLOW_REBOOT" != "true" ] && [ "$_force" != "force" ]; then
+        log err "reboot called for but disabled in config: $_reason"
+        publish_state degraded "reboot needed but disabled: $_reason"
+        return
+    fi
+
+    _since=$(( $(now) - $(state_get last_reboot_ts 0) ))
+    if [ "$_force" != "force" ] && [ "$_since" -lt "$REBOOT_COOLDOWN" ]; then
+        log err "reboot suppressed: last reboot was ${_since}s ago, cooldown is ${REBOOT_COOLDOWN}s"
+        publish_state degraded "still broken, reboot suppressed by cooldown ($((REBOOT_COOLDOWN - _since))s left)"
+        return
+    fi
+
+    state_set last_reboot_ts "$(now)"
+    state_set reboots_total "$(( $(state_get reboots_total 0) + 1 ))"
+    state_set restart_attempts 0
+    state_set fails 0
+    record_action reboot
+    publish_state rebooting "$_reason"
+    publish_availability offline
+
+    log err "rebooting container: $_reason"
+    sync
+    sleep 2
+    reboot
+}
+
+# ------------------------------------------------------------- check cycle ---
+
+on_healthy() {
+    state_set fails 0
+
+    # Only forget the restart attempts once things have actually stayed up for
+    # a while - otherwise a service that flaps every few minutes would restart
+    # forever and never escalate.
+    if [ "$(state_get restart_attempts 0)" -gt 0 ]; then
+        _since=$(( $(now) - $(state_get last_action_ts 0) ))
+        if [ "$_since" -ge "$STABLE_PERIOD" ]; then
+            state_set restart_attempts 0
+            log info "healthy for ${_since}s since last action, restart counter reset"
+        fi
+    fi
+
+    publish_state healthy ""
+}
+
+on_unhealthy() {
+    _fails=$(( $(state_get fails 0) + 1 ))
+    state_set fails "$_fails"
+    log warning "unhealthy ($_fails/$FAIL_THRESHOLD): $PROBE_REASON"
+    publish_state unhealthy "$PROBE_REASON"
+
+    [ "$_fails" -lt "$FAIL_THRESHOLD" ] && return 0
+
+    if [ "$(state_get restart_attempts 0)" -lt "$MAX_RESTARTS" ]; then
+        do_restart "$PROBE_REASON"
+    else
+        do_reboot "still unhealthy after $(state_get restart_attempts 0) restart(s): $PROBE_REASON"
+    fi
+}
+
+check_cycle() {
+    _up=$(uptime_seconds)
+    if [ "$_up" -lt "$BOOT_GRACE" ]; then
+        publish_state starting "boot grace, container up ${_up}s of ${BOOT_GRACE}s"
+        return 0
+    fi
+
+    _grace=$(state_get grace_until 0)
+    if [ "$(now)" -lt "$_grace" ]; then
+        publish_state starting "settling after $(state_get last_action none), $(( _grace - $(now) ))s left"
+        return 0
+    fi
+
+    probe
+    case "$PROBE_RESULT" in
+        healthy)
+            on_healthy
+            ;;
+        inconclusive)
+            log warning "check inconclusive: $PROBE_REASON"
+            publish_state inconclusive "$PROBE_REASON"
+            ;;
+        *)
+            on_unhealthy
+            ;;
+    esac
+}
+
+# ---------------------------------------------------------------- commands ---
+
+handle_command() {
+    [ -z "$1" ] && return 0
+
+    # mkdir is atomic, so only one handler can hold this at a time. Without it
+    # two deliveries arriving together both pass the debounce check below and a
+    # single button press turns into two reboots.
+    if ! mkdir "$STATE_DIR/cmd.lock" 2>/dev/null; then
+        log warning "already handling a command, ignoring '$1'"
+        return 0
+    fi
+
+    if [ "$1" = "$(state_get last_cmd '')" ] &&
+        [ "$(( $(now) - $(state_get last_cmd_ts 0) ))" -lt 10 ]; then
+        log warning "ignoring duplicate '$1' command"
+        rmdir "$STATE_DIR/cmd.lock" 2>/dev/null
+        return 0
+    fi
+    state_set last_cmd "$1"
+    state_set last_cmd_ts "$(now)"
+
+    _run_command "$1"
+    rmdir "$STATE_DIR/cmd.lock" 2>/dev/null
+}
+
+_run_command() {
+    case "$1" in
+        restart_service)
+            log notice "restart requested over MQTT"
+            do_restart "requested from Home Assistant"
+            ;;
+        reboot_host)
+            log notice "reboot requested over MQTT"
+            do_reboot "requested from Home Assistant" force
+            ;;
+        check_now)
+            log notice "check requested over MQTT"
+            state_set grace_until 0
+            check_cycle
+            ;;
+        *)
+            log warning "ignoring unknown command: $1"
+            ;;
+    esac
+}
+
+# OpenRC stops the main script but not the subshell it spawned for the command
+# listener. That orphan keeps looping and respawns its own mosquitto_sub, so
+# killing the subscriber alone is not enough - the subshell has to go too, or
+# every command ends up handled twice.
+reap_stale_instances() {
+    _found=0
+
+    # Match on the PID the previous instance recorded rather than on a command
+    # line pattern - "z2m-watchdog daemon" also appears in, say, an ssh command
+    # someone is running to inspect the watchdog, and killing that would be
+    # rude. Confirm the PID is still one of ours before signalling it.
+    _old=$(state_get listener_pid 0)
+    if [ "$_old" -gt 0 ] 2>/dev/null && [ -r "/proc/$_old/cmdline" ]; then
+        if tr '\0' ' ' <"/proc/$_old/cmdline" 2>/dev/null | grep -q 'z2m-watchdog'; then
+            pkill -P "$_old" 2>/dev/null
+            kill "$_old" 2>/dev/null && _found=1
+        fi
+    fi
+
+    # Anything still subscribed to our own command topic can only be ours.
+    pkill -f "mosquitto_sub.*-t $CMD_TOPIC" 2>/dev/null && _found=1
+
+    if [ "$_found" = 1 ]; then
+        log info "cleaned up stale watchdog processes from a previous instance"
+        sleep 2
+    fi
+}
+
+command_listener() {
+    while true; do
+        mqtt_sub -q 1 -t "$CMD_TOPIC" \
+            --will-topic "$AVAIL_TOPIC" --will-payload offline --will-retain \
+            2>/dev/null | while IFS= read -r _cmd; do
+            handle_command "$_cmd"
+        done
+        # broker went away or refused us; back off and reconnect
+        sleep 10
+    done
+}
+
+# ------------------------------------------------------------------- entry ---
+
+run_daemon() {
+    log info "starting: probing $Z2M_BASE_TOPIC on $MQTT_HOST:$MQTT_PORT every ${INTERVAL}s"
+    log info "escalation: $FAIL_THRESHOLD failed checks -> restart, $MAX_RESTARTS restart(s) -> reboot (allowed: $ALLOW_REBOOT)"
+
+    publish_discovery
+
+    # A reboot never releases the command lock, so clear it on the way up.
+    rmdir "$STATE_DIR/cmd.lock" 2>/dev/null
+
+    # Order matters. Killing the previous instance's subscriber makes the broker
+    # fire that connection's last will, publishing a retained "offline" - if we
+    # announced ourselves before that, the stale will overwrites us and Home
+    # Assistant shows every entity as unavailable, so the buttons silently stop
+    # working. Reap first, connect our own subscriber, announce last.
+    reap_stale_instances
+    command_listener &
+    _listener=$!
+    state_set listener_pid "$_listener"
+    trap 'kill $_listener 2>/dev/null; pkill -P $_listener 2>/dev/null; pkill -f "mosquitto_sub.*-t $CMD_TOPIC" 2>/dev/null; publish_availability offline; exit 0' TERM INT
+
+    # Let the subscriber finish connecting so the stale will has landed first.
+    sleep 3
+    publish_availability online
+
+    while true; do
+        # Cheap and retained: re-asserting each cycle means a stray last will
+        # can never leave the entities stuck unavailable.
+        publish_availability online
+        check_cycle
+        sleep "$INTERVAL"
+    done
+}
+
+case "${1:-daemon}" in
+    daemon) run_daemon ;;
+    check) check_cycle ;;
+    discovery) publish_discovery ;;
+    state)
+        probe
+        printf 'result: %s\nreason: %s\n' "$PROBE_RESULT" "${PROBE_REASON:-none}"
+        ;;
+    *)
+        printf 'usage: %s [daemon|check|discovery|state]\n' "$0" >&2
+        exit 2
+        ;;
+esac

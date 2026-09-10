@@ -1,0 +1,11 @@
+---
+# Overrides for the z2m_watchdog role. See roles/z2m_watchdog/defaults/main.yml
+# for the full list and what each setting does.
+#
+# Roughly three minutes of sustained failure before the watchdog acts, then two
+# service restarts before it escalates to rebooting the container.
+z2m_watchdog_interval: 60
+z2m_watchdog_fail_threshold: 3
+z2m_watchdog_max_restarts: 2
+z2m_watchdog_allow_reboot: true
+z2m_watchdog_reboot_cooldown: 3600

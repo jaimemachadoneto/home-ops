@@ -1,0 +1,55 @@
+# {{ ansible_managed }}
+#
+# Settings for /usr/local/bin/z2m-watchdog.
+#
+# The MQTT settings below are read out of {{ z2m_watchdog_z2m_config }} when
+# this file is generated, so they are never stored in git. Re-run the
+# z2m-watchdog playbook after changing Zigbee2MQTT's broker settings.
+#
+# NOTE: values must not contain spaces.
+
+Z2M_SERVICE="{{ z2m_watchdog_z2m_service }}"
+Z2M_BASE_TOPIC="{{ _z2m_base_topic }}"
+FRONTEND_PORT="{{ _z2m_frontend_port }}"
+
+MQTT_HOST="{{ _z2m_mqtt_host }}"
+MQTT_PORT="{{ _z2m_mqtt_port }}"
+MQTT_USER="{{ _z2m_mqtt_user }}"
+MQTT_PASS="{{ _z2m_mqtt_pass }}"
+
+HOST_ID="{{ _z2m_host_id }}"
+HOST_FQDN="{{ inventory_hostname }}"
+
+TOPIC_ROOT="{{ z2m_watchdog_topic_root }}"
+HA_DISCOVERY="{{ z2m_watchdog_ha_discovery | ternary('true', 'false') }}"
+HA_PREFIX="{{ z2m_watchdog_ha_discovery_prefix }}"
+
+# Seconds between checks.
+INTERVAL="{{ z2m_watchdog_interval }}"
+
+# Consecutive failures before acting.
+FAIL_THRESHOLD="{{ z2m_watchdog_fail_threshold }}"
+
+# Service restarts to try before escalating to a container reboot.
+MAX_RESTARTS="{{ z2m_watchdog_max_restarts }}"
+
+# Set to false for restart-only mode (never reboots the container).
+ALLOW_REBOOT="{{ z2m_watchdog_allow_reboot | ternary('true', 'false') }}"
+
+# Minimum seconds between automatic reboots. Manual reboots from Home
+# Assistant ignore this.
+REBOOT_COOLDOWN="{{ z2m_watchdog_reboot_cooldown }}"
+
+# Quiet periods after a container boot and after the watchdog acts.
+BOOT_GRACE="{{ z2m_watchdog_boot_grace }}"
+ACTION_GRACE="{{ z2m_watchdog_action_grace }}"
+
+# Healthy for this long before the restart counter resets.
+STABLE_PERIOD="{{ z2m_watchdog_stable_period }}"
+
+# Probe timeouts.
+PROBE_TIMEOUT="{{ z2m_watchdog_probe_timeout }}"
+HTTP_TIMEOUT="{{ z2m_watchdog_http_timeout }}"
+
+# Whether an unresponsive frontend alone counts as a failure.
+HTTP_FATAL="{{ z2m_watchdog_http_fatal | ternary('true', 'false') }}"

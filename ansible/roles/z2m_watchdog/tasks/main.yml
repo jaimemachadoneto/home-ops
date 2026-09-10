@@ -1,0 +1,131 @@
+---
+# These Alpine containers ship without Python, which every Ansible module needs,
+# so bootstrap it over raw SSH before doing anything else.
+- name: Check whether Python is available
+  ansible.builtin.raw: command -v python3
+  register: _z2m_wd_python
+  changed_when: false
+  failed_when: false
+
+- name: Install Python for Ansible
+  ansible.builtin.raw: apk add --no-cache python3
+  when: _z2m_wd_python.rc != 0
+  changed_when: true
+
+- name: Gather facts
+  ansible.builtin.setup:
+
+- name: Verify this is an Alpine host
+  ansible.builtin.assert:
+    that: ansible_facts.distribution == 'Alpine'
+    fail_msg: >-
+      z2m_watchdog targets Alpine/OpenRC containers, but {{ inventory_hostname }}
+      reports {{ ansible_facts.distribution }}.
+
+- name: Install watchdog dependencies
+  community.general.apk:
+    name: mosquitto-clients,curl,logrotate
+    state: present
+    update_cache: true
+
+# Read the broker settings, base topic and frontend port straight out of
+# Zigbee2MQTT's own config so none of it has to be duplicated in this repo.
+# no_log on the next three tasks: the registered content and the derived facts
+# carry the broker password. Base64 is not encryption, and Semaphore keeps run
+# logs, so none of this should end up in a job history.
+- name: Read the Zigbee2MQTT configuration
+  ansible.builtin.slurp:
+    src: "{{ z2m_watchdog_z2m_config }}"
+  register: _z2m_wd_config_raw
+  no_log: true
+
+- name: Parse the Zigbee2MQTT configuration
+  ansible.builtin.set_fact:
+    _z2m_config: "{{ _z2m_wd_config_raw.content | b64decode | from_yaml }}"
+  no_log: true
+
+- name: Derive watchdog settings from the Zigbee2MQTT configuration
+  ansible.builtin.set_fact:
+    _z2m_base_topic: "{{ _z2m_config.mqtt.base_topic | default('zigbee2mqtt', true) }}"
+    _z2m_frontend_port: "{{ _z2m_config.frontend.port | default(8080, true) }}"
+    _z2m_mqtt_host: "{{ _mqtt_url | regex_replace('^[a-z]+://', '') | regex_replace(':[0-9]+$', '') }}"
+    _z2m_mqtt_port: "{{ (_mqtt_url | regex_search(':([0-9]+)$', '\\1') or ['1883']) | first }}"
+    _z2m_mqtt_user: "{{ _z2m_config.mqtt.user | default('', true) }}"
+    _z2m_mqtt_pass: "{{ _z2m_config.mqtt.password | default('', true) }}"
+    _z2m_host_id: "{{ inventory_hostname.split('.')[0] | regex_replace('[^A-Za-z0-9_]', '_') | lower }}"
+  vars:
+    _mqtt_url: "{{ _z2m_config.mqtt.server }}"
+  no_log: true
+
+- name: Verify the derived settings are usable
+  ansible.builtin.assert:
+    that:
+      - _z2m_mqtt_host | length > 0
+      - _z2m_base_topic | length > 0
+      - "' ' not in _z2m_mqtt_user"
+      - "' ' not in _z2m_mqtt_pass"
+    fail_msg: >-
+      Could not derive usable MQTT settings from {{ z2m_watchdog_z2m_config }}.
+      Note that the watchdog config format cannot carry credentials containing
+      spaces.
+
+- name: Create the watchdog state directory
+  ansible.builtin.file:
+    path: /var/lib/z2m-watchdog
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the watchdog script
+  ansible.builtin.template:
+    src: z2m-watchdog.sh.j2
+    dest: /usr/local/bin/z2m-watchdog
+    owner: root
+    group: root
+    mode: "0755"
+  notify: Restart z2m-watchdog
+
+# Holds the broker password, so keep it readable by root only and keep its
+# contents out of --diff output.
+- name: Install the watchdog configuration
+  ansible.builtin.template:
+    src: z2m-watchdog.conf.j2
+    dest: /etc/conf.d/z2m-watchdog
+    owner: root
+    group: root
+    mode: "0600"
+  diff: false
+  notify: Restart z2m-watchdog
+
+- name: Install the watchdog OpenRC service
+  ansible.builtin.template:
+    src: z2m-watchdog.initd.j2
+    dest: /etc/init.d/z2m-watchdog
+    owner: root
+    group: root
+    mode: "0755"
+  notify: Restart z2m-watchdog
+
+- name: Install log rotation for the watchdog
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/z2m-watchdog
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible (z2m_watchdog role)
+      /var/log/z2m-watchdog.log {
+          weekly
+          rotate 4
+          missingok
+          notifempty
+          compress
+          copytruncate
+      }
+
+- name: Enable and start the watchdog
+  ansible.builtin.service:
+    name: z2m-watchdog
+    enabled: true
+    state: started

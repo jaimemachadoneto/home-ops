@@ -46,6 +46,24 @@ endpoints:
       - "[STATUS] == 404"
     alerts:
       - type: pushover
+
+  # Zigbee2MQTT bridges. These containers each run their own watchdog (see
+  # ansible/roles/z2m_watchdog) which restarts or reboots them on failure;
+  # these checks are the independent outside view of whether that worked.
+  # Add `alerts: [{type: pushover}]` once the alerting block above is enabled.
+  - name: zigbee2mqtt-garagem
+    group: zigbee
+    url: http://zig2mqgaragem.home.jaimenet.com:8080/
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: zigbee2mqtt-casa
+    group: zigbee
+    url: http://zig2mqcasa.jaimenet.com:8080/
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
   # - name: heartbeat
   #   group: external
   #   ui:

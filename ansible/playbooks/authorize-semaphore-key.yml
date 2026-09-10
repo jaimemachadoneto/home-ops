@@ -1,0 +1,34 @@
+---
+# Authorises Semaphore's own SSH identity on the managed hosts, so Semaphore can
+# run the other playbooks in this repo without borrowing anyone's personal key.
+#
+# The keypair lives on the Semaphore host at /root/.ssh/semaphore_ansible; only
+# the public half belongs here. Regenerate it there and update this value if the
+# key is ever rotated, then re-run this playbook.
+#
+#   ansible-playbook playbooks/authorize-semaphore-key.yml
+#
+- name: Authorize the Semaphore SSH key on managed hosts
+  hosts: semaphore
+  gather_facts: false
+  vars:
+    semaphore_public_key: >-
+      ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMksvpkvwTlEqjtRx90fpNlx7R25P0e0fH7os6r0Sntw
+      semaphore@semaphore.local.jaimenet.com
+
+  tasks:
+    # The fleet is a mix of Alpine and Debian/Ubuntu containers, and several ship
+    # without Python, which the authorized_key module needs.
+    - name: Ensure Python is available for Ansible modules
+      ansible.builtin.raw: >-
+        command -v python3 >/dev/null ||
+        apk add --no-cache python3 2>/dev/null ||
+        (apt-get update && apt-get install -y python3)
+      changed_when: false
+
+    - name: Authorize the Semaphore key for root
+      ansible.posix.authorized_key:
+        user: root
+        key: "{{ semaphore_public_key }}"
+        state: present
+        exclusive: false

@@ -1,0 +1,143 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: bank-report
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: bank-report
+  interval: 30m
+  values:
+    controllers:
+      bank-report:
+        annotations:
+          reloader.stakater.com/auto: 'true'
+
+        # One replica, and Recreate rather than RollingUpdate. Two reasons that
+        # each would be sufficient: the data volume is ReadWriteOnce, and
+        # @actual-app/api is a process-global singleton whose local budget cache
+        # concurrent writers would corrupt.
+        replicas: 1
+        strategy: Recreate
+
+        pod:
+          securityContext:
+            fsGroup: 2000
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 2000
+            runAsNonRoot: true
+            runAsUser: 2000
+
+        containers:
+          app:
+            image:
+              repository: ghcr.io/jaimemachadoneto/bank-report
+              # Pin an immutable tag. `main` moves under you; CI also publishes
+              # sha-<commit> for exactly this.
+              tag: main
+            env:
+              NODE_ENV: production
+              PORT: &httpPort 3000
+              LOG_LEVEL: info
+              TZ: Europe/Madrid
+              DATA_DIR: /data
+              ACTUAL_DATA_DIR: /data/actual
+              # Absolute URLs are built from this and never from Host or
+              # X-Forwarded-Host, which the client controls.
+              PUBLIC_BASE_URL: https://bank-report.${SECRET_DOMAIN}
+              # The session cookie is only sent back over TLS.
+              COOKIE_SECURE: 'true'
+              # In-cluster and plain http on purpose: the gateway terminates TLS
+              # for browsers, and this path never leaves the cluster.
+              ACTUAL_SERVER_URL: http://actual.selfhosted.svc.cluster.local:5006
+              # Consistent copies inside /data, so the volsync snapshot captures
+              # a VACUUMed database rather than a live WAL. Spelled out rather
+              # than left to the defaults, because a backup schedule is the kind
+              # of thing that should be readable from the manifest.
+              BACKUP_INTERVAL_HOURS: '24'
+              # Two, not a week's worth: volsync snapshots this volume hourly
+              # into kopia and retains 24 hourly / 7 daily, so history lives
+              # there. These are only what that snapshot picks up.
+              BACKUP_KEEP: '2'
+            # ACTUAL_SYNC_ID rides along in here rather than as a plain env
+            # var. The plan put it in the ConfigMap on the grounds that it is
+            # not a credential, but that costs a second place to configure and
+            # a new cluster-secrets key, and it does identify a specific budget.
+            # One 1Password item holds everything this app needs.
+            envFrom:
+              - secretRef:
+                  name: bank-report-secret
+            probes:
+              # Liveness touches the process only. It must never reach the
+              # database or Actual, or a slow budget download would kill the pod.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *httpPort
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /readyz
+                    port: *httpPort
+                  initialDelaySeconds: 2
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+                  failureThreshold: 3
+            resources:
+              requests:
+                cpu: 50m
+                memory: 512Mi
+              limits:
+                # loot-core loads the entire budget in-process, so a 256Mi limit
+                # OOMKills on a multi-year budget.
+                memory: 1Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ['ALL']
+
+    service:
+      app:
+        ports:
+          http:
+            port: *httpPort
+
+    persistence:
+      data:
+        existingClaim: bank-report-data
+        globalMounts:
+          - path: /data
+      # readOnlyRootFilesystem leaves nowhere to write otherwise, and both node
+      # and better-sqlite3 expect a usable /tmp.
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: 'true'
+          gethomepage.dev/description: Bank statements into Actual
+          gethomepage.dev/group: Apps
+          gethomepage.dev/icon: si-actualbudget.svg
+          gethomepage.dev/name: Bank Report
+          gethomepage.dev/app: bank-report
+        hostnames:
+          - bank-report.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
