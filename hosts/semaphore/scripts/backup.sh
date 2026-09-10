@@ -65,11 +65,15 @@ chmod 600 "$STAGE_DIR/$ARCHIVE"
 # missing export) must not fail the backup - the local copy still happened. The
 # timeout keeps a hung mount from stalling the timer indefinitely.
 #
-# Mount on demand if it is not up. systemd refuses automount units inside a
-# container ("unit type not supported on this system"), so x-systemd.automount
-# silently does nothing here and the share has to be mounted explicitly - an
-# unattended run would otherwise keep every backup local while the NAS sat
-# there perfectly available.
+# Copy to $NAS_DIR when something is mounted there. Nothing is, by design:
+# offsite copies are Proxmox's job (vzdump of the whole container), and an
+# unprivileged LXC cannot mount NFS itself. This still fires if a PVE bind
+# mount is ever attached at that path, which is the supported way to give this
+# container a share directly.
+#
+# The explicit mount covers an fstab entry existing: systemd refuses automount
+# units inside a container, so x-systemd.automount silently does nothing and a
+# share would otherwise never be mounted on an unattended run.
 if ! mountpoint -q "$NAS_DIR" 2>/dev/null; then
   timeout 60 mount "$NAS_DIR" >/dev/null 2>&1 || true
 fi
@@ -79,7 +83,7 @@ if timeout 60 mountpoint -q "$NAS_DIR" 2>/dev/null; then
   find "$NAS_DIR" -maxdepth 1 -name 'semaphore-*.tar.gz' -mtime "+$NAS_KEEP_DAYS" -delete
   echo "backed up to $NAS_DIR/$ARCHIVE"
 else
-  echo "warning: $NAS_DIR not mounted, backup kept locally only" >&2
+  echo "no share mounted at $NAS_DIR; local copy only (offsite is vzdump's job)"
 fi
 
 find "$STAGE_DIR" -maxdepth 1 -name 'semaphore-*.tar.gz' -mtime "+$LOCAL_KEEP_DAYS" -delete

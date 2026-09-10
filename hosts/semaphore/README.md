@@ -109,32 +109,36 @@ change cannot leave it quietly archiving something stale.
 Retention is 14 days locally in `/opt/semaphore/backups` and 30 days on the
 NAS. Archives are ~32 KB.
 
-### The NAS copy
+### Offsite copies are Proxmox's job
 
-Backups land on `nas.jaimenet.com:/mnt/Data1/Semaphore` (**capital S** - NFS
-paths are case-sensitive), exported read-write to `10.30.51.104`. Confirm the
-address the NAS actually sees with `ip route get 10.30.50.7`.
+The nightly archives stay on the container; getting them off it is handled by
+**`vzdump` of the whole LXC** on the PVE host, not by this container pushing to
+a share.
 
-**This requires the LXC to be privileged**, and that is the reason it is. An
-unprivileged container cannot mount NFS at all: the kernel refuses it from
-inside a user namespace no matter what the export allows - `tmpfs` mounts fine,
-`nfs` returns `Operation not permitted`. The Pi could mount it because it was
-bare metal. Converting is not a toggle; it needs a dump and restore on the PVE
-host:
+That split is deliberate rather than a fallback. A `vzdump` of a running
+container copies the SQLite database mid-write; WAL usually makes that
+recoverable, but "usually" is thin cover for the store holding credentials to
+every host in the fleet. The nightly logical snapshot is already consistent and
+integrity-checked, so `vzdump` sweeps up known-good archives regardless of what
+it catches the live database doing. Two layers, and the cheap one does the hard
+part.
+
+The container is deliberately **unprivileged**, which means it cannot mount NFS
+at all - the kernel refuses it from inside a user namespace no matter what the
+export allows (`tmpfs` mounts fine, `nfs` returns `Operation not permitted`).
+Making it privileged does work, and was tried, but it costs the AppArmor
+protection too (see gotchas) and that is a poor trade for a host with SSH
+access to everything.
+
+If you ever do want a share visible in here, attach it from the PVE host rather
+than mounting it inside:
 
 ```sh
-vzdump <ctid> --compress zstd --storage <backup-storage>
-pct stop <ctid> && pct destroy <ctid>
-pct restore <ctid> /path/to/vzdump-lxc-<ctid>-*.tar.zst \
-    --unprivileged 0 --features nesting=1,mount=nfs
-pct start <ctid>
+pct set <ctid> -mp0 /mnt/pve/semaphore,mp=/mnt/semaphore-backup
 ```
 
-Keep `nesting=1` or Docker stops working. The alternative that keeps the
-container unprivileged is to mount the export on the PVE host and bind-mount it
-in with `pct set <ctid> -mp0 /mnt/pve/semaphore,mp=/mnt/semaphore-backup`;
-worth revisiting, because privileged plus `apparmor=unconfined` is a lot of
-trust for a host holding SSH credentials to the whole fleet.
+`backup.sh` already copies to `/mnt/semaphore-backup` whenever something is
+mounted there, so a bind mount starts working with no changes.
 
 ### Restore
 
@@ -181,19 +185,21 @@ curl -s -H "Authorization: Bearer <token>" localhost:3000/api/project/2/template
 - **`semaphore.env` must not live inside a directory owned by uid 1001** - the
   host-side `docker compose` reads it, and secrets silently come up empty if it
   cannot.
-- **A privileged LXC cannot load AppArmor profiles.** Docker tries to apply its
-  `docker-default` profile, `apparmor_parser` returns "Access denied. You need
-  policy admin privileges", and Docker then refuses to start *any* container -
-  it logs this and carries on to "Loading containers: done", so the daemon looks
-  healthy while nothing runs. Hence `security_opt: apparmor=unconfined` in the
-  compose file. This only became a problem after going privileged.
+- **A privileged LXC cannot load AppArmor profiles.** Only relevant if you make
+  this container privileged again: Docker tries to apply its `docker-default`
+  profile, `apparmor_parser` returns "Access denied. You need policy admin
+  privileges", and Docker then refuses to start *any* container - while logging
+  it and carrying on to "Loading containers: done", so the daemon looks healthy
+  and `systemctl is-active docker` says `active` while nothing runs. The
+  workaround is `security_opt: [apparmor=unconfined]` in the compose file,
+  which is why unprivileged is preferable: it keeps the profile.
 - **systemd will not run automount units inside a container.** It reports
   "unit type of ... .automount not supported on this system", so an
   `x-systemd.automount` fstab entry silently does nothing - `autofs` being
   present in `/proc/filesystems` is a red herring. The NFS share therefore uses
-  a plain `_netdev,nofail` entry, and `backup.sh` mounts it explicitly if it is
-  not already up. Without that the nightly backup finds nothing mounted and
-  quietly keeps every copy local while the NAS sits there available.
+  a plain `_netdev,nofail` entry when one exists at all, and `backup.sh` mounts
+  it explicitly rather than trusting an automount. Without that a configured
+  share is silently never mounted and every copy quietly stays local.
 - **Changing `SEMAPHORE_ACCESS_KEY_ENCRYPTION` orphans every stored key.** The
   database stays intact but its SSH keys and secrets become undecryptable. It
   was carried across the native → Docker migration for exactly this reason.
