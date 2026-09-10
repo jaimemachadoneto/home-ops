@@ -1,22 +1,34 @@
 ---
+# The inventory is a mix of Debian/Ubuntu and Alpine hosts, so every task here
+# is guarded on the host actually using apt. Without that, the Alpine
+# containers fail the play on every run and a scheduled job that always reports
+# failure is a job nobody reads.
 - name: Update and upgrade apt packages
   hosts: all
   become: true
   tasks:
-    - name: Update apt cache
-      ansible.builtin.apt:
-        update_cache: true
-        cache_valid_time: 3600
+    - name: Update and upgrade apt packages
+      when: ansible_facts.pkg_mgr == 'apt'
+      block:
+        - name: Update apt cache
+          ansible.builtin.apt:
+            update_cache: true
+            cache_valid_time: 3600
 
-    - name: Upgrade all packages
-      ansible.builtin.apt:
-        upgrade: safe
+        - name: Upgrade all packages
+          ansible.builtin.apt:
+            upgrade: safe
 
-    - name: Check if a reboot is required
-      ansible.builtin.stat:
-        path: /var/run/reboot-required
-      register: reboot_required
+        - name: Check if a reboot is required
+          ansible.builtin.stat:
+            path: /var/run/reboot-required
+          register: reboot_required
 
-    - name: Report reboot status
+        - name: Report reboot status
+          ansible.builtin.debug:
+            msg: "Reboot required: {{ reboot_required.stat.exists }}"
+
+    - name: Note hosts this playbook does not manage
       ansible.builtin.debug:
-        msg: "Reboot required: {{ reboot_required.stat.exists }}"
+        msg: "Skipped: {{ inventory_hostname }} uses {{ ansible_facts.pkg_mgr }}, not apt"
+      when: ansible_facts.pkg_mgr != 'apt'

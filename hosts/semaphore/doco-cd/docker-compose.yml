@@ -8,7 +8,6 @@ services:
     restart: unless-stopped
     environment:
       TZ: Europe/Madrid
-      SSH_PRIVATE_KEY_FILE: /run/secrets/doco_cd_deploy_key
       POLL_CONFIG_FILE: /data/poll-config.yml
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -18,18 +17,12 @@ services:
       # compose file (e.g. env_file: /opt/semaphore/semaphore.env) must also
       # exist at that same path inside THIS container, not just on the host.
       - /opt/semaphore:/opt/semaphore:ro
-    secrets:
-      - doco_cd_deploy_key
-    # NOT cap_drop: ALL - doco-cd needs to read host-owned files (deploy key,
-    # hosts/semaphore's env_file) it doesn't own. This buys little anyway:
-    # the mounted docker.sock is already root-equivalent on the host.
+    # NOT cap_drop: ALL - doco-cd needs to read host-owned files it does not own
+    # (hosts/semaphore's env_file). This buys little anyway: the mounted
+    # docker.sock is already root-equivalent on the host.
     healthcheck:
       test: ["CMD", "/doco-cd", "healthcheck"]
       start_period: 15s
       interval: 30s
       timeout: 5s
       retries: 3
-
-secrets:
-  doco_cd_deploy_key:
-    file: /opt/doco-cd/deploy_key

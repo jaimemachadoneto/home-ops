@@ -200,16 +200,37 @@ curl -s -H "Authorization: Bearer <token>" localhost:3000/api/project/2/template
   a plain `_netdev,nofail` entry when one exists at all, and `backup.sh` mounts
   it explicitly rather than trusting an automount. Without that a configured
   share is silently never mounted and every copy quietly stays local.
+- **The container rootfs fills up quickly.** It shipped at 3.9 GB, of which
+  Docker images take ~1.5 GB and `/usr` (ansible, and previously the 96 MB
+  native semaphore binary) another 1.6 GB. Pulling a second image failed with
+  `no space left on device` mid-extract. Grown to 7.8 GB with
+  `pct resize <ctid> rootfs +4G` on the PVE host; `apt-get clean` and
+  `docker image prune` are the quick wins if it tightens again.
 - **Changing `SEMAPHORE_ACCESS_KEY_ENCRYPTION` orphans every stored key.** The
   database stays intact but its SSH keys and secrets become undecryptable. It
   was carried across the native → Docker migration for exactly this reason.
 
-## Not yet done
+## Auto-deploy (doco-cd)
 
-`doco-cd` is **not** set up on this host, so the container does not
-auto-deploy: Renovate can open image-bump PRs, but applying one currently means
-`docker compose pull && docker compose up -d` by hand. `install.sh` and
-`doco-cd/` describe the Pi's arrangement and would need adapting.
+`doco-cd` runs alongside Semaphore from `/opt/doco-cd`, polls this repo every
+30 minutes and runs `docker compose up` for `hosts/semaphore` whenever
+`docker-compose.yml` or `.doco-cd.semaphore.yml` changes on `main`. So merging
+a Renovate image-bump PR deploys itself; there is nothing to run by hand.
+
+```sh
+docker logs -f doco-cd          # watch it poll and deploy
+cd /opt/doco-cd && docker compose restart   # force an immediate poll
+```
+
+It clones over **HTTPS with no credentials**, because home-ops is a public
+repo. The Pi used an SSH deploy key that had to be registered on GitHub by
+hand; that step is gone. If the repo is ever made private this has to go back
+to `git@github.com:` with a key mounted as a secret - see git history for the
+previous shape of `doco-cd/docker-compose.yml`.
+
+Note doco-cd deploys the compose file **from the repo**, so
+`/opt/semaphore/docker-compose.yml` on the host is no longer what defines the
+stack. Edit it in git.
 
 ## Credentials
 

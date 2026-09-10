@@ -82,8 +82,12 @@ TEMPLATES = [
     },
 ]
 
-# Re-assert the watchdog config nightly so drift on the containers is corrected.
-SCHEDULES = [{"template": "z2m-watchdog", "cron": "0 4 * * *"}]
+# Re-assert the watchdog config nightly so drift on the containers is corrected,
+# and pick up package updates weekly. apt-update skips non-apt hosts itself.
+SCHEDULES = [
+    {"template": "z2m-watchdog", "cron": "0 4 * * *"},
+    {"template": "apt-update", "cron": "0 5 * * 0"},
+]
 
 opener = urllib.request.build_opener(
     urllib.request.HTTPCookieProcessor(CookieJar())

@@ -1,6 +1,8 @@
 # Copied to /opt/doco-cd/data/poll-config.yml by install.sh.
-# No secrets here - auth comes from the mounted SSH deploy key.
-- url: git@github.com:jaimemachadoneto/home-ops.git
+# No secrets here: home-ops is a public repo, so doco-cd clones over HTTPS and
+# needs no deploy key at all. If the repo is ever made private this has to go
+# back to git@github.com: with an SSH key mounted as a secret - see git history.
+- url: https://github.com/jaimemachadoneto/home-ops.git
   reference: main
-  interval: 5m
+  interval: 30m
   target: semaphore
