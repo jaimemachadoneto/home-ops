@@ -1,0 +1,6 @@
+---
+- name: Deploy the Zigbee2MQTT watchdog
+  hosts: zigbee2mqtt
+  gather_facts: false # the role bootstraps Python first, then gathers
+  roles:
+    - z2m_watchdog

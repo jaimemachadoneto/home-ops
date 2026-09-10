@@ -1,0 +1,49 @@
+---
+# Service name of Zigbee2MQTT in OpenRC.
+z2m_watchdog_z2m_service: zigbee2mqtt
+
+# Where Zigbee2MQTT keeps its configuration. The role reads MQTT credentials,
+# base topic and frontend port straight out of this file so nothing has to be
+# duplicated (or committed) here.
+z2m_watchdog_z2m_config: /var/lib/zigbee2mqtt/configuration.yaml
+
+# Root topic the watchdog publishes its own state under. Home Assistant
+# discovery entities are created under `z2m_watchdog_ha_discovery_prefix`.
+z2m_watchdog_topic_root: z2m-watchdog
+z2m_watchdog_ha_discovery: true
+z2m_watchdog_ha_discovery_prefix: homeassistant
+
+# Seconds between health checks.
+z2m_watchdog_interval: 60
+
+# Consecutive failed checks before the watchdog takes any action.
+# 3 x 60s means roughly 3 minutes of sustained failure before a restart.
+z2m_watchdog_fail_threshold: 3
+
+# How many service restarts to try before escalating to a container reboot.
+z2m_watchdog_max_restarts: 2
+
+# Never reboot more often than this (seconds). Guards against a boot loop when
+# the underlying problem is not fixed by rebooting.
+z2m_watchdog_reboot_cooldown: 3600
+
+# Set to false to disable the reboot escalation entirely (restart-only mode).
+z2m_watchdog_allow_reboot: true
+
+# Skip checks for this long after the container boots, and after the watchdog
+# itself takes an action, so Zigbee2MQTT gets a chance to come up.
+z2m_watchdog_boot_grace: 180
+z2m_watchdog_action_grace: 120
+
+# Healthy for this long after an action before the restart counter resets.
+# Stops a flapping service from restarting forever without ever escalating.
+z2m_watchdog_stable_period: 1800
+
+# Timeouts for the individual probes (seconds).
+z2m_watchdog_probe_timeout: 20
+z2m_watchdog_http_timeout: 10
+
+# Treat an unresponsive frontend as a failure on its own. Off by default: if
+# MQTT round-trips fine then Zigbee2MQTT is doing its actual job, and a hung
+# web UI is not worth a restart.
+z2m_watchdog_http_fatal: false

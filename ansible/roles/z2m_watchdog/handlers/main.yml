@@ -1,0 +1,5 @@
+---
+- name: Restart z2m-watchdog
+  ansible.builtin.service:
+    name: z2m-watchdog
+    state: restarted

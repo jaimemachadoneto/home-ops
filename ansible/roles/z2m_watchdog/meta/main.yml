@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: z2m_watchdog
+  description: >-
+    Watchdog for Zigbee2MQTT on Alpine/OpenRC LXC containers. Probes health over
+    MQTT, restarts the service on sustained failure and reboots the container if
+    restarting does not help. Exposes status and manual restart/reboot buttons to
+    Home Assistant via MQTT discovery.
+  license: MIT
+  min_ansible_version: "2.14"
+dependencies: []
