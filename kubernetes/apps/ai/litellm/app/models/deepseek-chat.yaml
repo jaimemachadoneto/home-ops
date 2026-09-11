@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: deepseek-chat
+spec:
+  modelName: deepseek/deepseek-chat
+  params:
+    model: deepseek/deepseek-chat
+    apiBase: https://api.deepseek.com/v1
+    apiKeyRef:
+      name: litellm-secret
+      key: DEEPSEEK_API_KEY
+  info:
+    maxTokens: 65536
+    supportsFunctionCalling: true

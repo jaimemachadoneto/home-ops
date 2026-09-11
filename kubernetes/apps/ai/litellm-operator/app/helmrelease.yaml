@@ -1,0 +1,26 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: litellm-operator
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: litellm-operator
+  interval: 1h
+  values:
+    controller:
+      leaderElection:
+        enabled: true
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+        limits:
+          memory: 128Mi
+    webhook:
+      enabled: true
+    llmkube:
+      # Auto-registers models served by llmkube as LiteLLM models
+      autoRegister: true
