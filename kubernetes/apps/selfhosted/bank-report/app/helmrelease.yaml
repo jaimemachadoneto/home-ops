@@ -34,9 +34,9 @@ spec:
           app:
             image:
               repository: ghcr.io/jaimemachadoneto/bank-report
-              # Pin an immutable tag. `main` moves under you; CI also publishes
-              # sha-<commit> for exactly this.
-              tag: main
+              # A released version, not `main`: that tag moves under you, and
+              # a string that never changes gives Flux nothing to reconcile.
+              tag: 0.2.0
             env:
               NODE_ENV: production
               PORT: &httpPort 3000
