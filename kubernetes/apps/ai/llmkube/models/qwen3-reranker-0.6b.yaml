@@ -1,0 +1,74 @@
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: Model
+metadata:
+  name: qwen3-reranker-0.6b
+spec:
+  source: hf://ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
+  files:
+    - qwen3-reranker-0.6b-q8_0.gguf
+  format: gguf
+  quantization: Q8_0
+  hardware:
+    # CPU-only for now — see the matching comment in
+    # qwen3-embedding-0.6b.yaml for the Nvidia GPU migration path.
+    accelerator: cpu
+    gpu:
+      enabled: false
+---
+apiVersion: inference.llmkube.dev/v1alpha1
+kind: InferenceService
+metadata:
+  name: qwen3-reranker-0.6b
+spec:
+  modelRef: qwen3-reranker-0.6b
+  runtime: llamacpp
+  # CPU build. Swap to ghcr.io/ggml-org/llama.cpp:server-cuda once an
+  # Nvidia GPU + device plugin are available.
+  image: ghcr.io/ggml-org/llama.cpp:server
+  replicas: 1
+  priority: normal
+  contextSize: 16384
+  parallelSlots: 2
+  batchSize: 2048
+  uBatchSize: 2048
+  extraArgs:
+    - --alias
+    - qwen3-reranker
+    - --rerank
+    - --pooling
+    - rank
+    - --cont-batching
+    # Adjust thread counts to match your node's actual core count
+    - --threads
+    - "4"
+    - --threads-batch
+    - "8"
+    - --mmap
+  endpoint:
+    port: 8080
+    type: ClusterIP
+  resources:
+    cpu: "1"
+    memory: 2Gi
+  probeOverrides:
+    startup:
+      httpGet:
+        path: /health
+        port: 8080
+      periodSeconds: 10
+      failureThreshold: 360
+    liveness:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      failureThreshold: 6
+    readiness:
+      httpGet:
+        path: /health
+        port: 8080
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      failureThreshold: 6
