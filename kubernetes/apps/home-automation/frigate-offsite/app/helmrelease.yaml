@@ -34,7 +34,7 @@ spec:
               repository: ghcr.io/jaimemachadoneto/frigate-offsite
               # Pin an immutable tag. `main` moves under you; CI also publishes
               # sha-<commit> for exactly this. Source: github.com/jaimemachadoneto/frigate-sync
-              tag: sha-0a2d6da7ae46a72b54acf8db8a03847e3f9e5e28
+              tag: sha-a102e54a60b9056c5d8eeb145c1b1d31e3db0c83
             env:
               TZ: Europe/Madrid
               # In-cluster, plain http: never leaves the cluster.
@@ -50,6 +50,9 @@ spec:
               RETENTION_AT: "04:00"
               SETTLE_SECONDS: "20"
               BACKFILL_HOURS: "6"
+              # Metrics JSON to MQTT (HA sensors); OneDrive usage via rclone size.
+              METRICS_INTERVAL: "60"
+              REMOTE_SIZE_INTERVAL: "3600"
               HEALTH_PORT: &healthPort 8080
               MQTT_USERNAME:
                 valueFrom:

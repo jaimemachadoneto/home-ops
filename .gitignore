@@ -99,3 +99,4 @@ Thumbs.db
 .kube/cache/http/41f1a94897df2f5d34bbfafe24313c907316f00bc9c61850703318b0a3a12bc4
 .kube/cache/http/53c0fe7db089889b5a278abc1e291c055216f169519e8ae013bb1cbaca3de37e
 .kube/cache/http/78c124c45d8642e358b5d19e5ef2c6861ca3e481bc172a88ae81d8444e8de8a2
+/kubconfig
