@@ -18,6 +18,7 @@ spec:
           resources:
             requests:
               cpu: 100m
+              memory: 256Mi
             limits:
               memory: 2Gi
         pod:
@@ -31,6 +32,7 @@ spec:
                   app.kubernetes.io/managed-by: envoy-gateway
               matchLabelKeys:
                 - gateway.envoyproxy.io/owning-gateway-name
+                - pod-template-hash
       envoyService:
         externalTrafficPolicy: Local
   shutdown:
