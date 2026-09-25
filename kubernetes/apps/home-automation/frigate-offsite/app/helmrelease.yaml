@@ -1,0 +1,114 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: frigate-offsite
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: frigate-offsite
+  interval: 30m
+  values:
+    controllers:
+      frigate-offsite:
+        annotations:
+          reloader.stakater.com/auto: "true"
+
+        # One consumer of frigate/reviews: two replicas would upload every
+        # clip twice (harmless, but wasted OneDrive bandwidth).
+        replicas: 1
+        strategy: Recreate
+
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 2000
+            runAsGroup: 2000
+            fsGroup: 2000
+            fsGroupChangePolicy: OnRootMismatch
+
+        containers:
+          app:
+            image:
+              repository: ghcr.io/jaimemachadoneto/frigate-offsite
+              # Pin an immutable tag. `main` moves under you; CI also publishes
+              # sha-<commit> for exactly this. Source: github.com/jaimemachadoneto/frigate-sync
+              tag: sha-0a2d6da7ae46a72b54acf8db8a03847e3f9e5e28
+            env:
+              TZ: Europe/Madrid
+              # In-cluster, plain http: never leaves the cluster.
+              FRIGATE_URL: http://frigate.home-automation.svc.cluster.local:5000
+              MQTT_HOST: mqtt.jaimenet.com
+              RCLONE_REMOTE: Onedrive-Jaime:/Frigate
+              RCLONE_CONFIG: /config/rclone/rclone.conf
+              WORK_DIR: /work
+              # Initial values only: both become HA entities (retention number,
+              # severity select) and HA's retained value wins after that.
+              RETENTION_DAYS: "30"
+              UPLOAD_SEVERITIES: alert,detection
+              RETENTION_AT: "04:00"
+              SETTLE_SECONDS: "20"
+              BACKFILL_HOURS: "6"
+              HEALTH_PORT: &healthPort 8080
+              MQTT_USERNAME:
+                valueFrom:
+                  secretKeyRef:
+                    name: frigate-offsite-secret
+                    key: MQTT_USERNAME
+              MQTT_PASSWORD:
+                valueFrom:
+                  secretKeyRef:
+                    name: frigate-offsite-secret
+                    key: MQTT_PASSWORD
+            probes:
+              # Process-only: a Frigate or OneDrive outage must not restart the
+              # pod and drop the retry queue.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /healthz
+                    port: *healthPort
+                  initialDelaySeconds: 5
+                  periodSeconds: 30
+                  timeoutSeconds: 2
+                  failureThreshold: 3
+              readiness:
+                enabled: false
+              startup:
+                enabled: false
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+
+    persistence:
+      rclone-config:
+        type: secret
+        name: frigate-offsite-secret
+        items:
+          - key: rclone.conf
+            path: rclone.conf
+        globalMounts:
+          - path: /config/rclone
+            readOnly: true
+      # Clips in flight plus the writable rclone.conf copy (OneDrive token
+      # refreshes). Sized for a few long clips at once.
+      work:
+        type: emptyDir
+        sizeLimit: 4Gi
+        globalMounts:
+          - path: /work
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp

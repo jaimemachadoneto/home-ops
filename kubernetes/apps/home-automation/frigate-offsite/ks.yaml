@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: frigate-offsite
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: frigate-offsite
+  dependsOn:
+    - name: frigate
+  interval: 1h
+  path: "./kubernetes/apps/home-automation/frigate-offsite/app"
+  postBuild:
+    substitute:
+      APP: frigate-offsite
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: home-automation
+  timeout: 5m
+  wait: false
