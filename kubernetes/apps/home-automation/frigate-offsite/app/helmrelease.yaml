@@ -34,7 +34,7 @@ spec:
               repository: ghcr.io/jaimemachadoneto/frigate-offsite
               # Pin an immutable tag. `main` moves under you; CI also publishes
               # sha-<commit> for exactly this. Source: github.com/jaimemachadoneto/frigate-sync
-              tag: sha-4f711dbf9ecd3b2da9616365d297342667cef489
+              tag: sha-c34a7a9b2d03a48a4ba8c9ff3d4bcf47f0052d9a
             env:
               TZ: Europe/Madrid
               # In-cluster, plain http: never leaves the cluster.
