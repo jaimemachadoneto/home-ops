@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/externaldns.k8s.io/dnsendpoint_v1alpha1.json
+# Paperclip VM (VLAN 70, outside the cluster). Private IP, so DNS-only:
+# Cloudflare's proxy cannot reach it. See paperclip-setup/TASKS.md.
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: paperclip
+spec:
+  endpoints:
+    - dnsName: paperclip.${SECRET_DOMAIN}
+      recordType: A
+      targets: ["10.30.70.5"]
+      providerSpecific: &dnsOnly
+        - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
+          value: "false"
+    - dnsName: "*.preview.${SECRET_DOMAIN}"
+      recordType: A
+      targets: ["10.30.70.5"]
+      providerSpecific: *dnsOnly

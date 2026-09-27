@@ -28,6 +28,7 @@ spec:
       - --crd-source-kind=DNSEndpoint
       - --gateway-label-filter=gateway-type=external
       - --ingress-class=external-nginx
+      - --txt-wildcard-replacement=wildcard
     podAnnotations:
       secret.reloader.stakater.com/reload: externaldns-cloudflare-secrets
     policy: sync
