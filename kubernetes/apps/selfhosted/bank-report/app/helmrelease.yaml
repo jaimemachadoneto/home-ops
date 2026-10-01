@@ -36,7 +36,7 @@ spec:
               repository: ghcr.io/jaimemachadoneto/bank-report
               # Pin an immutable tag. `main` moves under you; CI also publishes
               # sha-<commit> for exactly this.
-              tag: sha-16732b6a29966a84c8f09a6e67419e16cc30a0dd
+              tag: sha-e8f6d1656d9f397d271ed3911c56f989895cf787
             env:
               NODE_ENV: production
               PORT: &httpPort 3000
