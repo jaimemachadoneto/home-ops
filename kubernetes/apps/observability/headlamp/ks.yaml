@@ -8,6 +8,8 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: headlamp
+  components:
+    - ../../../../components/authentik-forward-auth
   interval: 1h
   path: "./kubernetes/apps/observability/headlamp/app"
   prune: true
@@ -19,6 +21,8 @@ spec:
   timeout: 5m
   wait: false
   postBuild:
+    substitute:
+      APP: headlamp
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
