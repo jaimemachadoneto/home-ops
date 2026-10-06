@@ -9,6 +9,11 @@ spec:
     kind: OCIRepository
     name: rook-ceph-cluster
   interval: 31m
+  # Helm waits for the CephCluster to be ready, and any change that touches the
+  # mons or OSDs makes Rook restart them one at a time, which takes well over
+  # the default 5m. A timeout then triggers a rollback, which restarts them all
+  # again (seen 2026-08-23 and 2026-10-06).
+  timeout: 30m
   values:
     monitoring:
       enabled: true
