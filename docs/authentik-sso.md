@@ -40,6 +40,19 @@ Before protecting an app, check nothing calls it by its public hostname
 the login page. Point them at the in-cluster service or a LoadBalancer address
 instead.
 
+### Apps used by phone apps or other API clients
+
+API clients (nzb360, LunaSea, ...) cannot get past a login page. For apps
+whose API always requires the app's own API key, the provider lists those
+paths in its `skip_path_regex` (one regex per line, matched against the
+request path) in `forward-auth.yaml`, so they bypass the Authentik login
+while the web UI still requires it. Check the
+API really refuses requests without a key before adding an app there: with
+no key, Sonarr, Radarr, Prowlarr, Bazarr and Overseerr answer 401, SABnzbd
+403, Tautulli 400 and Mylar "Missing API key". qBittorrent is left out: its
+own login is bypassed for 10.0.0.0/8 (`AuthSubnetWhitelist`), so its API
+would be open to the whole LAN.
+
 The outpost passes the user to the app in the `X-authentik-username`,
 `-email`, `-name`, `-groups` and `-uid` request headers, for apps that can
 use them.

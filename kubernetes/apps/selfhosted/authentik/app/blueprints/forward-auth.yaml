@@ -483,6 +483,10 @@ entries:
     attrs:
       <<: *forward-auth
       external_host: https://sonarr.${SECRET_DOMAIN}
+      # Phone/API clients: the app enforces its own API key on these paths.
+      skip_path_regex: |-
+        ^/api/
+        ^/feed/
   - model: authentik_core.application
     id: app-sonarr
     identifiers:
@@ -510,6 +514,10 @@ entries:
     attrs:
       <<: *forward-auth
       external_host: https://radarr.${SECRET_DOMAIN}
+      # Phone/API clients: the app enforces its own API key on these paths.
+      skip_path_regex: |-
+        ^/api/
+        ^/feed/
   - model: authentik_core.application
     id: app-radarr
     identifiers:
@@ -537,6 +545,10 @@ entries:
     attrs:
       <<: *forward-auth
       external_host: https://prowlarr.${SECRET_DOMAIN}
+      # Phone/API clients: the app enforces its own API key on these paths.
+      skip_path_regex: |-
+        ^/api/
+        ^/[0-9]+/api
   - model: authentik_core.application
     id: app-prowlarr
     identifiers:
@@ -564,6 +576,9 @@ entries:
     attrs:
       <<: *forward-auth
       external_host: https://bazarr.${SECRET_DOMAIN}
+      # Phone/API clients: the app enforces its own API key on these paths.
+      skip_path_regex: |-
+        ^/api/
   - model: authentik_core.application
     id: app-bazarr
     identifiers:
@@ -591,6 +606,9 @@ entries:
     attrs:
       <<: *forward-auth
       external_host: https://mylar.${SECRET_DOMAIN}
+      # Phone/API clients: the app enforces its own API key on these paths.
+      skip_path_regex: |-
+        ^/api
   - model: authentik_core.application
     id: app-mylar
     identifiers:
@@ -618,6 +636,9 @@ entries:
     attrs:
       <<: *forward-auth
       external_host: https://sabnzbd.${SECRET_DOMAIN}
+      # Phone/API clients: the app enforces its own API key on these paths.
+      skip_path_regex: |-
+        ^/api
   - model: authentik_core.application
     id: app-sabnzbd
     identifiers:
@@ -672,6 +693,9 @@ entries:
     attrs:
       <<: *forward-auth
       external_host: https://tautulli.${SECRET_DOMAIN}
+      # Phone/API clients: the app enforces its own API key on these paths.
+      skip_path_regex: |-
+        ^/api/
   - model: authentik_core.application
     id: app-tautulli
     identifiers:
@@ -780,6 +804,9 @@ entries:
     attrs:
       <<: *forward-auth
       external_host: https://overseerr.${SECRET_DOMAIN}
+      # Phone/API clients: the app enforces its own API key on these paths.
+      skip_path_regex: |-
+        ^/api/v1/
   - model: authentik_core.application
     id: app-overseerr
     identifiers:
