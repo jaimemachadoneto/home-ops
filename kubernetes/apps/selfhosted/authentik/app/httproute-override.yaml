@@ -1,5 +1,6 @@
 ---
-# Ensure external/internal Gateway routes for Authentik point to the proxy
+# Same route the chart renders (server.route.main): Flux and Helm both manage
+# it, so it stays defined in both until the chart's copy is the only one.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -28,7 +29,7 @@ spec:
       backendRefs:
         - group: ""
           kind: Service
-          name: authentik-proxy
+          name: authentik-server
           namespace: selfhosted
           port: 80
           weight: 1

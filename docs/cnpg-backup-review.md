@@ -209,10 +209,9 @@ Authentik's config is safe first. The agreed direction:
   `kubernetes/components/`.
 - Use native OIDC for apps that support it (Open WebUI, Grafana, Paperless,
   ...).
-- Replace the disabled gateway-wide OIDC attempt in
-  `kubernetes/apps/network/envoy-gateway/config/{internal,external}-auth.yaml`.
-  The nginx CORS proxy in front of Authentik can probably be removed, but
-  confirm the new setup works first.
+- Done (2026-10): forward auth via `components/authentik-forward-auth`, see
+  `docs/authentik-sso.md`; the old gateway-wide OIDC attempt and the nginx
+  CORS proxy in front of Authentik were removed.
 - Open questions for the owner: which apps go first, and which apps that
   were set up by hand in the Authentik UI need to be recreated as blueprints.
   Before changing anything in Authentik, list what exists today:
