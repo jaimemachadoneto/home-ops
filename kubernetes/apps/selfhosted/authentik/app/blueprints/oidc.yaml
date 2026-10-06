@@ -1,0 +1,44 @@
+# Apps that sign in with Authentik over OpenID Connect (their own login
+# button), as opposed to forward auth in forward-auth.yaml.
+#
+# Managed by GitOps: Authentik applies this file on start and whenever it
+# changes; edits made in the Authentik UI to these objects are overwritten.
+# Client IDs and secrets come from the app's 1Password item, through
+# authentik-secret (see externalsecret.yaml), as environment variables.
+version: 1
+metadata:
+  name: home-ops oidc
+  labels:
+    blueprints.goauthentik.io/description: OIDC applications, managed in git
+entries:
+  # --- Paperless ---------------------------------------------------------------
+  # Same client as Paperless's PAPERLESS_SOCIALACCOUNT_PROVIDERS (1Password
+  # item Paperless, field social_account); the slug must stay "paperless",
+  # it is part of the issuer URL Paperless uses.
+  - model: authentik_providers_oauth2.oauth2provider
+    id: provider-paperless
+    identifiers:
+      name: paperless
+    attrs:
+      client_type: confidential
+      client_id: !Env PAPERLESS_OIDC_CLIENT_ID
+      client_secret: !Env PAPERLESS_OIDC_CLIENT_SECRET
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+      redirect_uris:
+        - matching_mode: strict
+          url: https://paperless.${SECRET_DOMAIN}/accounts/oidc/authentik/login/callback/
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+      sub_mode: hashed_user_id
+  - model: authentik_core.application
+    identifiers:
+      slug: paperless
+    attrs:
+      name: Paperless
+      provider: !KeyOf provider-paperless
+      meta_launch_url: https://paperless.${SECRET_DOMAIN}
+      policy_engine_mode: any
