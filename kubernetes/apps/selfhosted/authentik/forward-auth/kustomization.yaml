@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./downloads.yaml
   - ./external-ingresses.yaml
+  - ./home-automation.yaml
   - ./observability.yaml
   - ./renovate.yaml
   - ./selfhosted.yaml

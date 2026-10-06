@@ -790,6 +790,60 @@ entries:
       meta_launch_url: https://overseerr.${SECRET_DOMAIN}
       policy_engine_mode: any
 
+  # --- Frigate (home-automation/frigate)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-frigate
+    identifiers:
+      name: frigate
+    attrs:
+      <<: *forward-auth
+      external_host: https://frigate.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-frigate
+    identifiers:
+      slug: frigate
+    attrs:
+      name: Frigate
+      provider: !KeyOf provider-frigate
+      meta_launch_url: https://frigate.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-frigate
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Frigate go2rtc (home-automation/frigate-go2rtc)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-frigate-go2rtc
+    identifiers:
+      name: frigate-go2rtc
+    attrs:
+      <<: *forward-auth
+      external_host: https://frigate-go2rtc.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-frigate-go2rtc
+    identifiers:
+      slug: frigate-go2rtc
+    attrs:
+      name: Frigate go2rtc
+      provider: !KeyOf provider-frigate-go2rtc
+      meta_launch_url: https://frigate-go2rtc.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-frigate-go2rtc
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
   # --- Embedded outpost: serves every provider above ------------------------
   # This list is the complete set: a provider missing here stops working.
   - model: authentik_outposts.outpost
@@ -826,3 +880,5 @@ entries:
         - !KeyOf provider-pinchflat
         - !KeyOf provider-shelfmark
         - !KeyOf provider-overseerr
+        - !KeyOf provider-frigate
+        - !KeyOf provider-frigate-go2rtc
