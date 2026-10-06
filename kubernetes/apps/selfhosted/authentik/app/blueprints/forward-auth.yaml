@@ -6,19 +6,19 @@
 # To protect another app (see docs/authentik-sso.md):
 #   1. add a provider + application (+ binding) block below
 #   2. add its provider to the embedded outpost list at the bottom
-#   3. add the authentik-forward-auth component to the app's ks.yaml
+#   3. add its HTTPRoute to forward-auth/<namespace>.yaml
 version: 1
 metadata:
   name: home-ops forward auth
   labels:
     blueprints.goauthentik.io/description: Apps behind Authentik forward auth, managed in git
 entries:
-  # --- FileBrowser ------------------------------------------------------------
+  # --- FileBrowser (selfhosted/filebrowser)
   - model: authentik_providers_proxy.proxyprovider
     id: provider-filebrowser
     identifiers:
       name: filebrowser
-    attrs:
+    attrs: &forward-auth
       mode: forward_single
       external_host: https://filebrowser.${SECRET_DOMAIN}
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
@@ -33,8 +33,6 @@ entries:
       provider: !KeyOf provider-filebrowser
       meta_launch_url: https://filebrowser.${SECRET_DOMAIN}
       policy_engine_mode: any
-  # FileBrowser can read and delete the NAS (including the backup repository):
-  # admins only.
   - model: authentik_policies.policybinding
     identifiers:
       target: !KeyOf app-filebrowser
@@ -45,19 +43,95 @@ entries:
       negate: false
       timeout: 30
 
-  # --- Headlamp ---------------------------------------------------------------
-  # Headlamp talks to the API server with a cluster-admin service account:
-  # admins only.
+  # --- Argus (selfhosted/argus)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-argus
+    identifiers:
+      name: argus
+    attrs:
+      <<: *forward-auth
+      external_host: https://argus.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-argus
+    identifiers:
+      slug: argus
+    attrs:
+      name: Argus
+      provider: !KeyOf provider-argus
+      meta_launch_url: https://argus.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-argus
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Bank Report (selfhosted/bank-report)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-bank-report
+    identifiers:
+      name: bank-report
+    attrs:
+      <<: *forward-auth
+      external_host: https://bank-report.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-bank-report
+    identifiers:
+      slug: bank-report
+    attrs:
+      name: Bank Report
+      provider: !KeyOf provider-bank-report
+      meta_launch_url: https://bank-report.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-bank-report
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Paperless-GPT (selfhosted/paperless-gpt)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-paperless-gpt
+    identifiers:
+      name: paperless-gpt
+    attrs:
+      <<: *forward-auth
+      external_host: https://paperless-gpt.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-paperless-gpt
+    identifiers:
+      slug: paperless-gpt
+    attrs:
+      name: Paperless-GPT
+      provider: !KeyOf provider-paperless-gpt
+      meta_launch_url: https://paperless-gpt.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-paperless-gpt
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Headlamp (observability/headlamp)
   - model: authentik_providers_proxy.proxyprovider
     id: provider-headlamp
     identifiers:
       name: headlamp
     attrs:
-      mode: forward_single
+      <<: *forward-auth
       external_host: https://headlamp.${SECRET_DOMAIN}
-      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
-      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
-      access_token_validity: hours=24
   - model: authentik_core.application
     id: app-headlamp
     identifiers:
@@ -77,6 +151,699 @@ entries:
       negate: false
       timeout: 30
 
+  # --- Prometheus (observability/kube-prometheus-stack-prometheus)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-prometheus
+    identifiers:
+      name: prometheus
+    attrs:
+      <<: *forward-auth
+      external_host: https://prometheus.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-prometheus
+    identifiers:
+      slug: prometheus
+    attrs:
+      name: Prometheus
+      provider: !KeyOf provider-prometheus
+      meta_launch_url: https://prometheus.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-prometheus
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Alertmanager (observability/kube-prometheus-stack-alertmanager)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-alertmanager
+    identifiers:
+      name: alertmanager
+    attrs:
+      <<: *forward-auth
+      external_host: https://alertmanager.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-alertmanager
+    identifiers:
+      slug: alertmanager
+    attrs:
+      name: Alertmanager
+      provider: !KeyOf provider-alertmanager
+      meta_launch_url: https://alertmanager.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-alertmanager
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- VictoriaLogs (observability/victoria-logs-server)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-logs
+    identifiers:
+      name: logs
+    attrs:
+      <<: *forward-auth
+      external_host: https://logs.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-logs
+    identifiers:
+      slug: logs
+    attrs:
+      name: VictoriaLogs
+      provider: !KeyOf provider-logs
+      meta_launch_url: https://logs.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-logs
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Kopia (system/kopia)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-kopia
+    identifiers:
+      name: kopia
+    attrs:
+      <<: *forward-auth
+      external_host: https://kopia.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-kopia
+    identifiers:
+      slug: kopia
+    attrs:
+      name: Kopia
+      provider: !KeyOf provider-kopia
+      meta_launch_url: https://kopia.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-kopia
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Renovate (renovate/renovate-operator)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-renovate
+    identifiers:
+      name: renovate
+    attrs:
+      <<: *forward-auth
+      external_host: https://renovate.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-renovate
+    identifiers:
+      slug: renovate
+    attrs:
+      name: Renovate
+      provider: !KeyOf provider-renovate
+      meta_launch_url: https://renovate.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-renovate
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Zigbee2MQTT Casa (external-ingresses/zigmqtt-casa-httproute)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-zigmqtt-casa
+    identifiers:
+      name: zigmqtt-casa
+    attrs:
+      <<: *forward-auth
+      external_host: https://zigmqtt-casa.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-zigmqtt-casa
+    identifiers:
+      slug: zigmqtt-casa
+    attrs:
+      name: Zigbee2MQTT Casa
+      provider: !KeyOf provider-zigmqtt-casa
+      meta_launch_url: https://zigmqtt-casa.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-zigmqtt-casa
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Zigbee2MQTT Garagem (external-ingresses/zigmqtt-garagem-httproute)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-zigmqtt-garagem
+    identifiers:
+      name: zigmqtt-garagem
+    attrs:
+      <<: *forward-auth
+      external_host: https://zigmqtt-garagem.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-zigmqtt-garagem
+    identifiers:
+      slug: zigmqtt-garagem
+    attrs:
+      name: Zigbee2MQTT Garagem
+      provider: !KeyOf provider-zigmqtt-garagem
+      meta_launch_url: https://zigmqtt-garagem.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-zigmqtt-garagem
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Zigbee Radio Casa (external-ingresses/zigbee-casa-radio-httproute)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-zigbee-casa-radio
+    identifiers:
+      name: zigbee-casa-radio
+    attrs:
+      <<: *forward-auth
+      external_host: https://zigbee-casa-radio.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-zigbee-casa-radio
+    identifiers:
+      slug: zigbee-casa-radio
+    attrs:
+      name: Zigbee Radio Casa
+      provider: !KeyOf provider-zigbee-casa-radio
+      meta_launch_url: https://zigbee-casa-radio.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-zigbee-casa-radio
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- VPN UI (external-ingresses/vpn-ui-httproute)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-vpn-ui
+    identifiers:
+      name: vpn-ui
+    attrs:
+      <<: *forward-auth
+      external_host: https://vpn-ui.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-vpn-ui
+    identifiers:
+      slug: vpn-ui
+    attrs:
+      name: VPN UI
+      provider: !KeyOf provider-vpn-ui
+      meta_launch_url: https://vpn-ui.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-vpn-ui
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- VPN Torrent (external-ingresses/vpn-torrent-httproute)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-vpn-torrent
+    identifiers:
+      name: vpn-torrent
+    attrs:
+      <<: *forward-auth
+      external_host: https://vpn-torrent.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-vpn-torrent
+    identifiers:
+      slug: vpn-torrent
+    attrs:
+      name: VPN Torrent
+      provider: !KeyOf provider-vpn-torrent
+      meta_launch_url: https://vpn-torrent.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-vpn-torrent
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- VPN Streaming Casal (external-ingresses/vpn-streaming-casal-httproute)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-vpn-streaming-casal
+    identifiers:
+      name: vpn-streaming-casal
+    attrs:
+      <<: *forward-auth
+      external_host: https://vpn-streaming-casal.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-vpn-streaming-casal
+    identifiers:
+      slug: vpn-streaming-casal
+    attrs:
+      name: VPN Streaming Casal
+      provider: !KeyOf provider-vpn-streaming-casal
+      meta_launch_url: https://vpn-streaming-casal.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-vpn-streaming-casal
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- VPN TV Escritorio (external-ingresses/vpn-tv-escritorio-httproute)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-vpn-tv-escritorio
+    identifiers:
+      name: vpn-tv-escritorio
+    attrs:
+      <<: *forward-auth
+      external_host: https://vpn-tv-escritorio.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-vpn-tv-escritorio
+    identifiers:
+      slug: vpn-tv-escritorio
+    attrs:
+      name: VPN TV Escritorio
+      provider: !KeyOf provider-vpn-tv-escritorio
+      meta_launch_url: https://vpn-tv-escritorio.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-vpn-tv-escritorio
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Sonarr (downloads/sonarr)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-sonarr
+    identifiers:
+      name: sonarr
+    attrs:
+      <<: *forward-auth
+      external_host: https://sonarr.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-sonarr
+    identifiers:
+      slug: sonarr
+    attrs:
+      name: Sonarr
+      provider: !KeyOf provider-sonarr
+      meta_launch_url: https://sonarr.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-sonarr
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Radarr (downloads/radarr)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-radarr
+    identifiers:
+      name: radarr
+    attrs:
+      <<: *forward-auth
+      external_host: https://radarr.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-radarr
+    identifiers:
+      slug: radarr
+    attrs:
+      name: Radarr
+      provider: !KeyOf provider-radarr
+      meta_launch_url: https://radarr.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-radarr
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Prowlarr (downloads/prowlarr)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-prowlarr
+    identifiers:
+      name: prowlarr
+    attrs:
+      <<: *forward-auth
+      external_host: https://prowlarr.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-prowlarr
+    identifiers:
+      slug: prowlarr
+    attrs:
+      name: Prowlarr
+      provider: !KeyOf provider-prowlarr
+      meta_launch_url: https://prowlarr.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-prowlarr
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Bazarr (downloads/bazarr)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-bazarr
+    identifiers:
+      name: bazarr
+    attrs:
+      <<: *forward-auth
+      external_host: https://bazarr.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-bazarr
+    identifiers:
+      slug: bazarr
+    attrs:
+      name: Bazarr
+      provider: !KeyOf provider-bazarr
+      meta_launch_url: https://bazarr.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-bazarr
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Mylar (downloads/mylar)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-mylar
+    identifiers:
+      name: mylar
+    attrs:
+      <<: *forward-auth
+      external_host: https://mylar.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-mylar
+    identifiers:
+      slug: mylar
+    attrs:
+      name: Mylar
+      provider: !KeyOf provider-mylar
+      meta_launch_url: https://mylar.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-mylar
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- SABnzbd (downloads/sabnzbd)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-sabnzbd
+    identifiers:
+      name: sabnzbd
+    attrs:
+      <<: *forward-auth
+      external_host: https://sabnzbd.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-sabnzbd
+    identifiers:
+      slug: sabnzbd
+    attrs:
+      name: SABnzbd
+      provider: !KeyOf provider-sabnzbd
+      meta_launch_url: https://sabnzbd.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-sabnzbd
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- qBittorrent (downloads/qbittorrent)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-qbittorrent
+    identifiers:
+      name: qbittorrent
+    attrs:
+      <<: *forward-auth
+      external_host: https://qbittorrent.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-qbittorrent
+    identifiers:
+      slug: qbittorrent
+    attrs:
+      name: qBittorrent
+      provider: !KeyOf provider-qbittorrent
+      meta_launch_url: https://qbittorrent.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-qbittorrent
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Tautulli (downloads/tautulli)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-tautulli
+    identifiers:
+      name: tautulli
+    attrs:
+      <<: *forward-auth
+      external_host: https://tautulli.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-tautulli
+    identifiers:
+      slug: tautulli
+    attrs:
+      name: Tautulli
+      provider: !KeyOf provider-tautulli
+      meta_launch_url: https://tautulli.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-tautulli
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Maintainerr (downloads/maintainerr)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-maintainerr
+    identifiers:
+      name: maintainerr
+    attrs:
+      <<: *forward-auth
+      external_host: https://maintainerr.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-maintainerr
+    identifiers:
+      slug: maintainerr
+    attrs:
+      name: Maintainerr
+      provider: !KeyOf provider-maintainerr
+      meta_launch_url: https://maintainerr.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-maintainerr
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Pinchflat (downloads/pinchflat)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-pinchflat
+    identifiers:
+      name: pinchflat
+    attrs:
+      <<: *forward-auth
+      external_host: https://pinchflat.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-pinchflat
+    identifiers:
+      slug: pinchflat
+    attrs:
+      name: Pinchflat
+      provider: !KeyOf provider-pinchflat
+      meta_launch_url: https://pinchflat.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-pinchflat
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Shelfmark (downloads/shelfmark)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-shelfmark
+    identifiers:
+      name: shelfmark
+    attrs:
+      <<: *forward-auth
+      external_host: https://shelfmark.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-shelfmark
+    identifiers:
+      slug: shelfmark
+    attrs:
+      name: Shelfmark
+      provider: !KeyOf provider-shelfmark
+      meta_launch_url: https://shelfmark.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-shelfmark
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Overseerr (downloads/overseerr) - any signed-in user
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-overseerr
+    identifiers:
+      name: overseerr
+    attrs:
+      <<: *forward-auth
+      external_host: https://overseerr.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-overseerr
+    identifiers:
+      slug: overseerr
+    attrs:
+      name: Overseerr
+      provider: !KeyOf provider-overseerr
+      meta_launch_url: https://overseerr.${SECRET_DOMAIN}
+      policy_engine_mode: any
+
+  # --- Frigate (home-automation/frigate)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-frigate
+    identifiers:
+      name: frigate
+    attrs:
+      <<: *forward-auth
+      external_host: https://frigate.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-frigate
+    identifiers:
+      slug: frigate
+    attrs:
+      name: Frigate
+      provider: !KeyOf provider-frigate
+      meta_launch_url: https://frigate.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-frigate
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Frigate go2rtc (home-automation/frigate-go2rtc)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-frigate-go2rtc
+    identifiers:
+      name: frigate-go2rtc
+    attrs:
+      <<: *forward-auth
+      external_host: https://frigate-go2rtc.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-frigate-go2rtc
+    identifiers:
+      slug: frigate-go2rtc
+    attrs:
+      name: Frigate go2rtc
+      provider: !KeyOf provider-frigate-go2rtc
+      meta_launch_url: https://frigate-go2rtc.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-frigate-go2rtc
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
   # --- Embedded outpost: serves every provider above ------------------------
   # This list is the complete set: a provider missing here stops working.
   - model: authentik_outposts.outpost
@@ -85,4 +852,33 @@ entries:
     attrs:
       providers:
         - !KeyOf provider-filebrowser
+        - !KeyOf provider-argus
+        - !KeyOf provider-bank-report
+        - !KeyOf provider-paperless-gpt
         - !KeyOf provider-headlamp
+        - !KeyOf provider-prometheus
+        - !KeyOf provider-alertmanager
+        - !KeyOf provider-logs
+        - !KeyOf provider-kopia
+        - !KeyOf provider-renovate
+        - !KeyOf provider-zigmqtt-casa
+        - !KeyOf provider-zigmqtt-garagem
+        - !KeyOf provider-zigbee-casa-radio
+        - !KeyOf provider-vpn-ui
+        - !KeyOf provider-vpn-torrent
+        - !KeyOf provider-vpn-streaming-casal
+        - !KeyOf provider-vpn-tv-escritorio
+        - !KeyOf provider-sonarr
+        - !KeyOf provider-radarr
+        - !KeyOf provider-prowlarr
+        - !KeyOf provider-bazarr
+        - !KeyOf provider-mylar
+        - !KeyOf provider-sabnzbd
+        - !KeyOf provider-qbittorrent
+        - !KeyOf provider-tautulli
+        - !KeyOf provider-maintainerr
+        - !KeyOf provider-pinchflat
+        - !KeyOf provider-shelfmark
+        - !KeyOf provider-overseerr
+        - !KeyOf provider-frigate
+        - !KeyOf provider-frigate-go2rtc
