@@ -38,14 +38,26 @@ spec:
       envFrom:
         - secretRef:
             name: &secret authentik-secret
-      podAnnotations:
+      # Reloader reads Deployment annotations (it ignored the old podAnnotations).
+      deploymentAnnotations:
         secret.reloader.stakater.com/reload: *secret
     server:
-      replicas: 1
+      # The embedded outpost runs in the server: with forward auth in front of
+      # apps, one server pod down would lock them all out.
+      replicas: 2
       pdb:
-        enabled: false
+        enabled: true
         minAvailable: 1
-        maxUnavailable: 1
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: authentik
+                    app.kubernetes.io/component: server
       dnsConfig:
         options:
           - name: ndots
@@ -103,6 +115,15 @@ spec:
           memory: 2Gi
     worker:
       replicas: 1
+      # Blueprints are discovered when the worker starts. Recreate (not a
+      # rolling update) so the new worker, which has the updated blueprint
+      # ConfigMap mounted, is the one that runs that discovery; reload it when
+      # the ConfigMap changes so blueprint edits apply right away.
+      deploymentStrategy:
+        type: Recreate
+      deploymentAnnotations:
+        secret.reloader.stakater.com/reload: *secret
+        configmap.reloader.stakater.com/reload: authentik-blueprints
       serviceAccount:
         create: true
       pdb:
