@@ -1,0 +1,30 @@
+---
+# Lets the Envoy Gateway SecurityPolicies of protected apps in other namespaces
+# (components/authentik-forward-auth) call the embedded outpost in this one.
+# Add a namespace here before protecting its first app.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/referencegrant_v1beta1.json
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: authentik-forward-auth
+spec:
+  from:
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: database
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: downloads
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: home-automation
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: media
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: observability
+  to:
+    - group: ""
+      kind: Service
+      name: authentik-server

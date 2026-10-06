@@ -1,0 +1,55 @@
+# Apps protected by Authentik forward auth (Envoy Gateway extAuth -> embedded outpost).
+#
+# Managed by GitOps: Authentik applies this file on start and whenever it
+# changes; edits made in the Authentik UI to these objects are overwritten.
+#
+# To protect another app (see docs/authentik-sso.md):
+#   1. add a provider + application (+ binding) block below
+#   2. add its provider to the embedded outpost list at the bottom
+#   3. add the authentik-forward-auth component to the app's ks.yaml
+version: 1
+metadata:
+  name: home-ops forward auth
+  labels:
+    blueprints.goauthentik.io/description: Apps behind Authentik forward auth, managed in git
+entries:
+  # --- FileBrowser ------------------------------------------------------------
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-filebrowser
+    identifiers:
+      name: filebrowser
+    attrs:
+      mode: forward_single
+      external_host: https://filebrowser.${SECRET_DOMAIN}
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      access_token_validity: hours=24
+  - model: authentik_core.application
+    id: app-filebrowser
+    identifiers:
+      slug: filebrowser
+    attrs:
+      name: FileBrowser
+      provider: !KeyOf provider-filebrowser
+      meta_launch_url: https://filebrowser.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  # FileBrowser can read and delete the NAS (including the backup repository):
+  # admins only.
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-filebrowser
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
+  # --- Embedded outpost: serves every provider above ------------------------
+  # This list is the complete set: a provider missing here stops working.
+  - model: authentik_outposts.outpost
+    identifiers:
+      managed: goauthentik.io/outposts/embedded
+    attrs:
+      providers:
+        - !KeyOf provider-filebrowser

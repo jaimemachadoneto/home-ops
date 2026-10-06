@@ -24,6 +24,11 @@ spec:
       retries: 3
       strategy: rollback
   values:
+    # Providers, applications and the embedded outpost's providers are managed
+    # in git: see blueprints/forward-auth.yaml.
+    blueprints:
+      configMaps:
+        - authentik-blueprints
     authentik:
       redis:
         host: dragonfly.database.svc.cluster.local

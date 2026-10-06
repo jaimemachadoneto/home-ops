@@ -7,3 +7,12 @@ resources:
   - ./helmrelease.yaml
   - ./helmrepository.yaml
   - ./httproute-override.yaml
+  - ./referencegrant.yaml
+configMapGenerator:
+  # Mounted into Authentik by the HelmRelease (blueprints.configMaps); Flux
+  # substitutes ${SECRET_DOMAIN} in it.
+  - name: authentik-blueprints
+    files:
+      - blueprints/forward-auth.yaml
+generatorOptions:
+  disableNameSuffixHash: true
