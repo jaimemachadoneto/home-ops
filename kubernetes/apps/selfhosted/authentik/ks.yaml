@@ -26,3 +26,28 @@ spec:
   targetNamespace: selfhosted
   timeout: 5m
   wait: false
+---
+# Envoy Gateway SecurityPolicies that put routes behind Authentik, one per
+# namespace (forward-auth/<namespace>.yaml). Not namespaced by Flux: each
+# policy must live in its route's namespace.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app authentik-forward-auth
+  namespace: flux-system
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  dependsOn:
+    - name: authentik
+  interval: 30m
+  path: ./kubernetes/apps/selfhosted/authentik/forward-auth
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  timeout: 5m
+  wait: false

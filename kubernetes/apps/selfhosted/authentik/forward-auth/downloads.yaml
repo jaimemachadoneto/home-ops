@@ -1,0 +1,66 @@
+---
+# Routes in downloads that require an Authentik login. Each one also needs a
+# provider in ../app/blueprints/forward-auth.yaml (see docs/authentik-sso.md).
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: authentik-forward-auth
+  namespace: downloads
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: bazarr
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: maintainerr
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: mylar
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: overseerr
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: pinchflat
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: prowlarr
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: qbittorrent
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: radarr
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: sabnzbd
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: shelfmark
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: sonarr
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: tautulli
+  extAuth:
+    # The outpost needs the session cookie to recognise the user.
+    headersToExtAuth:
+      - cookie
+    http:
+      backendRefs:
+        - name: authentik-server
+          namespace: selfhosted
+          port: 80
+      # Prefixed to the request path; the outpost's Envoy endpoint also serves
+      # the /outpost.goauthentik.io/ sign-in callback through it.
+      path: /outpost.goauthentik.io/auth/envoy
+      # Identity of the signed-in user, for apps that can use it.
+      headersToBackend:
+        - x-authentik-username
+        - x-authentik-groups
+        - x-authentik-email
+        - x-authentik-name
+        - x-authentik-uid
