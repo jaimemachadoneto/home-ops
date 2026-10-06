@@ -14,5 +14,6 @@ configMapGenerator:
   - name: authentik-blueprints
     files:
       - blueprints/forward-auth.yaml
+      - blueprints/oidc.yaml
 generatorOptions:
   disableNameSuffixHash: true
