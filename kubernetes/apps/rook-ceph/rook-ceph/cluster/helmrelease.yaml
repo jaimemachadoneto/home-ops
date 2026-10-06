@@ -41,15 +41,6 @@ spec:
         urlPrefix: /
         ssl: false
         prometheusEndpoint: http://prometheus-operated.observability.svc.cluster.local:9090
-      # The hourly volsync burst makes the mon store's disk slow for a few
-      # minutes; the default 5s probe timeout then restarts the mon. Give it
-      # room rather than forcing an election every hour.
-      healthCheck:
-        livenessProbe:
-          mon:
-            probe:
-              timeoutSeconds: 15
-              failureThreshold: 6
       mgr:
         modules:
           - name: diskprediction_local
