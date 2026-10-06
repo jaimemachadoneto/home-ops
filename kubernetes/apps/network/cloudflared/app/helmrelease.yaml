@@ -15,11 +15,6 @@ spec:
         data:
           config.yaml: |-
             ingress:
-              - hostname: "*.auth.${SECRET_DOMAIN}"
-                originRequest:
-                  http2Origin: true
-                  originServerName: ingress-ext.${SECRET_DOMAIN}
-                service: https://envoy-external-auth.{{ .Release.Namespace }}.svc.cluster.local:443
               - hostname: "*.ext.${SECRET_DOMAIN}"
                 originRequest:
                   http2Origin: true
