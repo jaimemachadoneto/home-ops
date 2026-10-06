@@ -37,6 +37,21 @@ spec:
             envFrom:
               - secretRef:
                   name: frigate-secret
+            # WebRTC media must reach go2rtc directly: through the LoadBalancer
+            # (Cilium DSR, announced from another node) the UDP flow breaks
+            # after the handshake. go2rtc advertises home-ops-03's IP
+            # (webrtc.candidates in Frigate's config); Frigate is pinned there by
+            # its gpu nodeSelector, and the controller uses Recreate, so the
+            # hostPort never clashes with a second pod.
+            ports:
+              - name: webrtc-tcp-host
+                containerPort: 8555
+                hostPort: 8555
+                protocol: TCP
+              - name: webrtc-udp-host
+                containerPort: 8555
+                hostPort: 8555
+                protocol: UDP
             probes:
               liveness: &probes
                 enabled: false
