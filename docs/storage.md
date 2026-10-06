@@ -115,6 +115,7 @@
 - **Manual snapshot**: `just k8s snapshot <ns> <app>`, or `just k8s snapshot-all`
 - **Off-site**: see `docs/offsite-backup.md`
 - **Cache StorageClass**: `openebs-hostpath` (fast local cache during backup/restore jobs)
+- **Mover placement**: movers run only on the control-plane nodes (the ones with `sdc`) and spread across them (`moverAffinity`), and start with a 0-15 min random delay, so the hourly run does not saturate one node's disk. A cache PVC is pinned to the node it was created on: if they pile up on one node again, pause the ReplicationSources and delete the cache PVCs (see below) so they are recreated spread out.
 - **Default PVC StorageClass**: `ceph-block`
 - **Snapshot Class**: `csi-ceph-blockpool`
 
