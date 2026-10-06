@@ -24,6 +24,12 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: zigbee-casa-radio-httproute
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: zigmqtt-casa-httproute
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: zigmqtt-garagem-httproute
   extAuth:
     # The outpost needs the session cookie to recognise the user.
     headersToExtAuth:
