@@ -286,60 +286,6 @@ entries:
       negate: false
       timeout: 30
 
-  # --- Zigbee2MQTT Casa (external-ingresses/zigmqtt-casa-httproute)
-  - model: authentik_providers_proxy.proxyprovider
-    id: provider-zigmqtt-casa
-    identifiers:
-      name: zigmqtt-casa
-    attrs:
-      <<: *forward-auth
-      external_host: https://zigmqtt-casa.${SECRET_DOMAIN}
-  - model: authentik_core.application
-    id: app-zigmqtt-casa
-    identifiers:
-      slug: zigmqtt-casa
-    attrs:
-      name: Zigbee2MQTT Casa
-      provider: !KeyOf provider-zigmqtt-casa
-      meta_launch_url: https://zigmqtt-casa.${SECRET_DOMAIN}
-      policy_engine_mode: any
-  - model: authentik_policies.policybinding
-    identifiers:
-      target: !KeyOf app-zigmqtt-casa
-      group: !Find [authentik_core.group, [name, authentik Admins]]
-      order: 0
-    attrs:
-      enabled: true
-      negate: false
-      timeout: 30
-
-  # --- Zigbee2MQTT Garagem (external-ingresses/zigmqtt-garagem-httproute)
-  - model: authentik_providers_proxy.proxyprovider
-    id: provider-zigmqtt-garagem
-    identifiers:
-      name: zigmqtt-garagem
-    attrs:
-      <<: *forward-auth
-      external_host: https://zigmqtt-garagem.${SECRET_DOMAIN}
-  - model: authentik_core.application
-    id: app-zigmqtt-garagem
-    identifiers:
-      slug: zigmqtt-garagem
-    attrs:
-      name: Zigbee2MQTT Garagem
-      provider: !KeyOf provider-zigmqtt-garagem
-      meta_launch_url: https://zigmqtt-garagem.${SECRET_DOMAIN}
-      policy_engine_mode: any
-  - model: authentik_policies.policybinding
-    identifiers:
-      target: !KeyOf app-zigmqtt-garagem
-      group: !Find [authentik_core.group, [name, authentik Admins]]
-      order: 0
-    attrs:
-      enabled: true
-      negate: false
-      timeout: 30
-
   # --- Zigbee Radio Casa (external-ingresses/zigbee-casa-radio-httproute)
   - model: authentik_providers_proxy.proxyprovider
     id: provider-zigbee-casa-radio
@@ -871,6 +817,24 @@ entries:
       negate: false
       timeout: 30
 
+  # --- Zigbee2MQTT Casa: removed from forward auth
+  - model: authentik_core.application
+    state: absent
+    identifiers:
+      slug: zigmqtt-casa
+  - model: authentik_providers_proxy.proxyprovider
+    state: absent
+    identifiers:
+      name: zigmqtt-casa
+  # --- Zigbee2MQTT Garagem: removed from forward auth
+  - model: authentik_core.application
+    state: absent
+    identifiers:
+      slug: zigmqtt-garagem
+  - model: authentik_providers_proxy.proxyprovider
+    state: absent
+    identifiers:
+      name: zigmqtt-garagem
   # --- Embedded outpost: serves every provider above ------------------------
   # This list is the complete set: a provider missing here stops working.
   - model: authentik_outposts.outpost
@@ -888,8 +852,6 @@ entries:
         - !KeyOf provider-logs
         - !KeyOf provider-kopia
         - !KeyOf provider-renovate
-        - !KeyOf provider-zigmqtt-casa
-        - !KeyOf provider-zigmqtt-garagem
         - !KeyOf provider-zigbee-casa-radio
         - !KeyOf provider-vpn-ui
         - !KeyOf provider-vpn-torrent
