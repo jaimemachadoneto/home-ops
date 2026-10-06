@@ -80,18 +80,21 @@
 | **audiobookshelf**                           | media                 | PVC                                   | `ceph-block`       | Yes                |
 | **booklore**                                 | media                 | PVC                                   | `ceph-block`       | Yes                |
 | **gatus**                                    | observability         | emptyDir only                         | —                  | No                 |
-| **grafana**                                  | observability         | PVC                                   | `ceph-block`       | Yes                |
+| **grafana**                                  | observability         | none (persistence disabled; dashboards from git) | —       | No                 |
 | **headlamp**                                 | observability         | emptyDir only                         | —                  | No                 |
 | **kube-prometheus-stack**                    | observability         | PVC (Prometheus + Alertmanager)       | `ceph-block`       | No                 |
 | **victoria-logs**                            | observability         | PVC                                   | `ceph-block`       | No                 |
 | **onepassword-connect**                      | external-secrets      | emptyDir only                         | —                  | No                 |
 | **actual**                                   | selfhosted            | PVC                                   | `ceph-block`       | Yes                |
 | **argus**                                    | selfhosted            | PVC                                   | `ceph-block`       | Yes                |
+| **bank-report**                              | selfhosted            | PVC (data)                            | `ceph-block`       | Yes                |
 | **atuin**                                    | selfhosted            | PVC (5Gi)                             | `ceph-block`       | Yes                |
 | **filebrowser**                              | selfhosted            | PVC (5Gi, RWX)                        | `ceph-filesystem`  | No                 |
 | **karakeep**                                 | selfhosted            | PVC                                   | `ceph-block`       | Yes                |
 | **openwebui**                                | selfhosted            | PVC                                   | `ceph-block`       | Yes                |
-| **paperless**                                | selfhosted            | PVC (15Gi data, 1Gi cache, 1Gi media) | `ceph-block`       | Yes                |
+| **paperless**                                | selfhosted            | PVC (15Gi: SQLite DB, index, all documents) | `ceph-block` | Yes             |
+| **paperless-ai**                             | selfhosted            | PVC (1Gi)                             | `ceph-block`       | Yes                |
+| **paperless-gpt**                            | selfhosted            | PVC (1Gi)                             | `ceph-block`       | Yes                |
 | **rclone (syncDocumentsJaime)**              | selfhosted            | NFS (10.30.10.11)                     | NFS direct         | No                 |
 | **rclone (syncDocumentsMonica)**             | selfhosted            | NFS (10.30.10.11)                     | NFS direct         | No                 |
 | **rclone (syncPaperlessOcr)**                | selfhosted            | NFS (10.30.10.11)                     | NFS direct         | No                 |
@@ -104,9 +107,13 @@
 ## Volsync Backup Details
 
 - **Schedule**: Hourly
-- **Destination**: NAS at `nas.internal:/mnt/Data1/kubernetes`
-- **Method**: Kopia (via restic-compatible snapshots)
-- **Retention**: 24 hourly, 7 daily
+- **Destination**: one Kopia repository on the NAS, `nas.jaimenet.com:/mnt/Data1/kubernetes` (NFS, mounted into mover jobs by a MutatingAdmissionPolicy)
+- **Method**: Kopia, from a Ceph snapshot of the PVC (crash-consistent)
+- **Retention**: 24 hourly, 7 daily, 2 weekly
+- **Maintenance**: `KopiaMaintenance` daily at 03:30
+- **Restore**: a PVC created by the volsync component restores the latest snapshot automatically (`ReplicationDestination` `<app>-bootstrap`)
+- **Manual snapshot**: `just k8s snapshot <ns> <app>`, or `just k8s snapshot-all`
+- **Off-site**: see `docs/offsite-backup.md`
 - **Cache StorageClass**: `openebs-hostpath` (fast local cache during backup/restore jobs)
 - **Default PVC StorageClass**: `ceph-block`
 - **Snapshot Class**: `csi-ceph-blockpool`
