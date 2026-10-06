@@ -1,0 +1,72 @@
+---
+# Publishes cluster and backup health to Home Assistant as the "Home-Ops" MQTT
+# device (see status.py). It holds one MQTT connection with a Last Will, so if
+# it, its node or the cluster goes down, the device turns unavailable in
+# Home Assistant.
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ha-status
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: ha-status
+  interval: 30m
+  values:
+    controllers:
+      ha-status:
+        replicas: 1
+        # One MQTT client id: two pods at once would keep kicking each other off.
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+        containers:
+          app:
+            image:
+              repository: mirror.gcr.io/library/python
+              tag: 3.14-alpine@sha256:f6a589d43c42b9e7f7dc67a12d37132491f362859a5d750607710cc56da3bc72
+            command: ["python3", "/app/status.py"]
+            env:
+              PYTHONDONTWRITEBYTECODE: "1"
+              PROMETHEUS_URL: http://prometheus-operated.observability.svc.cluster.local:9090
+              ALERTMANAGER_URL: http://alertmanager-operated.observability.svc.cluster.local:9093
+              MQTT_HOST: mqtt.jaimenet.com
+              CONFIGURATION_URL: https://grafana.${SECRET_DOMAIN}
+            envFrom:
+              - secretRef:
+                  name: ha-status-secret
+            # It exits on any MQTT error and is restarted; nothing to probe.
+            probes:
+              liveness:
+                enabled: false
+              readiness:
+                enabled: false
+              startup:
+                enabled: false
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 64Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+    persistence:
+      script:
+        type: configMap
+        name: ha-status-script
+        globalMounts:
+          - path: /app
+            readOnly: true

@@ -23,8 +23,11 @@ spec:
       fsGroup: ${APP_GID:=2000}
     parallelism: 2
     repository: "${APP}-volsync-secret"
+    # Two weekly snapshots cover damage noticed more than a week late;
+    # kopia deduplicates, so they cost little extra space.
     retain:
       hourly: 24
       daily: 7
+      weekly: 2
     storageClassName: "${VOLSYNC_STORAGECLASS:=ceph-block}"
     volumeSnapshotClassName: "${VOLSYNC_SNAPSHOTCLASS:=csi-ceph-blockpool}"
