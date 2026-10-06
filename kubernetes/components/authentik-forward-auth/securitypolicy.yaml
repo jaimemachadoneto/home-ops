@@ -1,0 +1,35 @@
+---
+# Puts the app's HTTPRoute behind Authentik: Envoy asks the embedded outpost
+# about every request and only lets it through for a signed-in, allowed user.
+# The app also needs a provider in authentik/app/blueprints/forward-auth.yaml,
+# and its namespace in authentik/app/referencegrant.yaml (unless selfhosted).
+# Variables: APP, and AUTH_ROUTE when the HTTPRoute is not named after APP.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: "${APP}-authentik"
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: "${AUTH_ROUTE:=${APP}}"
+  extAuth:
+    # The outpost needs the session cookie to recognise the user.
+    headersToExtAuth:
+      - cookie
+    http:
+      backendRefs:
+        - name: authentik-server
+          namespace: selfhosted
+          port: 80
+      # Prefixed to the request path; the outpost's Envoy endpoint also serves
+      # the /outpost.goauthentik.io/ sign-in callback through it.
+      path: /outpost.goauthentik.io/auth/envoy
+      # Identity of the signed-in user, for apps that can use it.
+      headersToBackend:
+        - x-authentik-username
+        - x-authentik-groups
+        - x-authentik-email
+        - x-authentik-name
+        - x-authentik-uid
