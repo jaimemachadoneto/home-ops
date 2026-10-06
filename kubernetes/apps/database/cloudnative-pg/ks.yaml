@@ -49,27 +49,29 @@ spec:
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
----
-# Restore drill (temporary): remove this entry once the drill has been checked;
-# prune deletes the test cluster and its PVC.
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: &app cloudnative-pg-restore-test
-spec:
-  targetNamespace: database
-  commonMetadata:
-    labels:
-      app.kubernetes.io/name: *app
-  dependsOn:
-    - name: cloudnative-pg-cluster
-  path: ./kubernetes/apps/database/cloudnative-pg/restore-test
-  prune: true
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-    namespace: flux-system
-  wait: false
-  interval: 30m
-  timeout: 30m
+# Restore drill: recovers the latest backup into a throwaway cluster to prove
+# the backups restore (see restore-test/ and docs/offsite-backup.md). Uncomment
+# to run it; comment it out again afterwards and Flux prunes the test cluster
+# and its PVC. Last run 2026-10-06: restored, ~5 min behind live.
+# ---
+# # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+# apiVersion: kustomize.toolkit.fluxcd.io/v1
+# kind: Kustomization
+# metadata:
+#   name: &app cloudnative-pg-restore-test
+# spec:
+#   targetNamespace: database
+#   commonMetadata:
+#     labels:
+#       app.kubernetes.io/name: *app
+#   dependsOn:
+#     - name: cloudnative-pg-cluster
+#   path: ./kubernetes/apps/database/cloudnative-pg/restore-test
+#   prune: true
+#   sourceRef:
+#     kind: GitRepository
+#     name: flux-system
+#     namespace: flux-system
+#   wait: false
+#   interval: 30m
+#   timeout: 30m
