@@ -1,0 +1,48 @@
+---
+# Prints what the restored cluster contains. Read it with:
+#   kubectl -n database logs job/postgres16-restore-verify
+# The point in time that was restored is logged by the recovery pod:
+#   kubectl -n database logs -l cnpg.io/cluster=postgres16-restore-test,cnpg.io/jobRole=full-recovery | grep -i "last completed transaction"
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres16-restore-verify
+spec:
+  backoffLimit: 30
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: verify
+          image: ghcr.io/cloudnative-pg/postgresql:16.4-29
+          env:
+            - name: PGHOST
+              value: postgres16-restore-test-rw.database.svc.cluster.local
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: cloudnative-pg-secret
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cloudnative-pg-secret
+                  key: password
+            - name: PGDATABASE
+              value: postgres
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              until pg_isready -t 5; do echo "waiting for restored cluster..."; sleep 10; done
+              echo "=== databases ==="
+              psql -c "SELECT datname, pg_size_pretty(pg_database_size(datname)) AS size FROM pg_database WHERE NOT datistemplate ORDER BY 1;"
+              for db in $(psql -Atc "SELECT datname FROM pg_database WHERE NOT datistemplate AND datname <> 'postgres' ORDER BY 1;"); do
+                echo "=== $db: largest tables (exact row counts) ==="
+                psql -d "$db" -c "SELECT table_schema || '.' || table_name AS tbl, (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text::bigint AS rows FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema') ORDER BY rows DESC LIMIT 5;"
+              done
+              if psql -Atc "SELECT 1 FROM pg_database WHERE datname='authentik'" | grep -q 1; then
+                echo "=== authentik ==="
+                psql -d authentik -c "SELECT (SELECT count(*) FROM authentik_core_user) AS users, (SELECT count(*) FROM authentik_core_application) AS applications, (SELECT max(last_login) FROM authentik_core_user) AS last_login;"
+              fi

@@ -75,3 +75,43 @@ spec:
           for: 15m
           labels:
             severity: warning
+    - name: cloudnative-pg-backup.rules
+      rules:
+        - alert: CNPGNoRecentBackup
+          annotations:
+            description: The newest base backup of {{ $labels.namespace }}/postgres16 is {{ $value | humanizeDuration }} old (expected one per day). Check the ScheduledBackup, the Backup objects and the MinIO bucket.
+            summary: No successful postgres base backup in over 26 hours
+          expr: |-
+            time() - max by (namespace) (cnpg_collector_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"}) > 26 * 3600
+          for: 15m
+          labels:
+            severity: critical
+        - alert: CNPGBackupMetricsMissing
+          annotations:
+            description: Prometheus has no backup metrics for the postgres16 cluster, so backup age cannot be checked. The cluster or its PodMonitor may be down.
+            summary: Postgres backup metrics are missing
+          expr: |-
+            absent(cnpg_collector_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})
+          for: 1h
+          labels:
+            severity: critical
+        - alert: CNPGLastBackupFailed
+          annotations:
+            description: The most recent base backup of {{ $labels.namespace }}/postgres16 failed and no backup has succeeded since.
+            summary: Postgres base backup failed
+          expr: |-
+            max by (namespace) (cnpg_collector_last_failed_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})
+              > max by (namespace) (cnpg_collector_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})
+          for: 15m
+          labels:
+            severity: critical
+        - alert: CNPGWalArchivingStalled
+          annotations:
+            description: No WAL segment has been shipped to the object store for {{ $value | humanizeDuration }}. Point-in-time recovery is falling behind; check the ContinuousArchiving condition on the cluster.
+            summary: Postgres WAL archiving has stalled
+          # min across pods selects the primary; replicas do not archive
+          expr: |-
+            min by (namespace) (cnpg_pg_stat_archiver_seconds_since_last_archival{namespace="database", pod=~"postgres16-[0-9]+"}) > 3600
+          for: 15m
+          labels:
+            severity: critical
