@@ -78,7 +78,10 @@ spec:
 # Restore drill: recovers the latest backup into a throwaway cluster to prove
 # the backups restore (see restore-test/ and docs/offsite-backup.md). Uncomment
 # to run it; comment it out again afterwards and Flux prunes the test cluster
-# and its PVC. Last run 2026-10-06: restored, ~5 min behind live.
+# and its PVC. Without a PR: `kubectl kustomize .../restore-test | kubectl -n
+# database apply -f -`, then delete the Cluster and the Job.
+# Last run 2026-10-07 through the Barman Cloud plugin: restored, identical to
+# live at the time of the drill.
 # ---
 # # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
 # apiVersion: kustomize.toolkit.fluxcd.io/v1

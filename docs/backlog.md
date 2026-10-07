@@ -28,24 +28,20 @@ NFS/S3, loses live data and backups together. Steps in
       reads `{FRIGATE_*}` environment variables, which can come from 1Password
       through an ExternalSecret (step towards Frigate's config in git).
 
-### 3. Postgres: finish the Barman Cloud Plugin move
+### 3. Postgres: small deprecations left
 
-Done: restore-on-rebuild (2026-10-07, PR #327; procedure in
-[offsite-backup.md](offsite-backup.md) under "Restore procedures > Postgres"),
-and backups moved to the Barman Cloud plugin (PR `feat/cnpg-barman-cloud-plugin`,
-ObjectStore `postgres16-nas`, same `postgres16-v0` archive).
+Done 2026-10-07: restore-on-rebuild (PR #327, procedure in
+[offsite-backup.md](offsite-backup.md) under "Restore procedures > Postgres")
+and backups on the Barman Cloud plugin (PR #328, ObjectStore `postgres16-nas`,
+same `postgres16-v0` archive). Verified after the rollout: WAL archiving
+through the plugin, a manual `method: plugin` base backup, the
+`barman_cloud_cloudnative_pg_io_*` metrics, and a restore drill identical to
+live. The operator chart is no longer held back; Renovate proposes upgrades
+(1.31 is safe now).
 
-Still open:
-
-- [ ] After the plugin PR is live: confirm `ContinuousArchiving=True`, take a
-      manual base backup with `method: plugin`, check the
-      `barman_cloud_cloudnative_pg_io_*` metrics exist (the backup alerts and
-      `ha-status` now use them), then re-run the restore drill.
-- [ ] Then unpin the operator chart (`cloudnative-pg/app/ocirepository.yaml`,
-      `tag: 0.29.1`) and let Renovate upgrade it.
-- [ ] Smaller deprecation warnings from the operator:
-      `nodeMaintenanceWindow` → `spec.enablePDB`, and
-      `monitoring.enablePodMonitor` → our own PodMonitor.
+- [ ] Operator deprecation warnings: `nodeMaintenanceWindow` →
+      `spec.enablePDB`, and `monitoring.enablePodMonitor` → our own
+      PodMonitor.
 
 ### 4. Monitoring gaps
 
