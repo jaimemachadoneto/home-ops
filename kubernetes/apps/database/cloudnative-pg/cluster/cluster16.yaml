@@ -39,9 +39,10 @@ spec:
         maxParallel: 8
       destinationPath: s3://cloudnative/
       endpointURL: http://nas.jaimenet.com:9000
-      # Note: serverName version needs to be inclemented
-      # when recovering from an existing cnpg cluster
-      serverName: &currentCluster postgres16-v0
+      # Archive this cluster writes to. Bump it (v0 -> v1) whenever the
+      # cluster is re-created: CNPG refuses to archive into a non-empty path.
+      # Procedure in docs/offsite-backup.md, "Restore procedures > Postgres".
+      serverName: postgres16-v0
       s3Credentials:
         accessKeyId:
           name: cloudnative-pg-secret
@@ -49,19 +50,15 @@ spec:
         secretAccessKey:
           name: cloudnative-pg-secret
           key: s3-secret
+  # A new or re-created cluster always restores from the object store,
+  # never starts empty. CNPG only reads `bootstrap` when it creates the
+  # cluster, so this does nothing to the running one. If the archive cannot
+  # be read the bootstrap fails instead of handing apps an empty database.
   bootstrap:
-    initdb:
-      database: app
-      owner: app
-
-  # Note: previousCluster needs to be set to the name of the previous
-  # cluster when recovering from an existing cnpg cluster
-  # bootstrap:
-  #   recovery:
-  #     source: &previousCluster postgres16-v0
-  # Note: externalClusters is needed when recovering from an existing cnpg cluster
-  # externalClusters:
-  #   - name: *previousCluster
-  #     barmanObjectStore:
-  #       <<: *barmanObjectStore
-  #       serverName: *previousCluster
+    recovery:
+      source: &previousCluster postgres16-v0
+  externalClusters:
+    - name: *previousCluster
+      barmanObjectStore:
+        <<: *barmanObjectStore
+        serverName: *previousCluster

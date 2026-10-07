@@ -148,7 +148,65 @@ Browse snapshots and restore single files from the Kopia UI
 
 ### Postgres
 
-See `docs/cnpg-backup-review.md` (added in PR #308).
+`postgres16` is bootstrapped with `recovery` from its own archive
+(`cluster16.yaml`), so a new or re-created cluster restores the latest backup
+plus WAL instead of starting empty, and fails to start if it cannot read the
+archive. The restore drill (`restore-test/`, see `docs/cnpg-backup-review.md`)
+exercises the same path without touching production.
+
+Two names matter, both in `cluster16.yaml`:
+
+| Field | Meaning | Today |
+| --- | --- | --- |
+| `backup.barmanObjectStore.serverName` | archive the running cluster writes to | `postgres16-v0` |
+| `bootstrap.recovery.source` (and the `externalClusters` entry) | archive a new cluster restores from | `postgres16-v0` |
+
+They are equal while the cluster runs. CNPG refuses to archive into a path
+that already holds another cluster's backups ("Expected empty archive"), so a
+re-created cluster needs the write name bumped.
+
+**Rebuilding on purpose** (corrupt data, lost PVCs on both nodes, a
+re-bootstrap):
+
+1. Commit: `serverName: postgres16-v1`; leave `recovery.source` at
+   `postgres16-v0`. Merge and let Flux apply it.
+2. Delete the cluster; CNPG removes its PVCs, Flux re-creates it and it
+   restores from `v0`:
+
+   ```bash
+   kubectl -n database delete cluster postgres16
+   kubectl -n database get cluster postgres16 -w     # until "Cluster in healthy state"
+   ```
+
+3. Take a base backup in the new archive straight away (the daily
+   ScheduledBackup only runs at midnight):
+
+   ```bash
+   kubectl -n database create -f - <<'YAML'
+   apiVersion: postgresql.cnpg.io/v1
+   kind: Backup
+   metadata:
+     generateName: postgres16-rebuild-
+   spec:
+     cluster:
+       name: postgres16
+   YAML
+   ```
+
+4. Commit: `recovery.source` (and the `restore-test` source, and the
+   archive path in the table at the top) to `postgres16-v1`, so the next
+   rebuild restores from the new archive. **Do not skip this**: a rebuild from
+   `v0` later would lose everything written since step 2.
+5. After 31 days, once `v1` holds a full retention window, delete
+   `s3://cloudnative/postgres16-v0/` from MinIO (retention only prunes the
+   archive the cluster writes to).
+
+**Re-created by accident** (namespace deleted, Cluster pruned): it restores
+from `v0` by itself, then WAL archiving fails and the Postgres backup alerts
+fire (also `binary_sensor.home_ops_backup_problem` in Home Assistant). The
+data is safe, but WAL piles up in `pg_wal` until archiving works again, so do
+steps 1, 3 and 4 above the same day. Changing `serverName` on the running
+cluster only re-points the archiver; it does not re-create anything.
 
 ### From R2 (NAS lost)
 
