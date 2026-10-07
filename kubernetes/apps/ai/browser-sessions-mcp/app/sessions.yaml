@@ -1,0 +1,23 @@
+---
+# One LiteLLMMCPServer per browser-sessions session. browser-sessions gives
+# every session its own URL and token on purpose (one agent per session), so
+# each is a separate MCP server in the gateway, with tools prefixed by its
+# alias. To add a session `<name>`: create it in the admin UI, add a field
+# `<name>` with its token to the 1Password item `browser-sessions`, add it to
+# externalsecret.yaml, and copy the block below with the `colegio`s changed.
+#
+# Note: without a LiteLLM database every gateway client can use every server
+# here (docs/ai.md); each session's own approval switch still holds sends.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: browser-sessions-colegio
+spec:
+  alias: browser_colegio
+  url: http://browser-sessions.selfhosted.svc.cluster.local:8080/colegio/mcp
+  transport: http
+  authType: bearer_token
+  authTokenRef:
+    name: browser-sessions-mcp-secret
+    key: colegio

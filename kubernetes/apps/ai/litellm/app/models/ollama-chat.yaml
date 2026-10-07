@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: ollama-chat
+spec:
+  # Ollama host ai.local.jaimenet.com; `ollama list` there shows what is
+  # pulled (qwen3:8b, qwen3:4b, qwen2.5-coder:7b, llama3.2-vision:11b, ...).
+  modelName: ollama/local
+  params:
+    model: ollama/qwen3:8b
+    apiBase: http://ai.local.jaimenet.com:11434
+  info:
+    supportsFunctionCalling: true
