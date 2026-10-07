@@ -7,7 +7,7 @@ LiteLLM operator.
 | --- | --- |
 | `litellm` | One OpenAI-compatible API for every model, and one **MCP gateway** for every MCP server: `https://litellm.${SECRET_DOMAIN}` (envoy-internal, LAN only) |
 | Models | `deepseek/deepseek-chat` (DeepSeek API), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.jaimenet.com`) |
-| MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_colegio` (the browser-sessions session `colegio`) |
+| MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_<session>` (one per browser-sessions session, e.g. `browser_colegio`) |
 | `memini` | Long-term memory API (`memini.${SECRET_DOMAIN}`); embeddings from Ollama (`qwen3-embedding:4b`), reranker in-cluster (llmkube, `qwen3-reranker-0.6b`) |
 
 ## One URL for all MCP servers
@@ -36,7 +36,7 @@ Each app has its own ExternalSecret; a missing item only breaks that app.
 | `Context7` | `api_key` | context7 MCP |
 | `home-assistant` | `ha_mcp_token` | Home Assistant MCP (a long-lived HA token) |
 | `memini` | `API_KEY` | memini |
-| `browser-sessions` | `litellm_mcp_token` | bearer token of the `colegio` session, from the browser-sessions admin UI |
+| `browser-sessions-mcp` | one field per session, named like the session (`colegio`) | that session's bearer token, from the browser-sessions admin UI |
 
 ## Outlook MCP: one-time sign-in
 
@@ -58,3 +58,17 @@ Entra (personal accounts allowed, public client, Mail.ReadWrite + Mail.Send),
 put its ID in an ExternalSecret and set `MS365_MCP_CLIENT_ID`, then sign in
 again. To make it read-only, add `--read-only` to the server command in
 `outlook-mcp/app/mcpserver.yaml`.
+
+## browser-sessions sessions
+
+Each session has its own MCP URL and token by design, so each is its own MCP
+server in the gateway (`ai/browser-sessions-mcp/app/sessions.yaml`). To add a
+session `<name>`:
+
+1. Create it in `https://bwsessions.${SECRET_DOMAIN}/admin`, copy the token.
+2. 1Password item `browser-sessions-mcp`: add a field `<name>` with the token.
+3. Copy the `colegio` block in `sessions.yaml`, change the three `colegio`s.
+
+Without a LiteLLM database every gateway client can use every session (and
+every other MCP server); the per-session approval switch in browser-sessions
+still holds anything that sends. Per-key access needs the database (backlog).
