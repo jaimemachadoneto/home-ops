@@ -36,7 +36,7 @@ Each app has its own ExternalSecret; a missing item only breaks that app.
 | `Context7` | `api_key` | context7 MCP |
 | `home-assistant` | `ha_mcp_token` | Home Assistant MCP (a long-lived HA token) |
 | `memini` | `API_KEY` | memini |
-| `browser-sessions-mcp` | one field per session, named like the session (`colegio`) | that session's bearer token, from the browser-sessions admin UI |
+| `browser-sessions` | one field per session, named like the session (`colegio`) | that session's bearer token, from the browser-sessions admin UI |
 
 ## Outlook MCP: one-time sign-in
 
@@ -66,8 +66,9 @@ server in the gateway (`ai/browser-sessions-mcp/app/sessions.yaml`). To add a
 session `<name>`:
 
 1. Create it in `https://bwsessions.${SECRET_DOMAIN}/admin`, copy the token.
-2. 1Password item `browser-sessions-mcp`: add a field `<name>` with the token.
-3. Copy the `colegio` block in `sessions.yaml`, change the three `colegio`s.
+2. 1Password item `browser-sessions`: add a field `<name>` with the token.
+3. Add `<name>` to `browser-sessions-mcp/app/externalsecret.yaml` and copy the
+   `colegio` block in `sessions.yaml` with the names changed.
 
 Without a LiteLLM database every gateway client can use every session (and
 every other MCP server); the per-session approval switch in browser-sessions

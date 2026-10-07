@@ -3,8 +3,8 @@
 # every session its own URL and token on purpose (one agent per session), so
 # each is a separate MCP server in the gateway, with tools prefixed by its
 # alias. To add a session `<name>`: create it in the admin UI, add a field
-# `<name>` with its token to the 1Password item `browser-sessions-mcp`, and
-# copy the block below with the three `<name>`s changed.
+# `<name>` with its token to the 1Password item `browser-sessions`, add it to
+# externalsecret.yaml, and copy the block below with the `colegio`s changed.
 #
 # Note: without a LiteLLM database every gateway client can use every server
 # here (docs/ai.md); each session's own approval switch still holds sends.
