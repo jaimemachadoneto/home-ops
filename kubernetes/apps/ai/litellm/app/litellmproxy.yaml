@@ -10,6 +10,8 @@ spec:
   replicas: 1
   generalSettings:
     health_check_endpoint: /v1/health
+    # Per worker; the litellm role is capped at 40 connections.
+    database_connection_pool_limit: 10
   routerSettings:
     routing_strategy: simple-shuffle
     redis_host: os.environ/REDIS_HOST
@@ -42,6 +44,40 @@ spec:
         secretKeyRef:
           name: litellm
           key: LITELLM_MASTER_KEY
+    - name: LITELLM_SALT_KEY
+      valueFrom:
+        secretKeyRef:
+          name: litellm
+          key: LITELLM_SALT_KEY
+    # Keys, users, teams, SSO sessions and spend logs (CNPG postgres16).
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: litellm
+          key: DATABASE_URL
+    # Dashboard sign-in with Authentik (provider "litellm" in
+    # authentik/app/blueprints/oidc.yaml). Only authentik Admins may sign in
+    # and they get proxy_admin through the litellm_role claim. The master
+    # key still signs in at /fallback/login if Authentik is down.
+    - name: PROXY_BASE_URL
+      value: https://litellm.${SECRET_DOMAIN}
+    - name: GENERIC_CLIENT_ID
+      value: litellm
+    - name: GENERIC_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: litellm
+          key: GENERIC_CLIENT_SECRET
+    - name: GENERIC_AUTHORIZATION_ENDPOINT
+      value: https://sso.${SECRET_DOMAIN}/application/o/authorize/
+    - name: GENERIC_TOKEN_ENDPOINT
+      value: https://sso.${SECRET_DOMAIN}/application/o/token/
+    - name: GENERIC_USERINFO_ENDPOINT
+      value: https://sso.${SECRET_DOMAIN}/application/o/userinfo/
+    - name: GENERIC_SCOPE
+      value: openid email profile
+    - name: GENERIC_USER_ROLE_ATTRIBUTE
+      value: litellm_role
   resources:
     requests:
       cpu: 100m
