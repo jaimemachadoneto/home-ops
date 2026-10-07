@@ -11,6 +11,9 @@ spec:
   from:
     - group: gateway.envoyproxy.io
       kind: SecurityPolicy
+      namespace: ai
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
       namespace: database
     - group: gateway.envoyproxy.io
       kind: SecurityPolicy

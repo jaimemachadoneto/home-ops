@@ -34,7 +34,7 @@ data:
       G1:
         style: row
         header: false
-        columns: 6
+        columns: 7
         Home Automation:
           style: column
           icon: home-assistant
@@ -51,6 +51,9 @@ data:
           style: column
         Infrastructure:
           style: column
+        AI:
+          style: column
+          icon: mdi-robot
       G2:
         style: column
         header: false
@@ -79,4 +82,12 @@ data:
 
   bookmarks.yaml: ""
 
-  services.yaml: ""
+  # Only for apps whose route cannot carry gethomepage.dev annotations (the
+  # LiteLLM operator's HTTPRoute has no annotations field).
+  services.yaml: |
+    - AI:
+        - LiteLLM:
+            href: https://litellm.${SECRET_DOMAIN}/ui
+            icon: sh-litellm.png
+            description: Model gateway and MCP servers (one URL)
+            siteMonitor: http://litellm.ai.svc.cluster.local:4000/health/liveliness
