@@ -5,7 +5,7 @@
 | Data | Backed up by | Lands on | Retention |
 | --- | --- | --- | --- |
 | App PVCs (26 apps, see `docs/storage.md`) | VolSync + Kopia, hourly | NAS `/mnt/Data1/kubernetes` (NFS) | 24h / 7d / 2w |
-| Postgres `postgres16` | CNPG Barman: WAL continuously, base backup daily | NAS MinIO, `s3://cloudnative/postgres16-v0` | 31d |
+| Postgres `postgres16` | Barman Cloud plugin (ObjectStore `postgres16-nas`): WAL continuously, base backup daily | NAS MinIO, `s3://cloudnative/postgres16-v0` | 31d |
 | Semaphore LXC | `hosts/semaphore/scripts/backup.sh` + Proxmox vzdump | NAS | 14d local |
 | Documents, scans | rclone jobs + Paperless | NAS `/mnt/Data1/Documents` | none |
 | Keys (Kopia password, S3 keys, Talos secrets, age key) | 1Password | off-site | — |
@@ -158,7 +158,7 @@ Two names matter, both in `cluster16.yaml`:
 
 | Field | Meaning | Today |
 | --- | --- | --- |
-| `backup.barmanObjectStore.serverName` | archive the running cluster writes to | `postgres16-v0` |
+| `plugins[barman-cloud].parameters.serverName` | archive the running cluster writes to | `postgres16-v0` |
 | `bootstrap.recovery.source` (and the `externalClusters` entry) | archive a new cluster restores from | `postgres16-v0` |
 
 They are equal while the cluster runs. CNPG refuses to archive into a path
@@ -190,6 +190,9 @@ re-bootstrap):
    spec:
      cluster:
        name: postgres16
+     method: plugin
+     pluginConfiguration:
+       name: barman-cloud.cloudnative-pg.io
    YAML
    ```
 

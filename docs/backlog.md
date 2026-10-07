@@ -28,29 +28,22 @@ NFS/S3, loses live data and backups together. Steps in
       reads `{FRIGATE_*}` environment variables, which can come from 1Password
       through an ExternalSecret (step towards Frigate's config in git).
 
-### 3. Postgres: move backups to the Barman Cloud Plugin — before any operator upgrade
+### 3. Postgres: finish the Barman Cloud Plugin move
 
-Restore-on-rebuild is done (2026-10-07, PR `feat/cnpg-restore-on-rebuild`):
-`postgres16` bootstraps from `recovery` of `postgres16-v0`, and the rebuild
-procedure (bump `serverName`, base backup, then move the recovery source) is
-in [offsite-backup.md](offsite-backup.md) under "Restore procedures >
-Postgres". The operator chart is pinned at `0.29.1` (operator 1.30.1).
+Done: restore-on-rebuild (2026-10-07, PR #327; procedure in
+[offsite-backup.md](offsite-backup.md) under "Restore procedures > Postgres"),
+and backups moved to the Barman Cloud plugin (PR `feat/cnpg-barman-cloud-plugin`,
+ObjectStore `postgres16-nas`, same `postgres16-v0` archive).
 
 Still open:
 
-- [ ] **Barman Cloud Plugin.** Operator 1.31.0 removes the in-tree
-      `barmanObjectStore` (the API server warns on every apply), so backups
-      stop on the next operator upgrade. Until this is done, reject Renovate
-      PRs for the `cloudnative-pg` chart. Steps: install the
-      `plugin-barman-cloud` (cert-manager is already in the cluster); create
-      an `ObjectStore` with today's `barmanObjectStore` settings; in
-      `cluster16.yaml` replace `backup.barmanObjectStore` with `plugins:`
-      (`barman-cloud.cloudnative-pg.io`, `isWALArchiver: true`, same
-      `serverName: postgres16-v0` so the archive continues) and point
-      `externalClusters` at the plugin; ScheduledBackup `method: plugin`;
-      update `restore-test/` and the backup alerts if metric names change.
-      Then unpin the chart. Re-run the restore drill afterwards.
-- [ ] Smaller deprecation warnings from the same apply:
+- [ ] After the plugin PR is live: confirm `ContinuousArchiving=True`, take a
+      manual base backup with `method: plugin`, check the
+      `barman_cloud_cloudnative_pg_io_*` metrics exist (the backup alerts and
+      `ha-status` now use them), then re-run the restore drill.
+- [ ] Then unpin the operator chart (`cloudnative-pg/app/ocirepository.yaml`,
+      `tag: 0.29.1`) and let Renovate upgrade it.
+- [ ] Smaller deprecation warnings from the operator:
       `nodeMaintenanceWindow` → `spec.enablePDB`, and
       `monitoring.enablePodMonitor` → our own PodMonitor.
 

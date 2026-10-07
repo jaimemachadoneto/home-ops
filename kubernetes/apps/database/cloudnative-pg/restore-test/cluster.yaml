@@ -1,8 +1,9 @@
 ---
 # Restore drill: recovers the latest postgres16 backup into a throwaway cluster
 # to prove the backups in the object store are usable.
-# It has no `backup:` section on purpose, so it never writes to the bucket and
-# cannot touch the production archive. Remove it from ks.yaml when done.
+# It has no `plugins:` section on purpose (only reads the ObjectStore through
+# externalClusters), so it never writes to the bucket and cannot touch the
+# production archive. Remove it from ks.yaml when done.
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/postgresql.cnpg.io/cluster_v1.json
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
@@ -31,16 +32,8 @@ spec:
       source: &source postgres16-v0
   externalClusters:
     - name: *source
-      barmanObjectStore:
-        destinationPath: s3://cloudnative/
-        endpointURL: http://nas.jaimenet.com:9000
-        serverName: *source
-        wal:
-          maxParallel: 8
-        s3Credentials:
-          accessKeyId:
-            name: cloudnative-pg-secret
-            key: s3-key
-          secretAccessKey:
-            name: cloudnative-pg-secret
-            key: s3-secret
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: postgres16-nas
+          serverName: *source
