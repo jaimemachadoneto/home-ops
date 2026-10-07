@@ -871,6 +871,39 @@ entries:
       negate: false
       timeout: 30
 
+  # --- memini (ai/memini)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-memini
+    identifiers:
+      name: memini
+    attrs:
+      <<: *forward-auth
+      external_host: https://memini.${SECRET_DOMAIN}
+      # Agents: the REST API and MCP endpoint require memini's own API key
+      # (401 without it); only the web UI at / needs the Authentik login.
+      skip_path_regex: |-
+        ^/v1/
+        ^/mcp
+        ^/healthz$
+  - model: authentik_core.application
+    id: app-memini
+    identifiers:
+      slug: memini
+    attrs:
+      name: memini
+      provider: !KeyOf provider-memini
+      meta_launch_url: https://memini.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-memini
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
   # --- Embedded outpost: serves every provider above ------------------------
   # This list is the complete set: a provider missing here stops working.
   - model: authentik_outposts.outpost
@@ -909,3 +942,4 @@ entries:
         - !KeyOf provider-overseerr
         - !KeyOf provider-frigate
         - !KeyOf provider-frigate-go2rtc
+        - !KeyOf provider-memini

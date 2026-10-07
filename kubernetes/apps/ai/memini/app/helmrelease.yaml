@@ -76,6 +76,12 @@ spec:
     route:
       internal:
         enabled: true
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: AI
+          gethomepage.dev/name: memini
+          gethomepage.dev/icon: mdi-brain
+          gethomepage.dev/description: Long-term memory for AI agents
         hostnames:
           - "memini.${SECRET_DOMAIN}"
         parentRefs:
