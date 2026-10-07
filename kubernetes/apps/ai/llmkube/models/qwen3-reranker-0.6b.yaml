@@ -10,8 +10,8 @@ spec:
   format: gguf
   quantization: Q8_0
   hardware:
-    # CPU-only for now — see the matching comment in
-    # qwen3-embedding-0.6b.yaml for the Nvidia GPU migration path.
+    # CPU-only. For a GPU later: a device plugin, accelerator + gpu.enabled
+    # here, and the llama.cpp server-cuda image below.
     accelerator: cpu
     gpu:
       enabled: false
@@ -49,7 +49,8 @@ spec:
     port: 8080
     type: ClusterIP
   resources:
-    cpu: "1"
+    # A request, not a limit: idle most of the time, bursts when reranking.
+    cpu: 250m
     memory: 2Gi
   probeOverrides:
     startup:

@@ -5,11 +5,11 @@ kind: LiteLLMModel
 metadata:
   name: ollama-chat
 spec:
-  # NOTE: swap `llama3.1` for whatever tag you actually have pulled
-  # on your Ollama host (`ollama list` to check).
+  # Ollama host ai.local.jaimenet.com; `ollama list` there shows what is
+  # pulled (qwen3:8b, qwen3:4b, qwen2.5-coder:7b, llama3.2-vision:11b, ...).
   modelName: ollama/local
   params:
-    model: ollama/llama3.1
+    model: ollama/qwen3:8b
     apiBase: http://ai.local.jaimenet.com:11434
   info:
     supportsFunctionCalling: true
