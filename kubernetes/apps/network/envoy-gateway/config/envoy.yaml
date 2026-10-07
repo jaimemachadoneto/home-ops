@@ -22,6 +22,7 @@ spec:
             limits:
               memory: 2Gi
         pod:
+          priorityClassName: homelab-critical
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: kubernetes.io/hostname
@@ -34,7 +35,12 @@ spec:
                 - gateway.envoyproxy.io/owning-gateway-name
                 - pod-template-hash
       envoyService:
-        externalTrafficPolicy: Local
+        # Cluster, not Local: Cilium's L2 announcements do not follow where
+        # the envoy pods run, so with Local the node announcing the IP can
+        # have no envoy pod and drop all traffic (HA outage 2026-10-06,
+        # https://docs.cilium.io/en/stable/network/l2-announcements/). Cilium
+        # runs in DSR mode, so envoy still sees the client's real IP.
+        externalTrafficPolicy: Cluster
   shutdown:
     drainTimeout: 180s
   telemetry:

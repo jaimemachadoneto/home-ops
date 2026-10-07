@@ -1,0 +1,14 @@
+---
+# For pods whose loss takes the house offline (the Envoy gateways in front of
+# Home Assistant and every app). Above ordinary apps, below the
+# system-cluster/node-critical classes that Ceph, Cilium and Flux use: an
+# osd-prepare job still wins, which is why the gateways also run with
+# externalTrafficPolicy Cluster (envoy.yaml).
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/scheduling.k8s.io/priorityclass_v1.json
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: homelab-critical
+value: 1000000000
+globalDefault: false
+description: Home network entry points (Envoy gateways); above apps, below system-*-critical.
