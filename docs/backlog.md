@@ -44,16 +44,25 @@ node-exporter runs on the NAS since 2026-10-07 (TrueNAS custom app, YAML in
 - [ ] Home Assistant: notify on `binary_sensor.home_ops_nas_problem`, like the
       backup problem automation.
 
-### 4. Envoy external gateway resilience (caused an HA outage)
+### 4. Envoy external gateway resilience — done 2026-10-07, follow-ups
 
-`envoy-external` uses `externalTrafficPolicy: Local`; Cilium does not move the
-L2 announcement of `10.30.50.200` when the announcing node loses its envoy pod.
-On 2026-10-06 a Rook osd-prepare job preempted the envoy pod on home-ops-01
-(93% CPU requested) and `ha.jaimenet.com` was down until the lease
-`cilium-l2announce-network-envoy-external` was deleted.
+Root cause of the 2026-10-06 HA outage: Cilium L2 announcements ignore
+`externalTrafficPolicy: Local` (documented limitation), so the node announcing
+`10.30.50.200` can have no envoy pod and drops everything; home-ops-01 was 92%
+CPU-requested, so Rook's osd-prepare job (system-node-critical) preempted the
+envoy pod there. Fixed by `externalTrafficPolicy: Cluster` + PriorityClass
+`homelab-critical` for the envoy pods, and Ceph CPU requests sized for the
+cluster (~2 cores freed per storage node).
 
-- [ ] Give the envoy proxies a high `priorityClassName` (EnvoyProxy config).
-- [ ] Look at CPU requests on home-ops-01.
+- [ ] `l2-announce-healthcheck` (kube-system) cannot see this failure: it
+      probes the LoadBalancer IPs from a node with host networking, where
+      Cilium delivers to the pods directly without the L2 path, so it stayed
+      "up" during the outage. Either probe from outside the cluster (e.g.
+      Home Assistant / Gatus on another host) or drop it now that the policy
+      is Cluster.
+- [ ] L2 lease is 120s/60s (Cilium default 15s/5s): failover after the
+      announcing node dies takes up to ~3 min. Shorten if that matters.
+- [ ] The GitHub Actions runner requests 1 core on home-ops-00; review.
 
 ### 5. SSO: native OIDC for apps with their own login
 

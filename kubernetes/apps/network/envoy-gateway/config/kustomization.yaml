@@ -8,4 +8,5 @@ resources:
   - ./external.yaml
   - ./internal.yaml
   - ./podmonitor.yaml
+  - ./priorityclass.yaml
   - ./redirect-http-to-https.yaml
