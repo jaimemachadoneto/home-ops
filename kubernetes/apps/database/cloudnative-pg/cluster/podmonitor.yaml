@@ -1,0 +1,18 @@
+---
+# Scrapes postgres16's metrics port: Postgres stats from the instance manager
+# plus the Barman Cloud plugin's backup metrics (used by prometheusrule.yaml
+# and ha-status). Replaces the PodMonitor CNPG generated from the deprecated
+# `monitoring.enablePodMonitor`; named differently so CNPG's cleanup of its
+# own PodMonitor does not remove this one.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/podmonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cnpg-postgres16
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: postgres16
+      cnpg.io/podRole: instance
+  podMetricsEndpoints:
+    - port: metrics
