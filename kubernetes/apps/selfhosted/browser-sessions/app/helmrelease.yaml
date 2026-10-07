@@ -24,12 +24,14 @@ spec:
           # The app never talks to the Kubernetes API.
           automountServiceAccountToken: false
           securityContext:
-            fsGroup: 1000
+            fsGroup: 1001
             fsGroupChangePolicy: OnRootMismatch
-            runAsGroup: 1000
+            runAsGroup: 1001
             runAsNonRoot: true
-            # pwuser in the Playwright image.
-            runAsUser: 1000
+            # pwuser in the Playwright image: 1001, not 1000. 1000 is `ubuntu`,
+            # whose home is on the read-only root, and Chromium aborts at start
+            # (crashpad: "--database is required") without a writable home.
+            runAsUser: 1001
             seccompProfile:
               type: RuntimeDefault
 
@@ -105,7 +107,8 @@ spec:
         globalMounts:
           - path: /data
       # readOnlyRootFilesystem leaves nowhere else to write: Chromium, Xvfb and
-      # x11vnc need /tmp, and Chromium a home directory.
+      # x11vnc need /tmp, and Chromium a writable home (pwuser's, from
+      # /etc/passwd).
       tmp:
         type: emptyDir
         globalMounts:
