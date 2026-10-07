@@ -136,6 +136,18 @@ Prometheus scrapes `nas.jaimenet.com:9100`
 (`kube-prometheus-stack/app/scrapeconfigs/node-exporter.yaml`);
 `ZfsUnexpectedPoolState` alerts on a pool that is not `online`.
 
+## Dashboards
+
+- **Home Assistant**: dashboard *Home-Ops* (`/home-ops`, admins only), built
+  from the Home-Ops device: cluster, backups, NAS, 48 h history, links to
+  Grafana and Alertmanager. It lives in Home Assistant's storage, not git.
+- **Grafana**: *Home-Ops: backups & storage* (`/d/home-ops-backups`), from
+  `kubernetes/apps/observability/grafana/app/dashboard/home-ops.json`:
+  the same signals plus history: Postgres backup/WAL age and connections per
+  role, VolSync backup durations, NAS pools, Data1 usage and largest datasets,
+  NAS disk throughput, Ceph usage and OSD latency. The NAS host itself is in
+  *Node Exporter Full* (instance `nas.jaimenet.com:9100`).
+
 ## Restore procedures
 
 ### One app from VolSync
