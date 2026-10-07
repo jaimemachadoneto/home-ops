@@ -28,32 +28,52 @@ NFS/S3, loses live data and backups together. Steps in
       reads `{FRIGATE_*}` environment variables, which can come from 1Password
       through an ExternalSecret (step towards Frigate's config in git).
 
-### 3. Postgres: a rebuilt cluster must restore, not start empty
+### 3. Postgres: move backups to the Barman Cloud Plugin — before any operator upgrade
 
-`cluster16.yaml` uses `bootstrap: initdb`: if the `postgres16` Cluster is ever
-re-created, CNPG starts an empty database and archiving to `postgres16-v0` then
-fails. The most likely cause of earlier data loss. Needs an agreed procedure
-(bootstrap from `recovery`, new `serverName`, immediate base backup), see
-[cnpg-backup-review.md](cnpg-backup-review.md) Step 3. The backups themselves
-are proven: the restore drill on 2026-10-06 recovered all databases, ~5 min
-behind live (re-run it by uncommenting `cloudnative-pg-restore-test` in
-`kubernetes/apps/database/cloudnative-pg/ks.yaml`).
+Restore-on-rebuild is done (2026-10-07, PR `feat/cnpg-restore-on-rebuild`):
+`postgres16` bootstraps from `recovery` of `postgres16-v0`, and the rebuild
+procedure (bump `serverName`, base backup, then move the recovery source) is
+in [offsite-backup.md](offsite-backup.md) under "Restore procedures >
+Postgres". The operator chart is pinned at `0.29.1` (operator 1.30.1).
 
-- [ ] Agree the procedure and implement it.
-- [ ] Move CNPG backups from in-tree `barmanObjectStore` (deprecated) to the
-      Barman Cloud Plugin; pin the operator chart until done (operator 1.30.1).
+Still open:
+
+- [ ] **Barman Cloud Plugin.** Operator 1.31.0 removes the in-tree
+      `barmanObjectStore` (the API server warns on every apply), so backups
+      stop on the next operator upgrade. Until this is done, reject Renovate
+      PRs for the `cloudnative-pg` chart. Steps: install the
+      `plugin-barman-cloud` (cert-manager is already in the cluster); create
+      an `ObjectStore` with today's `barmanObjectStore` settings; in
+      `cluster16.yaml` replace `backup.barmanObjectStore` with `plugins:`
+      (`barman-cloud.cloudnative-pg.io`, `isWALArchiver: true`, same
+      `serverName: postgres16-v0` so the archive continues) and point
+      `externalClusters` at the plugin; ScheduledBackup `method: plugin`;
+      update `restore-test/` and the backup alerts if metric names change.
+      Then unpin the chart. Re-run the restore drill afterwards.
+- [ ] Smaller deprecation warnings from the same apply:
+      `nodeMaintenanceWindow` → `spec.enablePDB`, and
+      `monitoring.enablePodMonitor` → our own PodMonitor.
 
 ### 4. Monitoring gaps
 
-- [ ] NAS node-exporter: `nas.jaimenet.com:9100` refuses connections, so the
-      backup target is unmonitored (`TargetDown`). Install as a TrueNAS custom
-      app (`quay.io/prometheus/node-exporter`, host network, `/:/host:ro`,
-      `--path.rootfs=/host`). Then add NAS pool health to the Home-Ops MQTT
-      device (`kubernetes/apps/observability/ha-status/`).
-- [ ] `osd.0` still reports `BLUESTORE_SLOW_OP_ALERT`; home-ops-00's disks are
-      5-7x slower than the other nodes even after the volsync load was spread.
-      Check the Proxmox host behind home-ops-00 (older host, QEMU pc-q35-9.2):
-      SMART/wear of the disk(s) backing its VM disks, other VMs sharing them.
+- [ ] NAS node-exporter: Prometheus already scrapes `nas.jaimenet.com:9100`
+      (`kube-prometheus-stack/app/scrapeconfigs/node-exporter.yaml`), only the
+      exporter is missing, so `TargetDown` fires. Install it as a TrueNAS
+      custom app: image `quay.io/prometheus/node-exporter`, host network,
+      host path `/` mounted read-only at `/host`, args `--path.rootfs=/host`.
+      Nothing to change in git; check `up{instance="nas.jaimenet.com:9100"}`
+      turns 1 and `node_zfs_zpool_state` has values.
+- [ ] Then add NAS pool health to the Home-Ops MQTT device
+      (`kubernetes/apps/observability/ha-status/`), from
+      `node_zfs_zpool_state`.
+- [ ] Optional: smartctl-exporter on the NAS (`:9108`); its ScrapeConfig is
+      written but commented out in `scrapeconfigs/kustomization.yaml`.
+- [x] `osd.0` slow ops: checked 2026-10-07. Ceph is `HEALTH_OK`; the
+      `BLUESTORE_SLOW_OP_ALERT` was latched from the 10-06 load and cleared
+      ~07:00 (it stays raised 24 h after the last slow op). Write latency over
+      6 h: home-ops-00 `sdc` 3.8 ms vs 2.8 / 1.7 ms on the others, so ~2x,
+      no longer 5-7x. If the alert comes back, check the Proxmox host behind
+      home-ops-00 (SMART/wear of the disks backing its VM, other VMs on them).
 
 ### 5. Envoy external gateway resilience (caused an HA outage)
 
