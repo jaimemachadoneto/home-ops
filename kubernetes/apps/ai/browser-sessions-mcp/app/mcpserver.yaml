@@ -1,0 +1,17 @@
+---
+# One browser-sessions session (logged-in Chromium for agents) behind the
+# LiteLLM MCP gateway. Each session has its own MCP URL and bearer token; add
+# another LiteLLMMCPServer like this one for more sessions.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: browser-sessions-agent
+spec:
+  alias: browser
+  url: http://browser-sessions.selfhosted.svc.cluster.local:8080/agent/mcp
+  transport: http
+  authType: bearer_token
+  authTokenRef:
+    name: browser-sessions-mcp-secret
+    key: token

@@ -1,0 +1,71 @@
+---
+# Outlook.com mailbox (personal Microsoft account) for AI clients, through
+# the LiteLLM MCP gateway like the other MCP servers.
+#
+# ms-365-mcp-server in HTTP mode wants every client to bring its own
+# Microsoft token, which the gateway's single key cannot do. So it runs in
+# stdio mode with its own stored sign-in (device code, token cache on the
+# volsync-backed PVC, refreshed by MSAL), and supergateway serves that over
+# Streamable HTTP to LiteLLM. One-time sign-in: docs/ai.md.
+#
+# Full mail access (read, send, move, delete), as asked; add --read-only to
+# the server command to take that back.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: outlook-mcp
+spec:
+  alias: outlook
+  workload:
+    # renovate: datasource=docker depName=ghcr.io/softeria/ms-365-mcp-server
+    image: ghcr.io/softeria/ms-365-mcp-server:0.159.1
+    port: 8000
+    path: /mcp
+    command:
+      - sh
+      - -c
+    args:
+      # supergateway is fetched by npx at start (cached in /tmp/.npm).
+      - >-
+        exec npx -y supergateway@4.1.0
+        --stdio "node /app/dist/index.js --preset mail"
+        --outputTransport streamableHttp --stateful --sessionTimeout 600000
+        --port 8000 --healthEndpoint /healthz
+    env:
+      - name: HOME
+        value: /tmp
+      - name: npm_config_cache
+        value: /tmp/.npm
+      - name: MS365_MCP_TOKEN_CACHE_PATH
+        value: /data/token-cache.json
+      - name: MS365_MCP_SELECTED_ACCOUNT_PATH
+        value: /data/selected-account.json
+    podSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      fsGroup: 1000
+      fsGroupChangePolicy: OnRootMismatch
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    resources:
+      requests:
+        cpu: 10m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+    volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: outlook-mcp
+      - name: tmp
+        emptyDir: {}
+    volumeMounts:
+      - name: data
+        mountPath: /data
+      - name: tmp
+        mountPath: /tmp

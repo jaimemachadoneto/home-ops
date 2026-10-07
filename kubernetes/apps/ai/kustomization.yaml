@@ -8,10 +8,12 @@ components:
   - ../../components/sops
 resources:
   - ./namespace.yaml
+  - ./browser-sessions-mcp/ks.yaml
   - ./context7-mcp/ks.yaml
   - ./ha-mcp/ks.yaml
   - ./litellm/ks.yaml
   - ./litellm-operator/ks.yaml
   - ./llmkube/ks.yaml
   - ./memini/ks.yaml
+  - ./outlook-mcp/ks.yaml
   - ./searxng-mcp/ks.yaml

@@ -89,7 +89,17 @@ the blueprint, client ID/secret from the app's 1Password item via
       alert, restart). Look for an upstream issue in goauthentik/authentik or
       open one; re-check after Authentik upgrades whether it still happens.
 
-### 7. Smaller items
+### 7. AI namespace follow-ups
+
+- [ ] Move `browser-sessions` from `selfhosted` to `ai` (it is an agent
+      tool). Its PVC holds the browser profiles (site sign-ins): restore it
+      from VolSync in the new namespace, then point
+      `ai/browser-sessions-mcp` at `browser-sessions.ai.svc`.
+- [ ] LiteLLM has no database: only the master key works. For per-client
+      keys and per-key MCP access, give it a Postgres database (CNPG role +
+      DB, mind the connection budget, see docs/authentik-sso.md).
+
+### 8. Smaller items
 
 - [ ] Frigate: notification links never expire (`notification_proxy_expire_after_seconds: 0`
       in the HA Frigate integration options); set e.g. 86400.
