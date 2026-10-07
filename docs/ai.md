@@ -7,7 +7,7 @@ LiteLLM operator.
 | --- | --- |
 | `litellm` | One OpenAI-compatible API for every model, and one **MCP gateway** for every MCP server: `https://litellm.${SECRET_DOMAIN}` (envoy-internal, LAN only) |
 | Models | `deepseek/deepseek-chat` (DeepSeek API), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.jaimenet.com`) |
-| MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser` (a browser-sessions session) |
+| MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_colegio` (the browser-sessions session `colegio`) |
 | `memini` | Long-term memory API (`memini.${SECRET_DOMAIN}`); embeddings from Ollama (`qwen3-embedding:4b`), reranker in-cluster (llmkube, `qwen3-reranker-0.6b`) |
 
 ## One URL for all MCP servers
@@ -36,7 +36,7 @@ Each app has its own ExternalSecret; a missing item only breaks that app.
 | `Context7` | `api_key` | context7 MCP |
 | `home-assistant` | `ha_mcp_token` | Home Assistant MCP (a long-lived HA token) |
 | `memini` | `API_KEY` | memini |
-| `browser-sessions` | `litellm_mcp_token` | bearer token of the `agent` session, from the browser-sessions admin UI |
+| `browser-sessions` | `litellm_mcp_token` | bearer token of the `colegio` session, from the browser-sessions admin UI |
 
 ## Outlook MCP: one-time sign-in
 

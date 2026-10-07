@@ -6,10 +6,10 @@
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer
 metadata:
-  name: browser-sessions-agent
+  name: browser-sessions-colegio
 spec:
-  alias: browser
-  url: http://browser-sessions.selfhosted.svc.cluster.local:8080/agent/mcp
+  alias: browser_colegio
+  url: http://browser-sessions.selfhosted.svc.cluster.local:8080/colegio/mcp
   transport: http
   authType: bearer_token
   authTokenRef:
