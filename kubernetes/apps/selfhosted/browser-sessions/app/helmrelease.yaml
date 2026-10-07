@@ -13,7 +13,7 @@ spec:
     controllers:
       browser-sessions:
         annotations:
-          reloader.stakater.com/auto: 'true'
+          reloader.stakater.com/auto: "true"
 
         # One replica, Recreate: each session is one Chromium on one profile
         # directory, and two Chromiums on the same profile corrupt it.
@@ -88,7 +88,7 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities:
-                drop: ['ALL']
+                drop: ["ALL"]
 
     service:
       app:
@@ -125,7 +125,7 @@ spec:
     route:
       app:
         annotations:
-          gethomepage.dev/enabled: 'true'
+          gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Logged-in browsers for AI agents
           gethomepage.dev/group: Apps
           gethomepage.dev/icon: mdi-web-box

@@ -14,14 +14,14 @@ spec:
     - name: rook-ceph-cluster
       namespace: rook-ceph
   interval: 1h
-  path: './kubernetes/apps/selfhosted/browser-sessions/app'
+  path: "./kubernetes/apps/selfhosted/browser-sessions/app"
   postBuild:
     substitute:
       APP: browser-sessions
       VOLSYNC_CLAIM: browser-sessions-data
       # pwuser in the Playwright image the app is built on.
-      APP_UID: '1000'
-      APP_GID: '1000'
+      APP_UID: "1000"
+      APP_GID: "1000"
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
