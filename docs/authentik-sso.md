@@ -74,3 +74,23 @@ roles in the app instead of a gate in front of it.
 - An app answering with Authentik's "Not Found" page means the outpost has no
   provider for that hostname: the blueprint was not applied, or the provider is
   missing from the outpost list.
+
+## Postgres connections
+
+Authentik 2025.10+ keeps its cache, tasks and the embedded outpost's sessions
+in Postgres. The outpost opens its own pool (up to 4 connections) for every
+forward-auth provider in every server pod, so about 30 idle connections per
+server pod is normal with 31 apps. Not configurable, even in 2026.8.
+
+After a Postgres restart or switchover the pools leak: on 2026-10-07 Authentik
+climbed to 387 connections, filled `max_connections` and its worker crash-looped
+(sign-in failing). Since then `max_connections` is 800, Authentik's role `user`
+is capped at 500 (`managed.roles` in `cluster16.yaml`), and
+`CNPGAuthentikConnectionsHigh` fires above 400. The fix is a restart:
+
+```bash
+kubectl -n selfhosted rollout restart deploy/authentik-server deploy/authentik-worker
+```
+
+Do it after any planned Postgres restart (operator upgrade, Postgres setting
+that needs a restart, node maintenance).

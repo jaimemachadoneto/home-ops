@@ -16,8 +16,25 @@ spec:
   enableSuperuserAccess: true
   postgresql:
     parameters:
-      max_connections: "400"
+      # Authentik's embedded outpost opens a pool of up to 4 connections per
+      # forward-auth app per server pod, and leaks pools after a Postgres
+      # restart or switchover (387 connections on 2026-10-07). Idle
+      # connections cost a few MB each; see the role cap below.
+      max_connections: "800"
       shared_buffers: 256MB
+  # Roles CNPG keeps in shape. Only attributes are managed here: without
+  # passwordSecret the passwords (set by each app's postgres-init) are left
+  # alone. Omitted attributes are reset to defaults, so list what matters.
+  managed:
+    roles:
+      # Authentik. Capped so a connection leak cannot starve the other apps
+      # (CNPGAuthentikConnectionsHigh warns at 400).
+      - name: user
+        ensure: present
+        login: true
+        inherit: true
+        connectionLimit: 500
+
   # PodDisruptionBudget on the primary (CNPG's default, explicit here): a
   # drain waits for a switchover instead of evicting the primary.
   enablePDB: true

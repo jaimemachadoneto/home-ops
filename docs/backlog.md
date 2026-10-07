@@ -77,7 +77,15 @@ the blueprint, client ID/secret from the app's 1Password item via
       for the whole LAN; narrow it to the pod network before giving its API an
       Authentik bypass like the other download apps.
 
-### 6. Smaller items
+### 6. Authentik connection leak after a Postgres restart
+
+- [ ] Authentik's embedded outpost leaks Postgres pools after a Postgres
+      restart or switchover (details in [authentik-sso.md](authentik-sso.md),
+      "Postgres connections"). Mitigated (max_connections 800, cap 500,
+      alert, restart). Look for an upstream issue in goauthentik/authentik or
+      open one; re-check after Authentik upgrades whether it still happens.
+
+### 7. Smaller items
 
 - [ ] Frigate: notification links never expire (`notification_proxy_expire_after_seconds: 0`
       in the HA Frigate integration options); set e.g. 86400.
