@@ -100,6 +100,8 @@ every minute:
 | `sensor.home_ops_postgres_wal_age` | minutes since the last WAL archive |
 | `sensor.home_ops_nodes_ready` | ready nodes (total in attributes) |
 | `sensor.home_ops_ceph_health` | `HEALTH_OK` / `HEALTH_WARN` / `HEALTH_ERR` |
+| `binary_sensor.home_ops_nas_problem` | on when a NAS ZFS pool is not `online`, `Data1` is over 90% full, or the NAS node-exporter is unreachable (reasons and pool states in attributes) |
+| `sensor.home_ops_nas_data_used` | `Data1` used, % (all datasets, snapshots not included) |
 | `binary_sensor.home_ops_prometheus`, `..._alertmanager`, `sensor.home_ops_last_update` | diagnostics |
 
 It follows Home Assistant's MQTT conventions: one retained device discovery
@@ -111,6 +113,28 @@ entity turns unavailable. Home Assistant automations notify on
 `binary_sensor.home_ops_status` being unavailable and on
 `binary_sensor.home_ops_backup_problem` turning on. The MQTT login comes from
 the 1Password item `mqtt` (`mqtt_username`, `mqtt_password`).
+
+## NAS monitoring
+
+node-exporter runs on TrueNAS as a custom app (Apps → Discover Apps → ⋮ →
+Install via YAML, name `node-exporter`):
+
+```yaml
+services:
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.12.1
+    command:
+      - --path.rootfs=/host
+    network_mode: host
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - /:/host:ro,rslave
+```
+
+Prometheus scrapes `nas.jaimenet.com:9100`
+(`kube-prometheus-stack/app/scrapeconfigs/node-exporter.yaml`);
+`ZfsUnexpectedPoolState` alerts on a pool that is not `online`.
 
 ## Restore procedures
 

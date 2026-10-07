@@ -28,26 +28,21 @@ NFS/S3, loses live data and backups together. Steps in
       reads `{FRIGATE_*}` environment variables, which can come from 1Password
       through an ExternalSecret (step towards Frigate's config in git).
 
-### 3. Monitoring gaps
+### 3. NAS: Data1 is 87% full
 
-- [ ] NAS node-exporter: Prometheus already scrapes `nas.jaimenet.com:9100`
-      (`kube-prometheus-stack/app/scrapeconfigs/node-exporter.yaml`), only the
-      exporter is missing, so `TargetDown` fires. Install it as a TrueNAS
-      custom app: image `quay.io/prometheus/node-exporter`, host network,
-      host path `/` mounted read-only at `/host`, args `--path.rootfs=/host`.
-      Nothing to change in git; check `up{instance="nas.jaimenet.com:9100"}`
-      turns 1 and `node_zfs_zpool_state` has values.
-- [ ] Then add NAS pool health to the Home-Ops MQTT device
-      (`kubernetes/apps/observability/ha-status/`), from
-      `node_zfs_zpool_state`.
+node-exporter runs on the NAS since 2026-10-07 (TrueNAS custom app, YAML in
+[offsite-backup.md](offsite-backup.md)); Prometheus scrapes it,
+`ZfsUnexpectedPoolState` covers pool health and Home Assistant shows
+`binary_sensor.home_ops_nas_problem` / `sensor.home_ops_nas_data_used`.
+
+- [ ] `Data1`: 3,133 GiB used, 463 GiB free (87%, snapshots not counted),
+      2.9 TiB of it `MediaServer`. ZFS slows down past ~80-90% and the
+      periodic snapshots from item 1 need room. Free space or plan bigger
+      disks; check snapshot usage in TrueNAS (Storage → Data1).
 - [ ] Optional: smartctl-exporter on the NAS (`:9108`); its ScrapeConfig is
       written but commented out in `scrapeconfigs/kustomization.yaml`.
-- [x] `osd.0` slow ops: checked 2026-10-07. Ceph is `HEALTH_OK`; the
-      `BLUESTORE_SLOW_OP_ALERT` was latched from the 10-06 load and cleared
-      ~07:00 (it stays raised 24 h after the last slow op). Write latency over
-      6 h: home-ops-00 `sdc` 3.8 ms vs 2.8 / 1.7 ms on the others, so ~2x,
-      no longer 5-7x. If the alert comes back, check the Proxmox host behind
-      home-ops-00 (SMART/wear of the disks backing its VM, other VMs on them).
+- [ ] Home Assistant: notify on `binary_sensor.home_ops_nas_problem`, like the
+      backup problem automation.
 
 ### 4. Envoy external gateway resilience (caused an HA outage)
 

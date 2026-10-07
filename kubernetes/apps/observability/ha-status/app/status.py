@@ -41,6 +41,9 @@ MQTT_PASSWORD = os.environ["MQTT_PASSWORD"]
 INTERVAL = int(os.environ.get("INTERVAL", "60"))
 CONFIGURATION_URL = os.environ.get("CONFIGURATION_URL")
 DISCOVERY_PREFIX = os.environ.get("DISCOVERY_PREFIX", "homeassistant")
+# node-exporter on the TrueNAS box (a custom app there, scraped by Prometheus)
+NAS_INSTANCE = os.environ.get("NAS_INSTANCE", "nas.jaimenet.com:9100")
+NAS_DATA_POOL = os.environ.get("NAS_DATA_POOL", "Data1")
 
 VERSION = "1.0.0"
 NODE_ID = "home-ops"
@@ -55,6 +58,8 @@ CEPH_HEALTH = {0: "HEALTH_OK", 1: "HEALTH_WARN", 2: "HEALTH_ERR"}
 # Thresholds for the "Backups" problem sensor; they match the Prometheus alerts.
 MAX_POSTGRES_BACKUP_AGE_H = 26
 MAX_POSTGRES_WAL_AGE_MIN = 60
+# ZFS slows down when a pool fills up, and snapshots need room.
+MAX_NAS_USED_PCT = 90
 
 
 def log(msg):
@@ -105,6 +110,15 @@ def collect():
         pg_wal = prom_scalar(
             'min(cnpg_pg_stat_archiver_seconds_since_last_archival{namespace="database", pod=~"postgres16-[0-9]+"})'
         )
+        nas_up = prom_scalar(f'up{{instance="{NAS_INSTANCE}"}}')
+        nas_pools = prom_query(f'node_zfs_zpool_state{{instance="{NAS_INSTANCE}"}} == 1')
+        # Each dataset is its own filesystem: the pool's use is the sum over
+        # all of them (snapshots not included), its free space is shared.
+        datasets = f'instance="{NAS_INSTANCE}", fstype="zfs", device=~"{NAS_DATA_POOL}(/.*)?"'
+        nas_used = prom_scalar(
+            f"sum(node_filesystem_size_bytes{{{datasets}}} - node_filesystem_avail_bytes{{{datasets}}})"
+        )
+        nas_free = prom_scalar(f'max(node_filesystem_avail_bytes{{instance="{NAS_INSTANCE}", device="{NAS_DATA_POOL}"}})')
     except Exception as exc:
         # Everything below is unknown, not zero: publish nulls.
         log(f"prometheus: {exc}")
@@ -133,6 +147,22 @@ def collect():
         problems.append(f'postgres WAL archive {status["postgres_wal_age_min"]}min old')
     status["backup_problem"] = "ON" if problems else "OFF"
     status["backup_problems"] = problems
+
+    # Every backup lands on the NAS, so its pools get their own problem sensor.
+    pools = {r["metric"].get("zpool", "?"): r["metric"].get("state", "?") for r in nas_pools}
+    nas_problems = []
+    if nas_up != 1:
+        nas_problems.append(f"NAS exporter {NAS_INSTANCE} not reachable")
+    elif not pools:
+        nas_problems.append("no ZFS pool metrics from the NAS")
+    nas_problems += [f"pool {pool} is {state}" for pool, state in sorted(pools.items()) if state != "online"]
+    nas_used_pct = None if None in (nas_used, nas_free) else round(100 * nas_used / (nas_used + nas_free), 1)
+    if nas_used_pct is not None and nas_used_pct > MAX_NAS_USED_PCT:
+        nas_problems.append(f"pool {NAS_DATA_POOL} {nas_used_pct}% full")
+    status["nas_problem"] = "ON" if nas_problems else "OFF"
+    status["nas_problems"] = nas_problems
+    status["nas_pools"] = pools
+    status["nas_data_used_pct"] = nas_used_pct
     return status
 
 
@@ -169,6 +199,19 @@ def discovery_config():
             "binary_sensor", "backup_problem", "Backups",
             device_class="problem", value_template=value("backup_problem"),
             **attributes("{{ {'problems': value_json.backup_problems | default([])} | tojson }}"),
+        ),
+        "nas_problem": component(
+            "binary_sensor", "nas_problem", "NAS pools",
+            device_class="problem", value_template=value("nas_problem"),
+            **attributes(
+                "{{ {'problems': value_json.nas_problems | default([]),"
+                " 'pools': value_json.nas_pools | default({})} | tojson }}"
+            ),
+        ),
+        "nas_data_used": component(
+            "sensor", "nas_data_used", "NAS Data1 used",
+            value_template=value("nas_data_used_pct"), unit_of_measurement="%",
+            state_class="measurement", suggested_display_precision=1, icon="mdi:nas",
         ),
         "critical_alerts": component(
             "sensor", "critical_alerts", "Critical alerts",
