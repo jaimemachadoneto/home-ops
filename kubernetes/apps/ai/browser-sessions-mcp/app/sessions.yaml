@@ -15,7 +15,9 @@ metadata:
   name: browser-sessions-colegio
 spec:
   alias: browser_colegio
-  url: http://browser-sessions.selfhosted.svc.cluster.local:8080/colegio/mcp
+  # The public hostname, not the Service: browser-sessions checks the Host
+  # header (421 Misdirected Request for anything else).
+  url: https://bwsessions.${SECRET_DOMAIN}/colegio/mcp
   transport: http
   authType: bearer_token
   authTokenRef:
