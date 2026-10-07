@@ -95,9 +95,8 @@ the blueprint, client ID/secret from the app's 1Password item via
       tool). Its PVC holds the browser profiles (site sign-ins): restore it
       from VolSync in the new namespace, then point
       `ai/browser-sessions-mcp` at `browser-sessions.ai.svc`.
-- [ ] LiteLLM has no database: only the master key works. For per-client
-      keys and per-key MCP access, give it a Postgres database (CNPG role +
-      DB, mind the connection budget, see docs/authentik-sso.md).
+- [ ] After the LiteLLM database PR: create per-client virtual keys with
+      only the MCP servers each needs, and stop handing out the master key.
 
 ### 8. Smaller items
 
