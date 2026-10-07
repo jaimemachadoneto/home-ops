@@ -1,4 +1,8 @@
 ---
+# Web search through the existing SearXNG (kubernetes/apps/selfhosted/searxng).
+# mcp-searxng serves Streamable HTTP when MCP_HTTP_PORT is set (the image this
+# replaced was stdio-only and exited at once). In-cluster only, behind the
+# LiteLLM gateway, so no bearer token of its own.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer
@@ -6,20 +10,21 @@ metadata:
   name: searxng-mcp
 spec:
   alias: web_search
-  # Spins up a small HTTP bridge in front of the existing SearXNG instance
-  # (kubernetes/apps/selfhosted/searxng), which already has JSON output enabled.
-  # NOTE: verify the exposed port/env vars against whichever mcp-searxng image
-  # tag you pin below (docs vary slightly between forks of this project).
   workload:
-    # renovate: datasource=docker depName=docker.io/overtlids/mcp-searxng-enhanced
-    image: docker.io/overtlids/mcp-searxng-enhanced:1.0.0
+    # renovate: datasource=docker depName=docker.io/isokoliuk/mcp-searxng
+    image: docker.io/isokoliuk/mcp-searxng:2.5.1
     port: 8000
+    path: /mcp
     env:
-      - name: SEARXNG_ENGINE_API_BASE_URL
-        value: http://searxng.selfhosted.svc.cluster.local:8080/search
-    volumes:
-      - name: tmp
-        emptyDir: {}
-    volumeMounts:
-      - name: tmp
-        mountPath: /tmp
+      - name: SEARXNG_URL
+        value: http://searxng.selfhosted.svc.cluster.local:8080
+      - name: MCP_HTTP_PORT
+        value: "8000"
+      - name: MCP_HTTP_HOST
+        value: 0.0.0.0
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 256Mi

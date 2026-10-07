@@ -48,9 +48,9 @@ VolSync) and MSAL refreshes it; sign in again only if Microsoft revokes it
 
 ```bash
 POD=$(kubectl -n ai get pods -o name | grep outlook-mcp | head -1)
-kubectl -n ai exec -it "$POD" -- node /app/dist/index.js --login
+kubectl -n ai exec -it "$POD" -- ms-365-mcp-server --login
 # open https://microsoft.com/devicelogin, enter the code, sign in with the Outlook.com account
-kubectl -n ai exec "$POD" -- node /app/dist/index.js --verify-login
+kubectl -n ai exec "$POD" -- ms-365-mcp-server --verify-login
 ```
 
 It uses the project's built-in Entra app. To use your own: register an app in
