@@ -29,6 +29,26 @@ spec:
           for: 1m
           labels:
             severity: warning
+        - alert: CNPGConnectionsHigh
+          annotations:
+            description: '{{ $labels.pod }} uses {{ $value | humanizePercentage }} of max_connections. New connections fail when it is full; see which role holds them with pg_stat_activity.'
+            summary: Postgres connections above 80% of max_connections
+          expr: |-
+            sum by (namespace, pod) (cnpg_backends_total{namespace="database", pod=~"postgres16-[0-9]+"})
+              / on (namespace, pod) max by (namespace, pod) (cnpg_pg_settings_setting{namespace="database", pod=~"postgres16-[0-9]+", name="max_connections"})
+              > 0.8
+          for: 5m
+          labels:
+            severity: warning
+        - alert: CNPGAuthentikConnectionsHigh
+          annotations:
+            description: Authentik holds {{ $value }} Postgres connections (cap 500, normally under 100). Its embedded outpost leaks connection pools after a Postgres restart or switchover. Fix with `kubectl -n selfhosted rollout restart deploy/authentik-server deploy/authentik-worker`.
+            summary: Authentik is leaking Postgres connections
+          expr: |-
+            sum by (namespace) (cnpg_backends_total{namespace="database", pod=~"postgres16-[0-9]+", usename="user"}) > 400
+          for: 5m
+          labels:
+            severity: warning
         - alert: PGDatabase
           annotations:
             description: Over 150,000,000 transactions from frozen xid on pod {{ $labels.pod }}
