@@ -67,12 +67,37 @@ spec:
             - 10.30.50.0/23
         connections:
           requireMsgr2: true
+      # CPU requests sized for this cluster (3 OSDs), not the chart defaults
+      # for production (mon/osd 1 core, mgr 0.5, 100m per sidecar). Peak use
+      # over 7 days (2026-10-07): osd 0.14, mgr 0.10, mon 0.04 cores, sidecars
+      # ~0. The defaults reserved ~2.5 cores per storage node and filled
+      # home-ops-01 to 92%, so an osd-prepare job (system-node-critical)
+      # preempted the envoy-external pod there (HA outage 2026-10-06).
+      # No CPU limits: daemons still burst when they need to.
       resources:
         mgr:
+          requests:
+            cpu: 200m
           limits:
             memory: 2Gi
+        mgr-sidecar:
+          requests:
+            cpu: 20m
+        mon:
+          requests:
+            cpu: 150m
+        prepareosd:
+          requests:
+            cpu: 100m
+        crashcollector:
+          requests:
+            cpu: 10m
+        logcollector:
+          requests:
+            cpu: 10m
         osd:
           requests:
+            cpu: 300m
             memory: 2Gi
           limits:
             memory: 4Gi
