@@ -82,7 +82,7 @@ spec:
             description: The newest base backup of {{ $labels.namespace }}/postgres16 is {{ $value | humanizeDuration }} old (expected one per day). Check the ScheduledBackup, the Backup objects and the MinIO bucket.
             summary: No successful postgres base backup in over 26 hours
           expr: |-
-            time() - max by (namespace) (cnpg_collector_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"}) > 26 * 3600
+            time() - max by (namespace) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"}) > 26 * 3600
           for: 15m
           labels:
             severity: critical
@@ -91,7 +91,7 @@ spec:
             description: Prometheus has no backup metrics for the postgres16 cluster, so backup age cannot be checked. The cluster or its PodMonitor may be down.
             summary: Postgres backup metrics are missing
           expr: |-
-            absent(cnpg_collector_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})
+            absent(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})
           for: 1h
           labels:
             severity: critical
@@ -100,8 +100,8 @@ spec:
             description: The most recent base backup of {{ $labels.namespace }}/postgres16 failed and no backup has succeeded since.
             summary: Postgres base backup failed
           expr: |-
-            max by (namespace) (cnpg_collector_last_failed_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})
-              > max by (namespace) (cnpg_collector_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})
+            max by (namespace) (barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})
+              > max by (namespace) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})
           for: 15m
           labels:
             severity: critical

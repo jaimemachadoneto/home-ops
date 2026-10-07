@@ -1,0 +1,26 @@
+---
+# Barman Cloud CNPG-I plugin: takes over WAL archiving and base backups from
+# the operator's in-tree barmanObjectStore (removed in operator 1.31). It must
+# run in the operator's namespace. Its TLS comes from a self-signed
+# cert-manager Issuer the chart creates.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: plugin-barman-cloud
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: plugin-barman-cloud
+  interval: 31m
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      strategy: rollback
+      retries: 3
+  values:
+    crds:
+      create: true

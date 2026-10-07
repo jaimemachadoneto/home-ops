@@ -100,7 +100,7 @@ def collect():
         nodes_total = prom_scalar('count(kube_node_status_condition{condition="Ready", status="true"})')
         ceph = prom_scalar("max(ceph_health_status)")
         pg_backup = prom_scalar(
-            'time() - max(cnpg_collector_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})'
+            'time() - max(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})'
         )
         pg_wal = prom_scalar(
             'min(cnpg_pg_stat_archiver_seconds_since_last_archival{namespace="database", pod=~"postgres16-[0-9]+"})'

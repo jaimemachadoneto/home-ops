@@ -1,0 +1,26 @@
+---
+# Where postgres16's backups live: MinIO on the NAS. The Barman Cloud plugin
+# reads this; the archive path inside the bucket is the `serverName` set in
+# the Cluster (plugin parameters and externalClusters), not here.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/barmancloud.cnpg.io/objectstore_v1.json
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: postgres16-nas
+spec:
+  retentionPolicy: 31d
+  configuration:
+    destinationPath: s3://cloudnative/
+    endpointURL: http://nas.jaimenet.com:9000
+    data:
+      compression: bzip2
+    wal:
+      compression: bzip2
+      maxParallel: 8
+    s3Credentials:
+      accessKeyId:
+        name: cloudnative-pg-secret
+        key: s3-key
+      secretAccessKey:
+        name: cloudnative-pg-secret
+        key: s3-secret

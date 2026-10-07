@@ -29,27 +29,19 @@ spec:
   monitoring:
     enablePodMonitor: true
 
-  backup:
-    retentionPolicy: 31d
-    barmanObjectStore: &barmanObjectStore
-      data:
-        compression: bzip2
-      wal:
-        compression: bzip2
-        maxParallel: 8
-      destinationPath: s3://cloudnative/
-      endpointURL: http://nas.jaimenet.com:9000
-      # Archive this cluster writes to. Bump it (v0 -> v1) whenever the
-      # cluster is re-created: CNPG refuses to archive into a non-empty path.
-      # Procedure in docs/offsite-backup.md, "Restore procedures > Postgres".
-      serverName: postgres16-v0
-      s3Credentials:
-        accessKeyId:
-          name: cloudnative-pg-secret
-          key: s3-key
-        secretAccessKey:
-          name: cloudnative-pg-secret
-          key: s3-secret
+  # WAL archiving and base backups go through the Barman Cloud plugin into
+  # the ObjectStore postgres16-nas (objectstore.yaml, retention 31d).
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: postgres16-nas
+        # Archive this cluster writes to. Bump it (v0 -> v1) whenever the
+        # cluster is re-created: Barman refuses to archive into a non-empty
+        # path. Procedure in docs/offsite-backup.md, "Restore procedures >
+        # Postgres".
+        serverName: postgres16-v0
+
   # A new or re-created cluster always restores from the object store,
   # never starts empty. CNPG only reads `bootstrap` when it creates the
   # cluster, so this does nothing to the running one. If the archive cannot
@@ -59,6 +51,8 @@ spec:
       source: &previousCluster postgres16-v0
   externalClusters:
     - name: *previousCluster
-      barmanObjectStore:
-        <<: *barmanObjectStore
-        serverName: *previousCluster
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: postgres16-nas
+          serverName: *previousCluster
