@@ -130,7 +130,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Logged-in browsers for AI agents
-          gethomepage.dev/group: Apps
+          gethomepage.dev/group: AI
           gethomepage.dev/icon: mdi-web-box
           gethomepage.dev/name: Browser Sessions
           gethomepage.dev/href: https://bwsessions.${SECRET_DOMAIN}/admin

@@ -21,9 +21,18 @@ Tools arrive prefixed with the server alias (`outlook-…`, `ha_mcp-…`). Add a
 server by adding a `LiteLLMMCPServer` (a `url` for one that already runs, a
 `workload` for one the operator should run).
 
-LiteLLM and memini are **not** behind Authentik forward auth on purpose: they
-are APIs for programs, protected by their own keys. Do not add their routes to
-`authentik/forward-auth/`.
+Sign-in (SSO):
+
+- **memini**: the web UI is behind Authentik forward auth
+  (`authentik/forward-auth/ai.yaml`); `/v1/`, `/mcp` and `/healthz` skip it
+  because agents use memini's own API key there (401 without it).
+- **LiteLLM**: not behind forward auth, its API and MCP gateway are for
+  programs with the LiteLLM key. Its dashboard (`/ui`) can use Authentik as
+  an OIDC login, which needs a LiteLLM database (backlog).
+- **browser-sessions**: admin UI signs in with Authentik (OIDC).
+
+All three are in Homepage's **AI** group; LiteLLM through `services.yaml`
+there, since the operator's HTTPRoute takes no annotations.
 
 ## 1Password items
 
