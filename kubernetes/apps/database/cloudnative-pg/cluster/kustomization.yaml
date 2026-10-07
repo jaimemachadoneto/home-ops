@@ -6,5 +6,6 @@ resources:
   - ./objectstore.yaml
   - ./cluster16.yaml
   - ./scheduledbackup.yaml
+  - ./podmonitor.yaml
   - ./prometheusrule.yaml
   - ./service.yaml

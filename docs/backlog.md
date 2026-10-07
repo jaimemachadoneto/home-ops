@@ -28,26 +28,7 @@ NFS/S3, loses live data and backups together. Steps in
       reads `{FRIGATE_*}` environment variables, which can come from 1Password
       through an ExternalSecret (step towards Frigate's config in git).
 
-### 3. Postgres: finish the Barman Cloud Plugin move
-
-Done: restore-on-rebuild (2026-10-07, PR #327; procedure in
-[offsite-backup.md](offsite-backup.md) under "Restore procedures > Postgres"),
-and backups moved to the Barman Cloud plugin (PR `feat/cnpg-barman-cloud-plugin`,
-ObjectStore `postgres16-nas`, same `postgres16-v0` archive).
-
-Still open:
-
-- [ ] After the plugin PR is live: confirm `ContinuousArchiving=True`, take a
-      manual base backup with `method: plugin`, check the
-      `barman_cloud_cloudnative_pg_io_*` metrics exist (the backup alerts and
-      `ha-status` now use them), then re-run the restore drill.
-- [ ] Then unpin the operator chart (`cloudnative-pg/app/ocirepository.yaml`,
-      `tag: 0.29.1`) and let Renovate upgrade it.
-- [ ] Smaller deprecation warnings from the operator:
-      `nodeMaintenanceWindow` → `spec.enablePDB`, and
-      `monitoring.enablePodMonitor` → our own PodMonitor.
-
-### 4. Monitoring gaps
+### 3. Monitoring gaps
 
 - [ ] NAS node-exporter: Prometheus already scrapes `nas.jaimenet.com:9100`
       (`kube-prometheus-stack/app/scrapeconfigs/node-exporter.yaml`), only the
@@ -68,7 +49,7 @@ Still open:
       no longer 5-7x. If the alert comes back, check the Proxmox host behind
       home-ops-00 (SMART/wear of the disks backing its VM, other VMs on them).
 
-### 5. Envoy external gateway resilience (caused an HA outage)
+### 4. Envoy external gateway resilience (caused an HA outage)
 
 `envoy-external` uses `externalTrafficPolicy: Local`; Cilium does not move the
 L2 announcement of `10.30.50.200` when the announcing node loses its envoy pod.
@@ -79,7 +60,7 @@ On 2026-10-06 a Rook osd-prepare job preempted the envoy pod on home-ops-01
 - [ ] Give the envoy proxies a high `priorityClassName` (EnvoyProxy config).
 - [ ] Look at CPU requests on home-ops-01.
 
-### 6. SSO: native OIDC for apps with their own login
+### 5. SSO: native OIDC for apps with their own login
 
 Forward auth is done (see below). Next is OIDC, same pattern as Paperless in
 `kubernetes/apps/selfhosted/authentik/app/blueprints/oidc.yaml` (provider in
@@ -96,7 +77,7 @@ the blueprint, client ID/secret from the app's 1Password item via
       for the whole LAN; narrow it to the pod network before giving its API an
       Authentik bypass like the other download apps.
 
-### 7. Smaller items
+### 6. Smaller items
 
 - [ ] Frigate: notification links never expire (`notification_proxy_expire_after_seconds: 0`
       in the HA Frigate integration options); set e.g. 86400.
@@ -106,6 +87,16 @@ the blueprint, client ID/secret from the app's 1Password item via
       [offsite-backup.md](offsite-backup.md)); Postgres has been drilled, volsync not.
 - [ ] Cleanup: dead "Completed" pods left by node shutdowns, unused secret
       `network/envoy-oidc-hmac`.
+
+## Done on 2026-10-07
+
+- **Postgres**: a re-created `postgres16` restores from its archive instead
+  of starting empty (#327, procedure in [offsite-backup.md](offsite-backup.md));
+  backups moved to the Barman Cloud plugin (#328) and verified, restore drill
+  identical to live; operator chart no longer held back (#329); deprecated
+  `nodeMaintenanceWindow` / `enablePodMonitor` replaced by `enablePDB` and an
+  own PodMonitor.
+- **Ceph**: `osd.0` slow-op warning cleared (see item 3).
 
 ## Done on 2026-10-06
 
