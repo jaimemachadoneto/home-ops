@@ -22,3 +22,4 @@ resources:
   - ./searxng/ks.yaml
   - ./rclone/ks.yaml
   - ./bank-report/ks.yaml
+  - ./browser-sessions/ks.yaml
