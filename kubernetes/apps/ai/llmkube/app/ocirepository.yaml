@@ -11,5 +11,5 @@ spec:
     operation: copy
   ref:
     # renovate: datasource=docker depName=ghcr.io/home-operations/charts-mirror/llmkube
-    tag: 0.8.27
+    tag: 0.10.2
   url: oci://ghcr.io/home-operations/charts-mirror/llmkube
