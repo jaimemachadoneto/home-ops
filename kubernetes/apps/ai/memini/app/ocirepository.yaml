@@ -11,5 +11,5 @@ spec:
     operation: copy
   ref:
     # renovate: datasource=docker depName=registry.erwanleboucher.dev/eleboucher/charts/memini
-    tag: v0.5.4
+    tag: v0.7.32
   url: oci://registry.erwanleboucher.dev/eleboucher/charts/memini
