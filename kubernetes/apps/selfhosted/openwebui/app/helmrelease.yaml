@@ -29,7 +29,7 @@ spec:
           app:
             image:
               repository: ghcr.io/open-webui/open-webui
-              tag: v0.8.3@sha256:205e9cf23b66553643b065afcdeffb7f86b35bf36e0ce643dc56946a911954b7
+              tag: v0.12.3@sha256:a537bbe1e6b428820f52ed4a029d7fff97062e24d5cf32c365fba36fd0542def
             env:
               TZ: ${TIMEZONE}
               WEBUI_URL: https://ai.${SECRET_DOMAIN}
