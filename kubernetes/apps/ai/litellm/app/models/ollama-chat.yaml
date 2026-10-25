@@ -5,11 +5,11 @@ kind: LiteLLMModel
 metadata:
   name: ollama-chat
 spec:
-  # Ollama host ai.local.jaimenet.com; `ollama list` there shows what is
+  # Ollama host ai.local.${SECRET_DOMAIN}; `ollama list` there shows what is
   # pulled (qwen3:8b, qwen3:4b, qwen2.5-coder:7b, llama3.2-vision:11b, ...).
   modelName: ollama/local
   params:
     model: ollama/qwen3:8b
-    apiBase: http://ai.local.jaimenet.com:11434
+    apiBase: http://ai.local.${SECRET_DOMAIN}:11434
   info:
     supportsFunctionCalling: true
