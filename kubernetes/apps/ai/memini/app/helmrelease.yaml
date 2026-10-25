@@ -88,6 +88,8 @@ spec:
           gethomepage.dev/name: memini
           gethomepage.dev/icon: mdi-brain
           gethomepage.dev/description: Long-term memory for AI agents
+          # Homepage takes the path of the first rule (/v1/) otherwise.
+          gethomepage.dev/href: "https://memini.${SECRET_DOMAIN}/"
         hostnames:
           - "memini.${SECRET_DOMAIN}"
         parentRefs:
