@@ -107,7 +107,7 @@
 ## Volsync Backup Details
 
 - **Schedule**: Hourly
-- **Destination**: one Kopia repository on the NAS, `nas.jaimenet.com:/mnt/Data1/kubernetes` (NFS, mounted into mover jobs by a MutatingAdmissionPolicy)
+- **Destination**: one Kopia repository on the NAS, `nas.${SECRET_DOMAIN}:/mnt/Data1/kubernetes` (NFS, mounted into mover jobs by a MutatingAdmissionPolicy)
 - **Method**: Kopia, from a Ceph snapshot of the PVC (crash-consistent)
 - **Retention**: 24 hourly, 7 daily, 2 weekly
 - **Maintenance**: `KopiaMaintenance` daily at 03:30

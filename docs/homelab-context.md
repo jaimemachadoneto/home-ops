@@ -1,4 +1,4 @@
-# jaimenet.com — Homelab Context for Claude Code
+# ${SECRET_DOMAIN} — Homelab Context for Claude Code
 
 > **Status: target-state design — not yet implemented.** This document captures the *planned* future network and stack (see [`network.md`](./network.md) for the full design). It is **not** an accurate description of the cluster running in this repo today. The current setup is Talos-based, runs on a flat `10.30.0.0/16` network (kube-api VIP `10.30.6.50`, Cilium LB pool `10.30.6.30-199`), uses ingress-nginx for ingress, and has IoT devices on VLAN 303 (`10.1.3.0/24` via multus). When working on this repo *today*, defer to the actual manifests under `kubernetes/` rather than the target state described below.
 
@@ -76,7 +76,7 @@ Jaime Machado Leite — Barcelona, Spain.
 - One wildcard certificate:
   - Resource: `jaimenet-wildcard` in namespace `networking`
   - Secret: `jaimenet-wildcard-tls` in namespace `networking`
-  - Covers: `*.jaimenet.com` and `jaimenet.com`
+  - Covers: `*.${SECRET_DOMAIN}` and `${SECRET_DOMAIN}`
 - Gateway references this secret — no per-service certificates
 
 ### DNS
@@ -84,7 +84,7 @@ Jaime Machado Leite — Barcelona, Spain.
 - **UniFi UCG-Fiber built-in DNS** — no Pi-hole
 - Each VLAN uses its UCG gateway IP as DNS resolver
 - Custom records in **UniFi → Settings → DNS → Local DNS Records**
-- Every `*.jaimenet.com` subdomain → `10.30.50.200`
+- Every `*.${SECRET_DOMAIN}` subdomain → `10.30.50.200`
 - No wildcard DNS support — each subdomain added individually
 - Upstream: `1.1.1.1` / `9.9.9.9`
 
@@ -96,14 +96,14 @@ Jaime Machado Leite — Barcelona, Spain.
   - `eth0.50` → `10.30.50.5/23`, gateway `10.30.50.1` (default route)
   - `eth0.20` → `10.30.20.5/23`, no gateway (on-link only)
 - HA reaches IoT devices directly via `eth0.20` — no firewall rules needed
-- Exposed via Gateway at `home.jaimenet.com`
+- Exposed via Gateway at `home.${SECRET_DOMAIN}`
 - No NIC on Management (98), Main (10), or Media (30)
 
 ### Plex
 
 - VM on Proxmox in Services VLAN: `10.30.50.6`, port `32400`
-- Exposed via Gateway at `plex.jaimenet.com`
-- Media VLAN devices connect via `https://plex.jaimenet.com` (manual server entry in Plex client)
+- Exposed via Gateway at `plex.${SECRET_DOMAIN}`
+- Media VLAN devices connect via `https://plex.${SECRET_DOMAIN}` (manual server entry in Plex client)
 
 ---
 
@@ -134,14 +134,14 @@ spec:
       namespace: networking
       sectionName: https
   hostnames:
-    - <service-name>.jaimenet.com
+    - <service-name>.${SECRET_DOMAIN}
   rules:
     - backendRefs:
         - name: <k8s-service-name>
           port: <port>
 ```
 
-Then add UniFi DNS record: `<service-name>.jaimenet.com → 10.30.50.200`
+Then add UniFi DNS record: `<service-name>.${SECRET_DOMAIN} → 10.30.50.200`
 
 ### Adding a Non-Cluster Service
 
@@ -180,14 +180,14 @@ spec:
       namespace: networking
       sectionName: https
   hostnames:
-    - <name>.jaimenet.com
+    - <name>.${SECRET_DOMAIN}
   rules:
     - backendRefs:
         - name: <name>
           port: <port>
 ```
 
-Then add UniFi DNS record: `<name>.jaimenet.com → 10.30.50.200`
+Then add UniFi DNS record: `<name>.${SECRET_DOMAIN} → 10.30.50.200`
 
 ### File Layout
 
@@ -207,7 +207,7 @@ k8s/
 
 - Never commit secrets to Git
 - Use sealed-secrets or external-secrets for anything in Git
-- Cloudflare API token scoped to DNS Edit on `jaimenet.com` only
+- Cloudflare API token scoped to DNS Edit on `${SECRET_DOMAIN}` only
 
 ---
 
@@ -217,19 +217,19 @@ k8s/
 
 | Subdomain | Target IP | Port |
 |---|---|---|
-| home.jaimenet.com | 10.30.50.5 | 8123 |
-| plex.jaimenet.com | 10.30.50.6 | 32400 |
-| pve.jaimenet.com | 10.30.3.2 | 8006 |
-| nas.jaimenet.com | 10.30.50.7 | 443 |
+| home.${SECRET_DOMAIN} | 10.30.50.5 | 8123 |
+| plex.${SECRET_DOMAIN} | 10.30.50.6 | 32400 |
+| pve.${SECRET_DOMAIN} | 10.30.3.2 | 8006 |
+| nas.${SECRET_DOMAIN} | 10.30.50.7 | 443 |
 
 ### In-Cluster
 
 | Subdomain | Namespace |
 |---|---|
-| grafana.jaimenet.com | monitoring |
-| prometheus.jaimenet.com | monitoring |
-| longhorn.jaimenet.com | longhorn-system |
-| uptime.jaimenet.com | monitoring |
+| grafana.${SECRET_DOMAIN} | monitoring |
+| prometheus.${SECRET_DOMAIN} | monitoring |
+| longhorn.${SECRET_DOMAIN} | longhorn-system |
+| uptime.${SECRET_DOMAIN} | monitoring |
 
 ---
 
@@ -255,10 +255,10 @@ HA → IoT is on-link via `eth0.20` — no firewall rule needed.
 
 ## Domain
 
-`jaimenet.com` — DNS managed via **Cloudflare** (authoritative).
+`${SECRET_DOMAIN}` — DNS managed via **Cloudflare** (authoritative).
 
-Internal: UCG-Fiber custom records override for `*.jaimenet.com` → `10.30.50.200`.
-External: cert-manager uses Cloudflare API for DNS-01 challenge (`_acme-challenge.jaimenet.com` TXT record, created and removed automatically).
+Internal: UCG-Fiber custom records override for `*.${SECRET_DOMAIN}` → `10.30.50.200`.
+External: cert-manager uses Cloudflare API for DNS-01 challenge (`_acme-challenge.${SECRET_DOMAIN}` TXT record, created and removed automatically).
 
 ---
 
