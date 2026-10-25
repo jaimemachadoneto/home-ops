@@ -7,7 +7,7 @@ LiteLLM operator.
 | --- | --- |
 | `litellm` | One OpenAI-compatible API for every model, and one **MCP gateway** for every MCP server: `https://litellm.${SECRET_DOMAIN}` (envoy-internal, LAN only) |
 | Models | `deepseek/deepseek-chat` (DeepSeek API), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.jaimenet.com`) |
-| MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_<session>` (one per browser-sessions session, e.g. `browser_colegio`) |
+| MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_<session>` (one per browser-sessions session, e.g. `browser_colegio`), `memini` (agent memory, namespace `personal/jaime`) |
 | `memini` | Long-term memory API (`memini.${SECRET_DOMAIN}`); embeddings from Ollama (`qwen3-embedding:4b`), reranker in-cluster (llmkube, `qwen3-reranker-0.6b`) |
 
 ## One URL for all MCP servers
@@ -35,6 +35,19 @@ Sign-in (SSO):
 
 All three are in Homepage's **AI** group; LiteLLM through `services.yaml`
 there, since the operator's HTTPRoute takes no annotations.
+
+## memini through the gateway
+
+Claude Code on the workstation calls memini directly
+(`https://memini.${SECRET_DOMAIN}/mcp`, set up by `memini-agent` in
+nix-config), with one namespace for each repository. Clients that cannot
+reach memini directly use the gateway server `memini`
+(`kubernetes/apps/ai/memini-mcp/`). The gateway sends no project, so its
+static headers put every call in the namespace `personal/jaime`.
+
+The memini web UI asks for an API key once in each browser, because memini
+v0.7 has no OIDC or trusted-header login. Authentik still controls who can
+open the page.
 
 ## 1Password items
 
