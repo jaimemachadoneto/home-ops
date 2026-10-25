@@ -49,7 +49,7 @@ The owner has lost data before, so treat the database as precious.
 - Every app that uses Postgres shares this cluster: Authentik, Paperless,
   and others.
 - Backups use CNPG's built-in Barman (`barmanObjectStore`) and go to MinIO on
-  the NAS: `s3://cloudnative/postgres16-v0/` at `http://nas.jaimenet.com:9000`.
+  the NAS: `s3://cloudnative/postgres16-v0/` at `http://nas.${SECRET_DOMAIN}:9000`.
   WAL is shipped continuously, a base backup is taken `@daily`, and backups
   are kept for `31d`. The S3 credentials come from the 1Password item `s3`,
   through `cloudnative-pg-secret`.
@@ -118,7 +118,7 @@ Optionally, list the bucket. This needs the MinIO client (`mc`) and the
 credentials from the 1Password item `s3`:
 
 ```bash
-mc alias set nas http://nas.jaimenet.com:9000 "$S3_KEY" "$S3_SECRET"
+mc alias set nas http://nas.${SECRET_DOMAIN}:9000 "$S3_KEY" "$S3_SECRET"
 mc ls nas/cloudnative/                         # which serverNames exist (v0 only?)
 mc ls nas/cloudnative/postgres16-v0/base/      # one folder per base backup
 mc ls nas/cloudnative/postgres16-v0/wals/ | tail
