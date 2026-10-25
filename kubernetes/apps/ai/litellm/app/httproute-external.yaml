@@ -1,0 +1,49 @@
+---
+# The MCP gateway on the internet, for claude.ai custom connectors. claude.ai
+# calls it from Anthropic's cloud, so a LAN-only address or a VPN cannot work.
+# Only /mcp is public: the dashboard, the admin API and the models stay on the
+# operator's internal route. The connector sends a LiteLLM virtual key that
+# allows only low-risk MCP servers (see docs/ai.md).
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: litellm-external
+spec:
+  hostnames:
+    - litellm.${SECRET_DOMAIN}
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /mcp
+      backendRefs:
+        - name: litellm
+          port: 4000
+---
+# Anthropic's published outbound range for MCP tool calls
+# (https://platform.claude.com/docs/en/api/ip-addresses). This keeps scanners
+# and hand-made requests away from LiteLLM. A claude.ai user can still reach
+# the route through a connector of their own, so the key is what stops them.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: litellm-external
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: litellm-external
+  authorization:
+    defaultAction: Deny
+    rules:
+      - name: anthropic
+        action: Allow
+        principal:
+          clientCIDRs:
+            - 160.79.104.0/21
