@@ -12,10 +12,15 @@ LiteLLM operator.
 
 ## One URL for all MCP servers
 
-Clients (Claude Code, Open WebUI, agents) connect to the gateway once:
+Clients (Claude Code, agents, the claude.ai connector) connect to the
+gateway once:
 
 - URL: `https://litellm.${SECRET_DOMAIN}/mcp/`
-- Header: `Authorization: Bearer <LITELLM_MASTER_KEY>` (1Password `LiteLLM`)
+- Header: `Authorization: Bearer <key>` or `x-litellm-api-key: <key>`, with
+  the client's own virtual key (see "LiteLLM database: per-client keys").
+
+Do not give the master key (1Password `LiteLLM`) to a client. It is for
+admin work and the break-glass dashboard login.
 
 Tools arrive prefixed with the server alias (`outlook-…`, `ha_mcp-…`). Add a
 server by adding a `LiteLLMMCPServer` (a `url` for one that already runs, a
@@ -97,9 +102,9 @@ session `<name>`:
 3. Add `<name>` to `browser-sessions-mcp/app/externalsecret.yaml` and copy the
    `colegio` block in `sessions.yaml` with the names changed.
 
-Without a LiteLLM database every gateway client can use every session (and
-every other MCP server); the per-session approval switch in browser-sessions
-still holds anything that sends. Per-key access needs the database (backlog).
+A virtual key reaches only the MCP servers it lists, so give a session only
+to the key of the client that needs it. The per-session approval switch in
+browser-sessions still holds anything that sends.
 
 ## LiteLLM database: per-client keys
 
@@ -107,8 +112,16 @@ LiteLLM keeps keys, users, teams and spend logs in database `litellm` on
 `postgres16` (role capped at 40 connections, pool 10). With it, give each
 client its own key instead of the master key, limited to the models and MCP
 servers it needs: dashboard → Virtual Keys → Create, and under MCP choose the
-servers (e.g. only `web_search` and `context7` for a coding agent, never
-`outlook` unless it needs mail).
+servers and tools (e.g. only `web_search` and `context7` for a coding agent,
+never `outlook` unless it needs mail).
+
+- An empty model list gives the key **all** models. For a key without models,
+  set the model `no-default-models`.
+- Do not put a tool that fetches any URL (`web_search` has `web_url_read`) in
+  the same key as `memini` or `outlook`. Text that the agent reads can tell
+  it to read data with one tool and send it out with the other.
+- The dashboard shows a key once. If it is lost, regenerate it: the
+  permissions stay.
 
 ## claude.ai connector
 
@@ -127,9 +140,11 @@ The connector sends a virtual key, never the master key:
    `outlook` or a browser session. Also do not give it `web_search`:
    `web_url_read` fetches any URL, and with `memini` that can send memories
    out. claude.ai has its own web search and fetch.
-2. claude.ai → Settings → Connectors → Add custom connector: URL
-   `https://litellm.${SECRET_DOMAIN}/mcp/`, and the key as a fixed credential
-   (`Authorization: Bearer <key>`).
+2. claude.ai → Customize → Connectors → Add → Add custom connector: URL
+   `https://litellm.${SECRET_DOMAIN}/mcp/`, Authentication **No sign-in**,
+   and under Request headers `x-litellm-api-key` with the key. The value of
+   an `Authorization` header must start with `Bearer `, or LiteLLM answers
+   401 "Malformed API Key".
 3. To stop access, delete the key in the dashboard.
 
 From outside the range the route answers 403. If Anthropic changes the range,
