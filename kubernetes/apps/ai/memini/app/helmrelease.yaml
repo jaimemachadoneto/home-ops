@@ -41,6 +41,12 @@ spec:
               MEMINI_EMBED_MODEL: qwen3-embedding:4b
               MEMINI_EMBED_DIMS: "2560"
               MEMINI_EMBED_MAX_CONCURRENCY: "2"
+              # Ollama unloads an idle model after 5 min, and a cold load of
+              # the embedding model takes about 7 s. The defaults (5 s write,
+              # 2 s recall) then store writes without vectors and drop recall
+              # to keyword search.
+              MEMINI_WRITE_EMBED_TIMEOUT: 15s
+              MEMINI_RECALL_EMBED_TIMEOUT: 10s
               MEMINI_RERANK: http://qwen3-reranker-0-6b.ai.svc.cluster.local:8080/v1
               MEMINI_RERANK_MODEL: qwen3-reranker
               MEMINI_LOG_FORMAT: json
@@ -89,9 +95,19 @@ spec:
             namespace: network
             sectionName: https
         rules:
-          - backendRefs:
+          # Since v0.7 the web UI has its own port; agents keep the API and
+          # MCP surface on the main port.
+          - matches:
+              - path: { type: PathPrefix, value: /v1/ }
+              - path: { type: PathPrefix, value: /mcp }
+              - path: { type: Exact, value: /healthz }
+              - path: { type: Exact, value: /readyz }
+            backendRefs:
               - identifier: main
                 port: http
+          - backendRefs:
+              - identifier: main
+                port: ui
     serviceMonitor:
       main:
         enabled: true
