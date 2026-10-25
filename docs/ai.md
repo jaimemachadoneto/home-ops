@@ -6,7 +6,7 @@ LiteLLM operator.
 | Piece | What it is |
 | --- | --- |
 | `litellm` | One OpenAI-compatible API for every model, and one **MCP gateway** for every MCP server: `https://litellm.${SECRET_DOMAIN}` (envoy-internal, LAN only; only `/mcp` is also on the internet, for claude.ai) |
-| Models | `deepseek/deepseek-chat` (DeepSeek API), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.jaimenet.com`) |
+| Models | `deepseek/deepseek-chat` (DeepSeek API), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.${SECRET_DOMAIN}`) |
 | MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_<session>` (one per browser-sessions session, e.g. `browser_colegio`), `memini` (agent memory, namespace `personal/jaime`) |
 | `memini` | Long-term memory API (`memini.${SECRET_DOMAIN}`); embeddings from Ollama (`qwen3-embedding:4b`), reranker in-cluster (llmkube, `qwen3-reranker-0.6b`) |
 
