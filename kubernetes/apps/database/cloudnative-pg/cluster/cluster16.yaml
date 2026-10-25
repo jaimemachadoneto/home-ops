@@ -34,6 +34,15 @@ spec:
         login: true
         inherit: true
         connectionLimit: 500
+      # LiteLLM (litellm.yaml). Its pool is 10 per worker; the cap keeps it
+      # well inside the budget whatever it does.
+      - name: litellm
+        ensure: present
+        login: true
+        inherit: true
+        connectionLimit: 40
+        passwordSecret:
+          name: litellm-db-credentials
 
   # PodDisruptionBudget on the primary (CNPG's default, explicit here): a
   # drain waits for a switchover instead of evicting the primary.

@@ -11,6 +11,8 @@ spec:
   dependsOn:
     - name: dragonfly-cluster
       namespace: database
+    - name: cloudnative-pg-cluster
+      namespace: database
     - name: litellm-operator
   interval: 1h
   path: "./kubernetes/apps/ai/litellm/app"

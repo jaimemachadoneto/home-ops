@@ -26,9 +26,11 @@ Sign-in (SSO):
 - **memini**: the web UI is behind Authentik forward auth
   (`authentik/forward-auth/ai.yaml`); `/v1/`, `/mcp` and `/healthz` skip it
   because agents use memini's own API key there (401 without it).
-- **LiteLLM**: not behind forward auth, its API and MCP gateway are for
-  programs with the LiteLLM key. Its dashboard (`/ui`) can use Authentik as
-  an OIDC login, which needs a LiteLLM database (backlog).
+- **LiteLLM**: the dashboard (`/ui`) signs in with Authentik (OIDC provider
+  `litellm` in `authentik/app/blueprints/oidc.yaml`); only `authentik Admins`
+  may sign in and get `proxy_admin`. Break-glass: `/fallback/login` with user
+  `admin` and the master key. The API and MCP gateway stay key-only (not
+  forward auth): they are for programs.
 - **browser-sessions**: admin UI signs in with Authentik (OIDC).
 
 All three are in Homepage's **AI** group; LiteLLM through `services.yaml`
@@ -40,7 +42,10 @@ Each app has its own ExternalSecret; a missing item only breaks that app.
 
 | Item | Field | Used by |
 | --- | --- | --- |
-| `LiteLLM` | `master_key` | gateway key for clients |
+| `LiteLLM` | `master_key` | gateway key for clients (and break-glass dashboard login) |
+| `LiteLLM` | `db_password` | its Postgres role `litellm` (CNPG `managed.roles`, database `litellm`) |
+| `LiteLLM` | `salt_key` | encrypts credentials LiteLLM stores in its DB — **never change it** |
+| `LiteLLM` | `oidc_client_secret` | Authentik OIDC client `litellm` (read by both apps) |
 | `deepseek` | `API_KEY` | DeepSeek model |
 | `Context7` | `api_key` | context7 MCP |
 | `home-assistant` | `ha_mcp_token` | Home Assistant MCP (a long-lived HA token) |
@@ -82,3 +87,12 @@ session `<name>`:
 Without a LiteLLM database every gateway client can use every session (and
 every other MCP server); the per-session approval switch in browser-sessions
 still holds anything that sends. Per-key access needs the database (backlog).
+
+## LiteLLM database: per-client keys
+
+LiteLLM keeps keys, users, teams and spend logs in database `litellm` on
+`postgres16` (role capped at 40 connections, pool 10). With it, give each
+client its own key instead of the master key, limited to the models and MCP
+servers it needs: dashboard → Virtual Keys → Create, and under MCP choose the
+servers (e.g. only `web_search` and `context7` for a coding agent, never
+`outlook` unless it needs mail).
