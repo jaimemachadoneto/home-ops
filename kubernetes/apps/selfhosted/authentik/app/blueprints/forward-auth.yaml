@@ -43,6 +43,33 @@ entries:
       negate: false
       timeout: 30
 
+  # --- Syncthing (selfhosted/syncthing)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-syncthing
+    identifiers:
+      name: syncthing
+    attrs:
+      <<: *forward-auth
+      external_host: https://syncthing.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-syncthing
+    identifiers:
+      slug: syncthing
+    attrs:
+      name: Syncthing
+      provider: !KeyOf provider-syncthing
+      meta_launch_url: https://syncthing.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-syncthing
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
   # --- Argus (selfhosted/argus)
   - model: authentik_providers_proxy.proxyprovider
     id: provider-argus
@@ -925,6 +952,7 @@ entries:
         - !KeyOf provider-zigmqtt-garagem
         - !KeyOf provider-zigbee-casa-radio
         - !KeyOf provider-vpn-ui
+        - !KeyOf provider-syncthing
         - !KeyOf provider-vpn-torrent
         - !KeyOf provider-vpn-streaming-casal
         - !KeyOf provider-vpn-tv-escritorio

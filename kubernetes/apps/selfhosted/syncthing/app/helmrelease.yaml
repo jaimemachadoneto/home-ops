@@ -1,0 +1,103 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: syncthing
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: syncthing
+  interval: 30m
+  values:
+    controllers:
+      syncthing:
+        # The RWO volume attaches to one pod only, so the old pod must stop
+        # before the new pod starts.
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+        containers:
+          app:
+            image:
+              repository: docker.io/syncthing/syncthing
+              tag: 2.1.7@sha256:2b71da7c0d0a91a6ae5285ad079226fecc0a365d08b27720e1f7037b018f7546
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /rest/noauth/health
+                    port: &gui 8384
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+              readiness: *probes
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+    service:
+      app:
+        controller: syncthing
+        ports:
+          http:
+            port: *gui
+      sync:
+        controller: syncthing
+        # Local discovery does not reach the pod, so the phone and the PC
+        # connect to this address at home. Away from home, they use a relay.
+        type: LoadBalancer
+        annotations:
+          lbipam.cilium.io/ips: 10.30.50.209
+        ports:
+          sync-tcp:
+            port: 22000
+            protocol: TCP
+          sync-udp:
+            port: 22000
+            protocol: UDP
+    persistence:
+      data:
+        existingClaim: syncthing
+        globalMounts:
+          - path: /var/syncthing
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: Infrastructure
+          gethomepage.dev/name: Syncthing
+          gethomepage.dev/app: syncthing
+          gethomepage.dev/icon: syncthing.svg
+          gethomepage.dev/description: File sync for the notes vault
+        hostnames:
+          - "syncthing.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *gui

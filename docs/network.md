@@ -732,6 +732,7 @@ Priority:    Lowest
 | Source | Destination | Ports | Reason |
 |---|---|---|---|
 | Main (10) | Gateway (10.30.50.200) | 443, 80 | All services via Gateway |
+| Main (10) | Syncthing (10.30.50.209) | 22000 TCP+UDP | Notes sync from the PC and the phone ([syncthing.md](syncthing.md)) |
 | Main (10) | Management (98) | 8006, 22 | Direct Proxmox/UCG admin |
 | Main (10) | IoT (20) | 5353/UDP | mDNS |
 | Media (30) | Gateway (10.30.50.200) | 443 | Plex + all Services via Gateway |
