@@ -121,10 +121,12 @@ admin API and the models stay on the LAN.
 The connector sends a virtual key, never the master key:
 
 1. Dashboard → Virtual Keys → Create: name `claude-ai`, model
-   `no-default-models`, and under MCP only low-risk servers (`web_search`,
-   `context7`). An empty model list gives the key all models. Do not give it
-   `outlook` or a browser session. Claude on claude.ai reads web pages and
-   files, and text in them can tell it to call a tool.
+   `no-default-models`, and under MCP only `context7` and `memini`. An empty
+   model list gives the key all models. Claude on claude.ai reads web pages
+   and files, and text in them can tell it to call a tool. So do not give it
+   `outlook` or a browser session. Also do not give it `web_search`:
+   `web_url_read` fetches any URL, and with `memini` that can send memories
+   out. claude.ai has its own web search and fetch.
 2. claude.ai → Settings → Connectors → Add custom connector: URL
    `https://litellm.${SECRET_DOMAIN}/mcp/`, and the key as a fixed credential
    (`Authorization: Bearer <key>`).
