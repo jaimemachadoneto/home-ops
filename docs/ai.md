@@ -5,7 +5,7 @@ LiteLLM operator.
 
 | Piece | What it is |
 | --- | --- |
-| `litellm` | One OpenAI-compatible API for every model, and one **MCP gateway** for every MCP server: `https://litellm.${SECRET_DOMAIN}` (envoy-internal, LAN only) |
+| `litellm` | One OpenAI-compatible API for every model, and one **MCP gateway** for every MCP server: `https://litellm.${SECRET_DOMAIN}` (envoy-internal, LAN only; only `/mcp` is also on the internet, for claude.ai) |
 | Models | `deepseek/deepseek-chat` (DeepSeek API), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.jaimenet.com`) |
 | MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_<session>` (one per browser-sessions session, e.g. `browser_colegio`), `memini` (agent memory, namespace `personal/jaime`) |
 | `memini` | Long-term memory API (`memini.${SECRET_DOMAIN}`); embeddings from Ollama (`qwen3-embedding:4b`), reranker in-cluster (llmkube, `qwen3-reranker-0.6b`) |
@@ -109,3 +109,25 @@ client its own key instead of the master key, limited to the models and MCP
 servers it needs: dashboard → Virtual Keys → Create, and under MCP choose the
 servers (e.g. only `web_search` and `context7` for a coding agent, never
 `outlook` unless it needs mail).
+
+## claude.ai connector
+
+claude.ai calls a custom connector from Anthropic's cloud, so the LAN-only
+gateway cannot serve it, and a VPN does not help. `litellm/app/httproute-external.yaml`
+puts only `/mcp` on `envoy-external` (Cloudflare tunnel). Its `SecurityPolicy`
+accepts only Anthropic's outbound range `160.79.104.0/21`. The dashboard, the
+admin API and the models stay on the LAN.
+
+The connector sends a virtual key, never the master key:
+
+1. Dashboard → Virtual Keys → Create: name `claude-ai`, no models, and under
+   MCP only low-risk servers (`web_search`, `context7`). Do not give it
+   `outlook` or a browser session. Claude on claude.ai reads web pages and
+   files, and text in them can tell it to call a tool.
+2. claude.ai → Settings → Connectors → Add custom connector: URL
+   `https://litellm.${SECRET_DOMAIN}/mcp/`, and the key as a fixed credential
+   (`Authorization: Bearer <key>`).
+3. To stop access, delete the key in the dashboard.
+
+From outside the range the route answers 403. If Anthropic changes the range,
+update the `SecurityPolicy`.
