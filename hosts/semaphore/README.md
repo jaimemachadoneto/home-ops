@@ -3,7 +3,7 @@
 Ansible Semaphore, the UI/scheduler that runs the playbooks in `ansible/`.
 
 Runs as a **Docker container inside an unprivileged Proxmox LXC**
-(`semaphore`, `semaphore.local.jaimenet.com`, `10.30.51.104`, Ubuntu 24.04).
+(`semaphore`, `semaphore.local.${SECRET_DOMAIN}`, `10.30.51.104`, Ubuntu 24.04).
 
 | | |
 |---|---|
@@ -16,7 +16,7 @@ Runs as a **Docker container inside an unprivileged Proxmox LXC**
 
 Reachable at `https://semaphore.${SECRET_DOMAIN}` via the cluster's
 `envoy-internal` gateway (`kubernetes/apps/external-ingresses/semaphore/`).
-That `Backend` targets the **FQDN** `semaphore.local.jaimenet.com:3000` rather
+That `Backend` targets the **FQDN** `semaphore.local.${SECRET_DOMAIN}:3000` rather
 than an IP, so moving Semaphore only needs a DNS change - the cluster follows
 automatically. That is how it survived the move off the Pi.
 
@@ -39,7 +39,7 @@ It needs an API token. Mint a short-lived one - this avoids having to know or
 change the interactive admin password:
 
 ```sh
-ssh root@semaphore.local.jaimenet.com
+ssh root@semaphore.local.${SECRET_DOMAIN}
 docker exec semaphore semaphore user token create --login admin \
     --name provisioning --ttl 1h --config /etc/semaphore/config.json
 ```
@@ -47,7 +47,7 @@ docker exec semaphore semaphore user token create --login admin \
 Then, from a checkout of this repo:
 
 ```sh
-ssh root@semaphore.local.jaimenet.com "SEMAPHORE_TOKEN='<token>' python3 -" \
+ssh root@semaphore.local.${SECRET_DOMAIN} "SEMAPHORE_TOKEN='<token>' python3 -" \
     < hosts/semaphore/provision.py
 ```
 
@@ -81,7 +81,7 @@ that trusts no key you hold, install it with a password instead - the
 `.gitignore` excludes `*.pub`, so take the key off the Semaphore host:
 
 ```sh
-ssh root@semaphore.local.jaimenet.com cat /root/.ssh/semaphore_ansible.pub > /tmp/sem.pub
+ssh root@semaphore.local.${SECRET_DOMAIN} cat /root/.ssh/semaphore_ansible.pub > /tmp/sem.pub
 ssh-copy-id -i /tmp/sem.pub root@<host>
 ```
 
@@ -180,11 +180,11 @@ curl -s -H "Authorization: Bearer <token>" localhost:3000/api/project/2/template
 - **DNS gets reset on container restart.** Proxmox rewrites `/etc/resolv.conf`
   from the CT config each time the container starts. This container shipped
   pointing at `1.1.1.1` with an unrelated search domain, which cannot resolve
-  any internal `*.jaimenet.com` name, so every playbook failed to connect. The
+  any internal `*.${SECRET_DOMAIN}` name, so every playbook failed to connect. The
   durable fix is on the PVE host:
 
   ```sh
-  pct set <ctid> --nameserver 10.30.50.1 --searchdomain jaimenet.com
+  pct set <ctid> --nameserver 10.30.50.1 --searchdomain ${SECRET_DOMAIN}
   ```
 
 - **`ansible/requirements.yml` is not auto-installed.** Semaphore looks for

@@ -22,7 +22,7 @@ NFS/S3, loses live data and backups together. Steps in
 
 ### 2. Rotate credentials pasted into chat
 
-- [ ] MQTT password (user `jaime` on `mqtt.jaimenet.com`, used by Frigate).
+- [ ] MQTT password (user `jaime` on `mqtt.${SECRET_DOMAIN}`, used by Frigate).
 - [ ] Camera RTSP user (`bot`) on the three Reolink cameras.
 - [ ] Then move Frigate's secrets out of `config.yaml` on the NAS: Frigate
       reads `{FRIGATE_*}` environment variables, which can come from 1Password

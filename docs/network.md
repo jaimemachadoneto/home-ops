@@ -1,8 +1,8 @@
-# jaimenet.com — Home Network Configuration Project
+# ${SECRET_DOMAIN} — Home Network Configuration Project
 
 > **Stack:** UniFi (UCG-Fiber) · 6 VLANs · Kubernetes · Cilium Gateway API · cert-manager · Let's Encrypt DNS-01 (Cloudflare) · Home Assistant (dual-homed: Services + IoT)
 
-> **Status: target-state design — not yet implemented.** This document describes a planned redesign of the home network and is **not** the cluster's current configuration. Today the cluster runs on a flat `10.30.0.0/16` network (e.g. nodes like `10.30.4.1`, gateway `10.30.0.1`, kube-api VIP `10.30.6.50`, Cilium LB pool `10.30.6.30-199`), IoT devices are on VLAN 303 (`10.1.3.0/24` via multus, see `kubernetes/apps/network/multus/networks/iot.yaml`), a VPN macvlan already exists (`kubernetes/apps/network/multus/networks/vpn.yaml`, gateway `10.30.50.50` / `vpntor.jaimenet.com`), and ingress is handled by ingress-nginx (`kubernetes/apps/network/ingress-nginx/`) rather than Cilium Gateway API. Use this document as the reference target when planning the migration.
+> **Status: target-state design — not yet implemented.** This document describes a planned redesign of the home network and is **not** the cluster's current configuration. Today the cluster runs on a flat `10.30.0.0/16` network (e.g. nodes like `10.30.4.1`, gateway `10.30.0.1`, kube-api VIP `10.30.6.50`, Cilium LB pool `10.30.6.30-199`), IoT devices are on VLAN 303 (`10.1.3.0/24` via multus, see `kubernetes/apps/network/multus/networks/iot.yaml`), a VPN macvlan already exists (`kubernetes/apps/network/multus/networks/vpn.yaml`, gateway `10.30.50.50` / `vpntor.${SECRET_DOMAIN}`), and ingress is handled by ingress-nginx (`kubernetes/apps/network/ingress-nginx/`) rather than Cilium Gateway API. Use this document as the reference target when planning the migration.
 
 ---
 
@@ -53,7 +53,7 @@ Kubernetes Cluster (Services VLAN 50)
           └── HTTPRoutes → non-cluster services (Proxmox, NAS, HA, Plex)
 
 How clients reach services:
-    Any device → resolves *.jaimenet.com → 10.30.50.200 (Gateway)
+    Any device → resolves *.${SECRET_DOMAIN} → 10.30.50.200 (Gateway)
               → firewall allows [VLAN] → 10.30.50.200:443
               → Gateway proxies to backend
 ```
@@ -68,7 +68,7 @@ How clients reach services:
 | Media VLAN allowed to reach Gateway | TVs/Alexas reach Plex and any other permitted service via single rule |
 | Single Gateway IP as entry point | One firewall rule per VLAN exposes every permitted service |
 | UniFi built-in DNS (no Pi-hole) | UCG-Fiber handles custom records; simpler stack |
-| Single wildcard cert `*.jaimenet.com` | One cert-manager Certificate covers all subdomains |
+| Single wildcard cert `*.${SECRET_DOMAIN}` | One cert-manager Certificate covers all subdomains |
 
 ---
 
@@ -107,7 +107,7 @@ How clients reach services:
 | 10.30.50.6 | Plex VM |
 | 10.30.50.10–20 | Kubernetes control plane nodes |
 | 10.30.50.21–49 | Kubernetes worker nodes |
-| 10.30.50.50 | vpntor.jaimenet.com — VPN gateway for qbittorrent |
+| 10.30.50.50 | vpntor.${SECRET_DOMAIN} — VPN gateway for qbittorrent |
 | 10.30.50.51 | qbittorrent VPN interface (MAC: 2e:54:30:22:3f:74) |
 | 10.30.50.52–100 | Static IPs for other services (NAS, VMs, appliances) |
 | 10.30.50.200 | Cilium Gateway LoadBalancer IP |
@@ -176,7 +176,7 @@ Settings → Networks → [Network] → DHCP → Fixed IP Assignments → Add
 
 ## 4. Internal DNS (UniFi Custom Records)
 
-The UCG-Fiber acts as DNS resolver for all VLANs. All `*.jaimenet.com` subdomains resolve to the Gateway IP (`10.30.50.200`) so traffic stays internal.
+The UCG-Fiber acts as DNS resolver for all VLANs. All `*.${SECRET_DOMAIN}` subdomains resolve to the Gateway IP (`10.30.50.200`) so traffic stays internal.
 
 ### 4.1 Upstream Resolvers
 
@@ -194,15 +194,15 @@ UniFi → Settings → DNS → Local DNS Records
 
 | Hostname | IP |
 |---|---|
-| home.jaimenet.com | 10.30.50.200 |
-| plex.jaimenet.com | 10.30.50.200 |
-| grafana.jaimenet.com | 10.30.50.200 |
-| prometheus.jaimenet.com | 10.30.50.200 |
-| pve.jaimenet.com | 10.30.50.200 |
-| nas.jaimenet.com | 10.30.50.200 |
-| longhorn.jaimenet.com | 10.30.50.200 |
-| argocd.jaimenet.com | 10.30.50.200 |
-| uptime.jaimenet.com | 10.30.50.200 |
+| home.${SECRET_DOMAIN} | 10.30.50.200 |
+| plex.${SECRET_DOMAIN} | 10.30.50.200 |
+| grafana.${SECRET_DOMAIN} | 10.30.50.200 |
+| prometheus.${SECRET_DOMAIN} | 10.30.50.200 |
+| pve.${SECRET_DOMAIN} | 10.30.50.200 |
+| nas.${SECRET_DOMAIN} | 10.30.50.200 |
+| longhorn.${SECRET_DOMAIN} | 10.30.50.200 |
+| argocd.${SECRET_DOMAIN} | 10.30.50.200 |
+| uptime.${SECRET_DOMAIN} | 10.30.50.200 |
 | *(add each new service here)* | 10.30.50.200 |
 
 > **Note:** UniFi does not support wildcard DNS — each subdomain must be added individually when a new service is created.
@@ -212,7 +212,7 @@ UniFi → Settings → DNS → Local DNS Records
 From any device on VLANs 10, 20, 30, 50, or 98:
 
 ```bash
-nslookup plex.jaimenet.com
+nslookup plex.${SECRET_DOMAIN}
 # Expected: 10.30.50.200
 ```
 
@@ -225,7 +225,7 @@ HA runs as a Docker container on a Linux VM hosted on Proxmox. It needs:
 - **VLAN 50 (Services):** default gateway, internet access, exposed via Gateway
 - **VLAN 20 (IoT):** direct on-link access to all IoT devices
 
-It does **not** need VLANs 10, 30, 40, or 98. Main and Media users reach HA via `home.jaimenet.com` through the Gateway.
+It does **not** need VLANs 10, 30, 40, or 98. Main and Media users reach HA via `home.${SECRET_DOMAIN}` through the Gateway.
 
 ### 5.1 Architecture
 
@@ -345,7 +345,7 @@ spec:
       namespace: networking
       sectionName: https
   hostnames:
-    - home.jaimenet.com
+    - home.${SECRET_DOMAIN}
   rules:
     - backendRefs:
         - name: home-assistant
@@ -356,18 +356,18 @@ spec:
 
 ## 6. Plex — Media VLAN Access
 
-Plex runs on a VM in Services VLAN (`10.30.50.6`, port `32400`). It is exposed via the Cilium Gateway at `plex.jaimenet.com` using the wildcard cert.
+Plex runs on a VM in Services VLAN (`10.30.50.6`, port `32400`). It is exposed via the Cilium Gateway at `plex.${SECRET_DOMAIN}` using the wildcard cert.
 
 ### 6.1 How Media VLAN Devices Reach Plex
 
 ```
 TV / Alexa / streaming stick (VLAN 30)
-    → DNS: plex.jaimenet.com → 10.30.50.200 (Gateway)
+    → DNS: plex.${SECRET_DOMAIN} → 10.30.50.200 (Gateway)
     → Firewall: Media → 10.30.50.200:443 ✓
     → Gateway terminates TLS, proxies to 10.30.50.6:32400
 ```
 
-No special Plex configuration needed — clients connect to `https://plex.jaimenet.com`. Plex's built-in LAN discovery (GDM, UDP 32414) does not cross VLANs, but all major clients (Apple TV, Fire Stick, Chromecast, Alexa) support direct server entry by URL.
+No special Plex configuration needed — clients connect to `https://plex.${SECRET_DOMAIN}`. Plex's built-in LAN discovery (GDM, UDP 32414) does not cross VLANs, but all major clients (Apple TV, Fire Stick, Chromecast, Alexa) support direct server entry by URL.
 
 ### 6.2 Kubernetes Manifests
 
@@ -407,7 +407,7 @@ spec:
       namespace: networking
       sectionName: https
   hostnames:
-    - plex.jaimenet.com
+    - plex.${SECRET_DOMAIN}
   rules:
     - backendRefs:
         - name: plex
@@ -426,7 +426,7 @@ This single rule gives Media VLAN access to Plex and any other service exposed v
 
 ```
 UniFi → Settings → DNS → Local DNS Records
-plex.jaimenet.com → 10.30.50.200
+plex.${SECRET_DOMAIN} → 10.30.50.200
 ```
 
 ### 6.5 Plex Client Configuration
@@ -434,7 +434,7 @@ plex.jaimenet.com → 10.30.50.200
 On each streaming device, set the Plex server address manually:
 
 ```
-Server URL: https://plex.jaimenet.com
+Server URL: https://plex.${SECRET_DOMAIN}
 ```
 
 - **Apple TV:** Plex app → Settings → Manually enter server address
@@ -569,7 +569,7 @@ helm install cert-manager jetstack/cert-manager \
 
 ### 8.2 Cloudflare API Token Secret
 
-Scoped to **Zone → DNS → Edit** for `jaimenet.com` only:
+Scoped to **Zone → DNS → Edit** for `${SECRET_DOMAIN}` only:
 
 ```bash
 kubectl create secret generic cloudflare-api-token \
@@ -587,7 +587,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: jaime@jaimenet.com
+    email: jaime@${SECRET_DOMAIN}
     privateKeySecretRef:
       name: letsencrypt-prod-key
     solvers:
@@ -611,10 +611,10 @@ spec:
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
-  commonName: "*.jaimenet.com"
+  commonName: "*.${SECRET_DOMAIN}"
   dnsNames:
-    - "*.jaimenet.com"
-    - "jaimenet.com"
+    - "*.${SECRET_DOMAIN}"
+    - "${SECRET_DOMAIN}"
   renewBefore: 720h
 ```
 
@@ -636,7 +636,7 @@ spec:
       namespace: networking
       sectionName: https
   hostnames:
-    - grafana.jaimenet.com
+    - grafana.${SECRET_DOMAIN}
   rules:
     - backendRefs:
         - name: grafana
@@ -647,15 +647,15 @@ spec:
 
 | Subdomain | Backend | Type |
 |---|---|---|
-| home.jaimenet.com | HA (10.30.50.5:8123) | External |
-| plex.jaimenet.com | Plex VM (10.30.50.6:32400) | External |
-| grafana.jaimenet.com | Grafana pod | In-cluster |
-| prometheus.jaimenet.com | Prometheus pod | In-cluster |
-| pve.jaimenet.com | Proxmox (10.30.3.2:8006) | External |
-| nas.jaimenet.com | NAS | External |
-| longhorn.jaimenet.com | Longhorn UI pod | In-cluster |
-| argocd.jaimenet.com | ArgoCD pod | In-cluster |
-| uptime.jaimenet.com | Uptime Kuma pod | In-cluster |
+| home.${SECRET_DOMAIN} | HA (10.30.50.5:8123) | External |
+| plex.${SECRET_DOMAIN} | Plex VM (10.30.50.6:32400) | External |
+| grafana.${SECRET_DOMAIN} | Grafana pod | In-cluster |
+| prometheus.${SECRET_DOMAIN} | Prometheus pod | In-cluster |
+| pve.${SECRET_DOMAIN} | Proxmox (10.30.3.2:8006) | External |
+| nas.${SECRET_DOMAIN} | NAS | External |
+| longhorn.${SECRET_DOMAIN} | Longhorn UI pod | In-cluster |
+| argocd.${SECRET_DOMAIN} | ArgoCD pod | In-cluster |
+| uptime.${SECRET_DOMAIN} | Uptime Kuma pod | In-cluster |
 
 ---
 
@@ -697,7 +697,7 @@ spec:
       namespace: networking
       sectionName: https
   hostnames:
-    - pve.jaimenet.com
+    - pve.${SECRET_DOMAIN}
   rules:
     - backendRefs:
         - name: proxmox
@@ -708,10 +708,10 @@ spec:
 
 | Subdomain | Target IP | Port |
 |---|---|---|
-| home.jaimenet.com | 10.30.50.5 | 8123 |
-| plex.jaimenet.com | 10.30.50.6 | 32400 |
-| pve.jaimenet.com | 10.30.3.2 | 8006 |
-| nas.jaimenet.com | 10.30.50.7 | 443 |
+| home.${SECRET_DOMAIN} | 10.30.50.5 | 8123 |
+| plex.${SECRET_DOMAIN} | 10.30.50.6 | 32400 |
+| pve.${SECRET_DOMAIN} | 10.30.3.2 | 8006 |
+| nas.${SECRET_DOMAIN} | 10.30.50.7 | 443 |
 
 ---
 
@@ -758,7 +758,7 @@ Priority:    Lowest
 | Services (50) | Yes | Image pulls, cert issuance |
 | Management (98) | Yes | Updates, VPN, firmware |
 
-### 11.4 External Access to jaimenet.com
+### 11.4 External Access to ${SECRET_DOMAIN}
 
 - **WireGuard VPN on UCG-Fiber** — recommended
 - **Cloudflare Tunnel** — works behind CGNAT, no port forwarding
@@ -774,7 +774,7 @@ Priority:    Lowest
 - [ ] Media can only reach Gateway IP — not raw Services subnet
 - [ ] Guest is fully isolated
 - [ ] Management and Services are wired-only (no WiFi SSIDs)
-- [ ] All user-facing services behind `*.jaimenet.com` with valid TLS
+- [ ] All user-facing services behind `*.${SECRET_DOMAIN}` with valid TLS
 
 ### 12.2 Home Assistant
 
@@ -803,8 +803,8 @@ Priority:    Lowest
 
 1. Deploy service and `Service` object in its namespace.
 2. Create `HTTPRoute` referencing `main-gateway` in `networking`.
-3. Add UniFi DNS record: `myservice.jaimenet.com → 10.30.50.200`.
-4. Test: `curl https://myservice.jaimenet.com` from Main VLAN.
+3. Add UniFi DNS record: `myservice.${SECRET_DOMAIN} → 10.30.50.200`.
+4. Test: `curl https://myservice.${SECRET_DOMAIN}` from Main VLAN.
 
 ### Add a New Non-Cluster Service
 
@@ -819,7 +819,7 @@ No changes needed. Device goes on VLAN 20, HA discovers it via `eth0.20`.
 
 ### Add a New Media Device (TV, Alexa, etc.)
 
-Connect to `JaimeNet-Media` SSID or assign a wired port to VLAN 30. Configure Plex client with server URL `https://plex.jaimenet.com`. No firewall changes needed — the Media → Gateway rule already covers it.
+Connect to `JaimeNet-Media` SSID or assign a wired port to VLAN 30. Configure Plex client with server URL `https://plex.${SECRET_DOMAIN}`. No firewall changes needed — the Media → Gateway rule already covers it.
 
 ### Renew Wildcard Certificate (Manual)
 
@@ -833,7 +833,7 @@ kubectl annotate certificate jaimenet-wildcard -n networking \
 ```bash
 kubectl describe certificate jaimenet-wildcard -n networking
 kubectl get order,challenge -n networking
-dig TXT _acme-challenge.jaimenet.com @1.1.1.1
+dig TXT _acme-challenge.${SECRET_DOMAIN} @1.1.1.1
 ```
 
 ### Useful kubectl Commands
@@ -884,4 +884,4 @@ k8s/
 
 ---
 
-*Document version: June 2026 — jaimenet.com homelab*
+*Document version: June 2026 — ${SECRET_DOMAIN} homelab*

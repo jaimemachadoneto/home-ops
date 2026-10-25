@@ -87,7 +87,7 @@ old blobs; revisit if needed.
 Every backup alert depends on Prometheus and Alertmanager running. To catch
 those, or the whole cluster, going quiet, `ha-status`
 (`kubernetes/apps/observability/ha-status/`) publishes a **Home-Ops** device
-to Home Assistant through MQTT discovery (`mqtt.jaimenet.com`), refreshed
+to Home Assistant through MQTT discovery (`mqtt.${SECRET_DOMAIN}`), refreshed
 every minute:
 
 | Entity | Shows |
@@ -132,7 +132,7 @@ services:
       - /:/host:ro,rslave
 ```
 
-Prometheus scrapes `nas.jaimenet.com:9100`
+Prometheus scrapes `nas.${SECRET_DOMAIN}:9100`
 (`kube-prometheus-stack/app/scrapeconfigs/node-exporter.yaml`);
 `ZfsUnexpectedPoolState` alerts on a pool that is not `online`.
 
@@ -146,7 +146,7 @@ Prometheus scrapes `nas.jaimenet.com:9100`
   the same signals plus history: Postgres backup/WAL age and connections per
   role, VolSync backup durations, NAS pools, Data1 usage and largest datasets,
   NAS disk throughput, Ceph usage and OSD latency. The NAS host itself is in
-  *Node Exporter Full* (instance `nas.jaimenet.com:9100`).
+  *Node Exporter Full* (instance `nas.${SECRET_DOMAIN}:9100`).
 
 ## Restore procedures
 
