@@ -120,8 +120,9 @@ admin API and the models stay on the LAN.
 
 The connector sends a virtual key, never the master key:
 
-1. Dashboard → Virtual Keys → Create: name `claude-ai`, no models, and under
-   MCP only low-risk servers (`web_search`, `context7`). Do not give it
+1. Dashboard → Virtual Keys → Create: name `claude-ai`, model
+   `no-default-models`, and under MCP only low-risk servers (`web_search`,
+   `context7`). An empty model list gives the key all models. Do not give it
    `outlook` or a browser session. Claude on claude.ai reads web pages and
    files, and text in them can tell it to call a tool.
 2. claude.ai → Settings → Connectors → Add custom connector: URL
