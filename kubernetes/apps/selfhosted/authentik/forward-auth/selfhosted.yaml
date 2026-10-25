@@ -21,6 +21,9 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: paperless-gpt
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: syncthing
   extAuth:
     # The outpost needs the session cookie to recognise the user.
     headersToExtAuth:
