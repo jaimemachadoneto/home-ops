@@ -1,0 +1,32 @@
+version: "3.3"
+services:
+  tika:
+    ports:
+      - 9998:9998
+    image: apache/tika:latest-full
+    restart: always
+networks:
+  dockge_default:
+    external: true
+  openwebui_default:
+    external: true
+  ollama_default:
+    external: true
+  searxng_searxng:
+    external: true
+  open-webui_default:
+    external: true
+  fast-whisper-pt-br_default:
+    external: true
+  comfyui_default:
+    external: true
+  comfyui_full_default:
+    external: true
+  paperless-ai_default:
+    external: true
+  piper-pt-br_default:
+    external: true
+  summirizer_default:
+    external: true
+  time_default:
+    external: true

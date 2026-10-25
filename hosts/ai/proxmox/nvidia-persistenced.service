@@ -1,0 +1,15 @@
+# On the Proxmox host jmn-medusa: /etc/systemd/system/nvidia-persistenced.service
+# The NVIDIA .run installer installs the daemon but no unit. Without it, the
+# /dev/nvidia* nodes do not exist when Proxmox starts the guests, and the LXC
+# gets empty placeholder files instead of the GPUs.
+[Unit]
+Description=NVIDIA Persistence Daemon (creates /dev/nvidia* before guests start)
+Before=pve-guests.service
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/nvidia-persistenced --user root
+ExecStopPost=/bin/rm -rf /var/run/nvidia-persistenced
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,37 @@
+---
+# The ai host (Ollama LXC on Proxmox, hosts/ai/). Its disk alerts come from
+# the default node-exporter rules. These two cover what failed on 2026-10-25:
+# the GPUs did not reach the container, and Ollama stopped serving.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ai-host-rules
+  labels:
+    prometheus: k8s
+    role: alert-rules
+spec:
+  groups:
+    - name: ai-host.rules
+      rules:
+        - alert: AiHostGpuMissing
+          annotations:
+            summary: >-
+              The ai host reports {{ $value }} GPUs, fewer than 3. Check the
+              passthrough from Proxmox (hosts/ai/README.md).
+          expr: |
+            count(nvidia_smi_gpu_info{job="nvidia-gpu-exporter"}) < 3
+            or absent(nvidia_smi_gpu_info{job="nvidia-gpu-exporter"}) * 0
+          for: 10m
+          labels:
+            severity: critical
+        - alert: AiHostOllamaDown
+          annotations:
+            summary: >-
+              Ollama on the ai host does not answer. memini embeddings and the
+              LiteLLM model ollama/local fail.
+          expr: |
+            gatus_results_endpoint_success{name="ollama"} == 0
+          for: 5m
+          labels:
+            severity: critical

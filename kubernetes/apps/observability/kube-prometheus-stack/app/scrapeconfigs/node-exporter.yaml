@@ -8,6 +8,8 @@ spec:
   staticConfigs:
     - targets:
         - nas.jaimenet.com:9100
+        # The ai host (Ollama LXC, hosts/ai/stacks/node-exporter).
+        - ai.local.${SECRET_DOMAIN}:9100
   metricsPath: /metrics
   relabelings:
     - action: replace

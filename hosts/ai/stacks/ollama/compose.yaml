@@ -1,0 +1,29 @@
+version: "3.3"
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+    volumes:
+      - ollama:/root/.ollama
+    ports:
+      - 11434:11434
+    container_name: ollama
+    image: ollama/ollama
+    restart: always
+volumes:
+  ollama: {}
+networks:
+  openwebui_default:
+    external: true
+  searxng_searxng:
+    external: true
+  tika_default:
+    external: true
+  dockge_default:
+    external: true
