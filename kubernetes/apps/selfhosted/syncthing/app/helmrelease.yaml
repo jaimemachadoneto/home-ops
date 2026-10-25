@@ -66,6 +66,7 @@ spec:
         type: LoadBalancer
         annotations:
           lbipam.cilium.io/ips: 10.30.50.209
+          external-dns.alpha.kubernetes.io/hostname: sync.${SECRET_DOMAIN}
         ports:
           sync-tcp:
             port: 22000

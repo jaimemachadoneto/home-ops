@@ -13,16 +13,16 @@ PC (~/Notes)  ⇄  syncthing (cluster)  ⇄  Android phone (Obsidian)
 | Item | Value |
 | --- | --- |
 | Web UI | `https://syncthing.${SECRET_DOMAIN}`. Authentik controls access (administrators only). |
-| Sync address | `10.30.50.209`, port 22000 TCP and UDP (LoadBalancer) |
+| Sync address | `sync.${SECRET_DOMAIN}` (`10.30.50.209`), port 22000 TCP and UDP (LoadBalancer). external-dns makes the UniFi record. |
 | Data | PVC `syncthing` (5Gi, `ceph-block`). VolSync copies it to the backup repository. |
 | Folder path in the pod | `/var/syncthing/notes` |
 
 ## Before the first device
 
-1. On the UCG, add a firewall rule. Let Main (10.30.10.0/23) reach
-   `10.30.50.209` on port 22000, TCP and UDP. The default rules drop this
-   traffic between VLANs (see `network.md`, section 11). Without the rule,
-   devices at home use a slow public relay.
+1. Make sure that Main (10.30.10.0/23) can reach `10.30.50.209` on port
+   22000, TCP and UDP. On 2026-10-25, a PC on Main reached it with no new
+   firewall rule. If a device at home connects through a relay, examine the
+   UCG firewall rules (see `network.md`, section 11).
 2. Open the web UI of the cluster. Go to **Actions > Settings**.
 3. On the **Connections** tab, clear **Enable NAT traversal**. The router
    must not open port 22000 to the internet.
@@ -42,7 +42,8 @@ install with an empty volume.
 2. Open the web UI of the cluster. Click **Actions > Show ID**. Copy the
    device ID.
 3. On the device, add a remote device with that ID. Set its addresses to
-   `tcp://10.30.50.209:22000, quic://10.30.50.209:22000, dynamic`.
+   `tcp://sync.${SECRET_DOMAIN}:22000, quic://sync.${SECRET_DOMAIN}:22000, dynamic`.
+   Use the real domain in place of `${SECRET_DOMAIN}`.
 4. The web UI of the cluster shows a prompt for the new device. Compare the
    device ID in the prompt with the ID on the device (**Actions > Show
    ID**). Accept the device only if the two IDs are the same.
@@ -55,8 +56,9 @@ Do not set the cluster as an introducer, and do not turn on automatic
 acceptance of folders. A device that you did not compare must not get the
 vault.
 
-Away from home, a device cannot reach `10.30.50.209`. It then connects
-through a public Syncthing relay. The relay cannot read the data, because
+Away from home, the name `sync.${SECRET_DOMAIN}` does not resolve, and a
+device cannot reach `10.30.50.209`. It then connects through a public
+Syncthing relay. The relay cannot read the data, because
 Syncthing encrypts each connection from end to end.
 
 ## Ignore patterns
