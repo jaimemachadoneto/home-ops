@@ -10,7 +10,13 @@ spec:
     name: gha-runner-scale-set-controller
   driftDetection:
     mode: enabled
+  # Helm skips the CRDs on an upgrade. New controller versions write new
+  # fields (0.15 adds spec.phase), which an old CRD would drop.
+  install:
+    crds: CreateReplace
   interval: 30m
+  upgrade:
+    crds: CreateReplace
   values:
     fullnameOverride: actions-runner-controller
     replicaCount: 1
