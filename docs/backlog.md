@@ -95,8 +95,10 @@ the blueprint, client ID/secret from the app's 1Password item via
       tool). Its PVC holds the browser profiles (site sign-ins): restore it
       from VolSync in the new namespace, then point
       `ai/browser-sessions-mcp` at `browser-sessions.ai.svc`.
-- [ ] After the LiteLLM database PR: create per-client virtual keys with
-      only the MCP servers each needs, and stop handing out the master key.
+- [ ] Retire the LiteLLM master key for clients. No workload in the cluster
+      uses it, but agents outside it may. Give each one a virtual key (the
+      claude.ai connector already has `claude-ai`), check the spend logs
+      that nothing still sends the master key, then rotate it in 1Password.
 
 ### 8. Smaller items
 
