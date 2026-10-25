@@ -78,6 +78,9 @@ spec:
       value: openid email profile
     - name: GENERIC_USER_ROLE_ATTRIBUTE
       value: litellm_role
+    # The default is "sub", which is a hashed ID with hashed_user_id.
+    - name: GENERIC_USER_DISPLAY_NAME_ATTRIBUTE
+      value: name
   resources:
     requests:
       cpu: 100m
