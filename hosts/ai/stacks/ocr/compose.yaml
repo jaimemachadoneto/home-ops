@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  ocr-service:
+    image: ghcr.io/jaimemachado/ocr-service:049c650a38ce0cfbfccc4e4ef0097b33459c1c00
+    ports:
+      - "8000:8000"
+    environment:
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./tmp:/app/tmp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

@@ -1,0 +1,14 @@
+# Host metrics for Prometheus (scrapeconfigs/node-exporter.yaml in the
+# cluster). The disk alerts of kube-prometheus-stack cover this host through
+# them; the root disk was full for a month in 2026 with no alert.
+services:
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.12.1
+    container_name: node-exporter
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    command:
+      - --path.rootfs=/host
+    volumes:
+      - /:/host:ro

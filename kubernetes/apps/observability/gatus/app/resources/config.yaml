@@ -36,6 +36,15 @@ connectivity:
     interval: 1m
 
 endpoints:
+  # Ollama on the ai host (hosts/ai/). The alert is AiHostOllamaDown in
+  # kube-prometheus-stack, because Gatus alerts only on external endpoints.
+  - name: ollama
+    group: ai
+    url: http://ai.local.${SECRET_DOMAIN}:11434/api/version
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+
   - name: flux-webhook
     group: external
     url: https://flux-webhook.${SECRET_DOMAIN}

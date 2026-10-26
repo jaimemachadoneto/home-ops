@@ -1,0 +1,47 @@
+services:
+  faster-whisper:
+    image: lscr.io/linuxserver/faster-whisper:gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+    container_name: faster-whisper
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+      - WHISPER_MODEL=medium-int8
+      - WHISPER_BEAM=2 #optional
+      - WHISPER_LANG=pt-br
+    volumes:
+      - /docker/fasterwhisper/data:/config
+    ports:
+      - 10300:10300
+    restart: unless-stopped
+networks:
+  comfyui_default:
+    external: true
+  comfyui_full_default:
+    external: true
+  dockge_default:
+    external: true
+  ollama_default:
+    external: true
+  time_default:
+    external: true
+  tika_default:
+    external: true
+  summirizer_default:
+    external: true
+  piper-pt-br_default:
+    external: true
+  paperless-ai_default:
+    external: true
+  openai-whisper_default:
+    external: true
+  open-webui_default:
+    external: true

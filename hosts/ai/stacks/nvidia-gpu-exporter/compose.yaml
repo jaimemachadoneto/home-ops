@@ -1,0 +1,18 @@
+# GPU metrics for Prometheus (scrapeconfigs/nvidia-gpu-exporter.yaml in the
+# cluster). The alert "AiHostGpuMissing" fires when fewer GPUs report than
+# the host has, which is how a failed passthrough from Proxmox shows.
+services:
+  nvidia-gpu-exporter:
+    image: utkuozdemir/nvidia_gpu_exporter:1.15.1
+    container_name: nvidia-gpu-exporter
+    restart: unless-stopped
+    ports:
+      - 9835:9835
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu

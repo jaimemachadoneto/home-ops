@@ -1,0 +1,16 @@
+---
+# GPUs of the ai host (Ollama LXC, hosts/ai/stacks/nvidia-gpu-exporter).
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/scrapeconfig_v1alpha1.json
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: &name nvidia-gpu-exporter
+spec:
+  staticConfigs:
+    - targets:
+        - ai.local.${SECRET_DOMAIN}:9835
+  metricsPath: /metrics
+  relabelings:
+    - action: replace
+      targetLabel: job
+      replacement: *name
