@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Usage: precheck.sh <pr>
-# Exit: 0 ready to merge, 10 checks still run, 20 not open or not mergeable, 30 checks fail.
+# Exit: 0 ready to merge, 10 checks still run or GitHub still calculates mergeability,
+#       20 not open or not mergeable, 30 checks fail, 64 wrong arguments.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+need_args $# 1 "precheck.sh <pr>"
 pr=$1
 
 gh pr view "$pr" --json state,mergeable,statusCheckRollup >"$TMP/pr.json"
