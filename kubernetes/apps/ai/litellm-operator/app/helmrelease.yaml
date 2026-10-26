@@ -8,7 +8,11 @@ spec:
   chartRef:
     kind: OCIRepository
     name: litellm-operator
+  install:
+    crds: CreateReplace
   interval: 30m
+  upgrade:
+    crds: CreateReplace
   values:
     controller:
       leaderElection:
