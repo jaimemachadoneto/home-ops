@@ -10,8 +10,12 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 # gh gets its credentials from the 1Password app. A bash script does not get the zsh
-# wrapper of the user, so this function calls `op plugin run`.
-gh() { op plugin run -- gh "$@"; }
+# wrapper of the user, and each `op plugin run` in a script asks for a new approval.
+# So use GH_TOKEN when the caller gives it: GH_TOKEN=$(gh auth token) bash <script>.
+# A scheduled run gives GH_TOKEN from sops-nix.
+gh() {
+  if [ -n "${GH_TOKEN:-}" ]; then command gh "$@"; else op plugin run -- gh "$@"; fi
+}
 
 # helm and yq are in the home-ops shell only.
 tool() {

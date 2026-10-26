@@ -23,7 +23,7 @@ The plan note `~/Notes/10 - Projects/home-ops/Renovate merge plan <YYYY-MM>.md` 
 
 ## Scripts
 
-Set `S=.claude/skills/renovate-merge/scripts`, then run each script with `bash` from the home-ops repository root.
+Set `S=.claude/skills/renovate-merge/scripts`, then run each script with `bash` from the home-ops repository root. Give each script the GitHub token, so that 1Password does not ask for an approval in each script: `GH_TOKEN=$(gh auth token) bash $S/<script>`.
 
 | Script | Exit codes |
 | --- | --- |
