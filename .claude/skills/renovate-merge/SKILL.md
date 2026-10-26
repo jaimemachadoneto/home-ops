@@ -23,7 +23,19 @@ The plan note `~/Notes/10 - Projects/home-ops/Renovate merge plan <YYYY-MM>.md` 
 
 ## Scripts
 
-Set `S=.claude/skills/renovate-merge/scripts`, then run each script with `bash` from the home-ops repository root. Give each script the GitHub token, so that 1Password does not ask for an approval in each script: `GH_TOKEN=$(gh auth token) bash $S/<script>`.
+Set `S=.claude/skills/renovate-merge/scripts`, then run each script with `bash` from the home-ops repository root.
+
+Get the GitHub token one time, at the start of the run. Each `gh auth token` asks 1Password for an approval, and each Bash call starts a new shell. Thus keep the token in a file in the scratchpad directory of the session:
+
+```bash
+T=<scratchpad>/gh-token
+(umask 077; gh auth token > "$T")
+```
+
+- Give the token to each script: `GH_TOKEN=$(cat "$T") bash $S/<script>`.
+- For a `gh` command in the loop, use `GH_TOKEN=$(cat "$T") command gh ...`. `command` skips the 1Password wrapper of the shell.
+- Give the path of the file to each agent that runs `gh`.
+- At the end of the run, delete the file.
 
 | Script | Exit codes |
 | --- | --- |
