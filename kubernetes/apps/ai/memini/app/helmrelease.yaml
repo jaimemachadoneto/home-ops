@@ -47,6 +47,21 @@ spec:
               # to keyword search.
               MEMINI_WRITE_EMBED_TIMEOUT: 15s
               MEMINI_RECALL_EMBED_TIMEOUT: 10s
+              # Consolidation (contradictions, distillation) through LiteLLM,
+              # where all models are managed. qwen3:8b thinks before it answers,
+              # so it needs a larger token budget and time on these GPUs.
+              MEMINI_LLM_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
+              MEMINI_LLM_MODEL: ollama/local
+              MEMINI_LLM_MAX_TOKENS: "8192"
+              MEMINI_DISTILL_TIMEOUT: 180s
+              MEMINI_LLM_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: memini-secret
+                    key: MEMINI_LLM_API_KEY
+                    # memini keeps running without consolidation until the
+                    # 1Password field exists.
+                    optional: true
               MEMINI_RERANK: http://qwen3-reranker-0-6b.ai.svc.cluster.local:8080/v1
               MEMINI_RERANK_MODEL: qwen3-reranker
               MEMINI_LOG_FORMAT: json
