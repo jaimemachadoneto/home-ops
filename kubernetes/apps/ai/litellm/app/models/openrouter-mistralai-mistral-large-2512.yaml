@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-mistralai-mistral-large-2512
+spec:
+  modelName: openrouter/mistralai/mistral-large-2512
+  params:
+    model: openrouter/mistralai/mistral-large-2512
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+  info:
+    maxTokens: 209715
+    supportsFunctionCalling: true

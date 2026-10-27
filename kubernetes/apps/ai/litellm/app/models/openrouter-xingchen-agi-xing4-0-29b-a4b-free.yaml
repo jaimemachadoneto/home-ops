@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-xingchen-agi-xing4-0-29b-a4b-free
+spec:
+  modelName: openrouter/xingchen-agi/xing4.0-29b-a4b:free
+  params:
+    model: openrouter/xingchen-agi/xing4.0-29b-a4b:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+  info:
+    maxTokens: 235929
+    supportsFunctionCalling: true

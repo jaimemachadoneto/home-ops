@@ -5,3 +5,32 @@ kind: Kustomization
 resources:
   - ./deepseek-chat.yaml
   - ./ollama-chat.yaml
+  - ./openrouter.yaml
+  - ./openrouter-anthropic-claude-haiku-4-5.yaml
+  - ./openrouter-anthropic-claude-opus-5-5.yaml
+  - ./openrouter-anthropic-claude-sonnet-5-5.yaml
+  - ./openrouter-cohere-north-mini-code-free.yaml
+  - ./openrouter-deepseek-deepseek-v4-pro.yaml
+  - ./openrouter-dots-studio-dots-3-note-preview-free.yaml
+  - ./openrouter-google-gemini-2-5-pro.yaml
+  - ./openrouter-google-gemini-3-5-flash.yaml
+  - ./openrouter-google-gemma-4-26b-a4b-it-free.yaml
+  - ./openrouter-google-gemma-4-31b-it-free.yaml
+  - ./openrouter-liquid-lfm-2-5-2-6b-free.yaml
+  - ./openrouter-meta-llama-llama-4-maverick.yaml
+  - ./openrouter-mistralai-mistral-large-2512.yaml
+  - ./openrouter-nvidia-nemotron-3-5-content-safety-free.yaml
+  - ./openrouter-nvidia-nemotron-3-5-lightning-free.yaml
+  - ./openrouter-nvidia-nemotron-3-5-super-vl-free.yaml
+  - ./openrouter-nvidia-nemotron-3-nano-omni-30b-a3b-reasoning-free.yaml
+  - ./openrouter-nvidia-nemotron-3-ultra-550b-a55b-free.yaml
+  - ./openrouter-openai-gpt-5-4-mini.yaml
+  - ./openrouter-openai-gpt-5-5.yaml
+  - ./openrouter-poolside-laguna-s-2-1-free.yaml
+  - ./openrouter-poolside-laguna-xs-2-1-free.yaml
+  - ./openrouter-qwen-qwen3-8-max-prime.yaml
+  - ./openrouter-recursive-flint-v1-0-free.yaml
+  - ./openrouter-thinkingmachines-inkling-free.yaml
+  - ./openrouter-thinkingmachines-inkling-small-free.yaml
+  - ./openrouter-x-ai-grok-4-7.yaml
+  - ./openrouter-xingchen-agi-xing4-0-29b-a4b-free.yaml

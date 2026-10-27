@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-liquid-lfm-2-5-2-6b-free
+spec:
+  modelName: openrouter/liquid/lfm-2.5-2.6b:free
+  params:
+    model: openrouter/liquid/lfm-2.5-2.6b:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+  info:
+    maxTokens: 8192
+    supportsFunctionCalling: true

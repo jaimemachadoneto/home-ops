@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-meta-llama-llama-4-maverick
+spec:
+  modelName: openrouter/meta-llama/llama-4-maverick
+  params:
+    model: openrouter/meta-llama/llama-4-maverick
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+  info:
+    maxTokens: 16384
+    supportsFunctionCalling: true

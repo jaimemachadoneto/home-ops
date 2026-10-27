@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-google-gemma-4-26b-a4b-it-free
+spec:
+  modelName: openrouter/google/gemma-4-26b-a4b-it:free
+  params:
+    model: openrouter/google/gemma-4-26b-a4b-it:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+  info:
+    maxTokens: 32768
+    supportsFunctionCalling: true
