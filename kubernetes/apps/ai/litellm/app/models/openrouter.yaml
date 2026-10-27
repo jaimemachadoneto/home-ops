@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter
+spec:
+  # Catch-all: any model id after "openrouter/" routes straight through to
+  # OpenRouter, so no new LiteLLMModel is needed per model.
+  modelName: openrouter/*
+  params:
+    model: openrouter/*
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+  info:
+    supportsFunctionCalling: true
