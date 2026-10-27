@@ -146,3 +146,35 @@ entries:
       enabled: true
       negate: false
       timeout: 30
+
+  # --- Open WebUI (selfhosted/openwebui) --------------------------------------
+  # Sign-in at https://ai.${SECRET_DOMAIN}. Any signed-in user gets an account
+  # (DEFAULT_USER_ROLE: user in the app's HelmRelease); grant admin from the
+  # app's own Admin Panel if needed.
+  - model: authentik_providers_oauth2.oauth2provider
+    id: provider-openwebui
+    identifiers:
+      name: openwebui
+    attrs:
+      client_type: confidential
+      client_id: openwebui
+      client_secret: !Env OPENWEBUI_OIDC_CLIENT_SECRET
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+      redirect_uris:
+        - matching_mode: strict
+          url: https://ai.${SECRET_DOMAIN}/oauth/oidc/callback
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+      sub_mode: hashed_user_id
+  - model: authentik_core.application
+    identifiers:
+      slug: openwebui
+    attrs:
+      name: Open WebUI
+      provider: !KeyOf provider-openwebui
+      meta_launch_url: https://ai.${SECRET_DOMAIN}
+      policy_engine_mode: any

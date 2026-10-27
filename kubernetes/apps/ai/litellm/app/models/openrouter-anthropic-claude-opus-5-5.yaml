@@ -14,3 +14,6 @@ spec:
   info:
     maxTokens: 128000
     supportsFunctionCalling: true
+    extra:
+      input_cost_per_token: 0.000004
+      output_cost_per_token: 0.00002
