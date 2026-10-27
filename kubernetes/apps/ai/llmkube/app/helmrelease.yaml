@@ -39,6 +39,12 @@ spec:
     modelCache:
       enabled: true
       size: 20Gi
-      storageClass: ceph-block
-      accessMode: ReadWriteOnce
+      # ceph-block (RWO) only attaches on one node at a time: the controller
+      # and model-serving pods share this cache PVC but have no affinity to
+      # colocate on the same node, so whichever one lands elsewhere (e.g.
+      # after a node reboot) gets stuck on FailedAttachVolume forever. The
+      # chart's own values.yaml recommends an RWX class for multi-node
+      # clusters; ceph-filesystem (CephFS) is that class here.
+      storageClass: ceph-filesystem
+      accessMode: ReadWriteMany
       mountPath: /models
