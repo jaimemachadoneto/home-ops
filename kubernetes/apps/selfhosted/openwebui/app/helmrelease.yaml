@@ -37,7 +37,11 @@ spec:
               # Ollama
               ENABLE_OLLAMA_API: true
               OLLAMA_BASE_URL: http://ai.local.jaimenet.com:11434
-              ENABLE_OPENAI_API: false
+              # LiteLLM (ai/litellm): every model behind the gateway, in-cluster.
+              ENABLE_OPENAI_API: true
+              OPENAI_API_BASE_URLS: http://litellm.ai.svc.cluster.local:4000/v1
+              # Key is OPENAI_API_KEYS in externalsecret.yaml (OPENAI_API_CONFIGS
+              # keys connections by index into this list, so keep it single-valued).
               ENABLE_SIGNUP: false
               ENABLE_INITIAL_ADMIN_SIGNUP: true
               ENABLE_LOGIN_FORM: true
@@ -50,18 +54,20 @@ spec:
               # Redis
               ENABLE_WEBSOCKET_SUPPORT: true
               WEBSOCKET_MANAGER: redis
-              # OIDC
-              # ENABLE_OAUTH_SIGNUP: false
-              # OAUTH_MERGE_ACCOUNTS_BY_EMAIL: true
-              # OAUTH_UPDATE_PICTURE_ON_LOGIN: true
-              # OAUTH_PROVIDER_NAME: Movishell
-              # OAUTH_SCOPES: openid profile email offline_access
-              # ENABLE_OAUTH_ROLE_MANAGEMENT: "true"
-              # ENABLE_OAUTH_GROUP_MANAGEMENT: "true"
-              # ENABLE_OAUTH_GROUP_CREATION: "true"
-              # OAUTH_ALLOWED_ROLES: "media, infrastructure"
-              # OAUTH_ROLES_CLAIM: "groups"
-              # OAUTH_ADMIN_ROLES: "infrastructure"
+              # Tool servers: LiteLLM's MCP gateway (TOOL_SERVER_CONNECTIONS in
+              # externalsecret.yaml, embeds the bearer key).
+              ENABLE_TOOL_SERVERS: true
+              # OIDC (Authentik, provider "openwebui" in
+              # authentik/app/blueprints/oidc.yaml). Secret and endpoints are in
+              # externalsecret.yaml.
+              ENABLE_OAUTH_SIGNUP: true
+              # false: merging into an existing account by email alone lets
+              # anyone who controls a matching, "verified" email take it over.
+              # Local signup is already off, so nothing legitimate needs it.
+              OAUTH_MERGE_ACCOUNTS_BY_EMAIL: false
+              OAUTH_PROVIDER_NAME: Authentik
+              OAUTH_CLIENT_ID: openwebui
+              OAUTH_SCOPES: "openid email profile"
               DEFAULT_USER_ROLE: "user"
             envFrom:
               - secretRef:
