@@ -6,8 +6,12 @@ metadata:
   name: kubernetes
 spec:
   kubernetes:
+    # talosctl refuses to skip a minor version ("unsupported upgrade path
+    # 1.35->1.37"), so stage through v1.36.5 first; #224 bumped this
+    # straight to v1.37.1, which failed the same way. Set back to v1.37.1
+    # once this version lands successfully.
     # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-    version: v1.37.1
+    version: v1.36.5
   healthChecks:
     - apiVersion: volsync.backube/v1alpha1
       kind: ReplicationSource
