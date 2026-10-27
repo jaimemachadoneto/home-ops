@@ -61,10 +61,10 @@ spec:
               # authentik/app/blueprints/oidc.yaml). Secret and endpoints are in
               # externalsecret.yaml.
               ENABLE_OAUTH_SIGNUP: true
-              # false: merging into an existing account by email alone lets
-              # anyone who controls a matching, "verified" email take it over.
-              # Local signup is already off, so nothing legitimate needs it.
-              OAUTH_MERGE_ACCOUNTS_BY_EMAIL: false
+              # TEMPORARY true: one-time merge of the bootstrap admin account
+              # (same email) into its Authentik identity. Revert to false
+              # (see git history) once that sign-in has happened once.
+              OAUTH_MERGE_ACCOUNTS_BY_EMAIL: true
               OAUTH_PROVIDER_NAME: Authentik
               OAUTH_CLIENT_ID: openwebui
               OAUTH_SCOPES: "openid email profile"
