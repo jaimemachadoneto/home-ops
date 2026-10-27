@@ -6,11 +6,14 @@ metadata:
   name: kubernetes
 spec:
   kubernetes:
-    # v1.36.5 staged successfully (#394) after #224's direct 1.35->1.37
-    # jump failed talosctl's "unsupported upgrade path" check. Completing
-    # #224's original intent now that the intermediate version has landed.
+    # v1.37.1 is not reachable yet: talosctl refuses "unsupported upgrade
+    # path 1.36->1.37" because Talos v1.13.12's own bundled Kubernetes is
+    # v1.36.3 (see its release notes) - Talos 1.13.x does not support
+    # Kubernetes 1.37.x at all. Revisit once a Talos release that does is
+    # available; a new Renovate PR offering 1.37.x again should be closed
+    # with that reason until then.
     # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-    version: v1.37.1
+    version: v1.36.5
   healthChecks:
     - apiVersion: volsync.backube/v1alpha1
       kind: ReplicationSource
