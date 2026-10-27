@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-nvidia-nemotron-3-5-super-vl-free
+spec:
+  modelName: openrouter/nvidia/nemotron-3.5-super-vl:free
+  params:
+    model: openrouter/nvidia/nemotron-3.5-super-vl:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+  info:
+    maxTokens: 131072
+    supportsFunctionCalling: true

@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-dots-studio-dots-3-note-preview-free
+spec:
+  modelName: openrouter/dots-studio/dots-3-note-preview:free
+  params:
+    model: openrouter/dots-studio/dots-3-note-preview:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+  info:
+    maxTokens: 460800
+    supportsFunctionCalling: true

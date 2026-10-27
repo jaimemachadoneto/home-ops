@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-cohere-north-mini-code-free
+spec:
+  modelName: openrouter/cohere/north-mini-code:free
+  params:
+    model: openrouter/cohere/north-mini-code:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+  info:
+    maxTokens: 64000
+    supportsFunctionCalling: true
