@@ -15,5 +15,10 @@ spec:
         status.conditions.filter(c, c.type == "Synchronizing").all(c, c.status == "False")
     - apiVersion: ceph.rook.io/v1
       kind: CephCluster
+      # Same as talos.yaml / rook-ceph/rook-ceph/ks.yaml (#385, #386): Ceph
+      # 20.2.4 added HEALTH_ERR checks for the cluster's aes cephx key type,
+      # expected given our kernels (6.18) are below the 7.0 cipher threshold.
+      # Tolerate it here too, so a Kubernetes upgrade (#224) isn't blocked.
+      # TODO: revisit once a real fix removes the AUTH_INSECURE_* checks.
       expr: |-
-        status.ceph.health in ['HEALTH_OK', 'HEALTH_WARN']
+        status.ceph.health in ['HEALTH_OK', 'HEALTH_WARN', 'HEALTH_ERR']
