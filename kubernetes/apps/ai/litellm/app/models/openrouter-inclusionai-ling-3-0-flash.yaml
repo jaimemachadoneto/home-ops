@@ -1,0 +1,16 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-inclusionai-ling-3-0-flash
+spec:
+  modelName: openrouter/inclusionai/ling-3.0-flash
+  params:
+    model: openrouter/inclusionai/ling-3.0-flash
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+  info:
+    maxTokens: 32768
+    supportsFunctionCalling: true

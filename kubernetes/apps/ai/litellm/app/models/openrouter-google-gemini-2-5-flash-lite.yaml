@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+# Candidate for Home Assistant Assist's conversation agent: cheap, low-latency, reliable tool calls.
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-google-gemini-2-5-flash-lite
+spec:
+  modelName: openrouter/google/gemini-2.5-flash-lite
+  params:
+    model: openrouter/google/gemini-2.5-flash-lite
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+  info:
+    maxTokens: 65535
+    supportsFunctionCalling: true
