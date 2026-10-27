@@ -13,3 +13,6 @@ spec:
       key: OPENROUTER_API_KEY
   info:
     maxTokens: 8192
+    extra:
+      input_cost_per_token: 0
+      output_cost_per_token: 0
