@@ -6,12 +6,6 @@ metadata:
   name: kubernetes
 spec:
   kubernetes:
-    # v1.37.1 is not reachable yet: talosctl refuses "unsupported upgrade
-    # path 1.36->1.37" because Talos v1.13.12's own bundled Kubernetes is
-    # v1.36.3 (see its release notes) - Talos 1.13.x does not support
-    # Kubernetes 1.37.x at all. Revisit once a Talos release that does is
-    # available; a new Renovate PR offering 1.37.x again should be closed
-    # with that reason until then.
     # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
     version: v1.37.2
   healthChecks:
