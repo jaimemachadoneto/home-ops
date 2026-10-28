@@ -95,19 +95,24 @@ spec:
               name: envoy-external
               namespace: network
               sectionName: https
-      # extraEnv:
-      #   - name: DJANGO_SESSION_COOKIE_DOMAIN
-      #     value: "${SECRET_DOMAIN}"
-      #   - name: DJANGO_CSRF_COOKIE_DOMAIN
-      #     value: "${SECRET_DOMAIN}"
-      #   - name: DJANGO_SESSION_COOKIE_SAMESITE
-      #     value: "None"
-      #   - name: DJANGO_SESSION_COOKIE_SECURE
-      #     value: "true"
-      #   - name: DJANGO_CSRF_COOKIE_SAMESITE
-      #     value: "None"
-      #   - name: DJANGO_CSRF_COOKIE_SECURE
-      #     value: "true"
+      extraEnv:
+        # 2026.8 enforces this: forwarded headers (X-Forwarded-Proto/Host/For)
+        # are only trusted from these networks. All real traffic reaches this
+        # pod via an Envoy Gateway pod, so the cluster's own pod CIDR covers it.
+        - name: AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS
+          value: "10.244.0.0/16"
+        # - name: DJANGO_SESSION_COOKIE_DOMAIN
+        #   value: "${SECRET_DOMAIN}"
+        # - name: DJANGO_CSRF_COOKIE_DOMAIN
+        #   value: "${SECRET_DOMAIN}"
+        # - name: DJANGO_SESSION_COOKIE_SAMESITE
+        #   value: "None"
+        # - name: DJANGO_SESSION_COOKIE_SECURE
+        #   value: "true"
+        # - name: DJANGO_CSRF_COOKIE_SAMESITE
+        #   value: "None"
+        # - name: DJANGO_CSRF_COOKIE_SECURE
+        #   value: "true"
       metrics:
         serviceMonitor:
           enabled: true
