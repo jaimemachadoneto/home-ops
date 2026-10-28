@@ -18,6 +18,10 @@ spec:
     remediation:
       retries: 3
   interval: 25m
+  # The authentik image is large; a cold pull on this node can exceed the
+  # default 5m helm timeout before the pod reports ready, triggering a
+  # needless rollback (seen during the 2026.2 upgrade).
+  timeout: 10m
   upgrade:
     cleanupOnFail: true
     remediation:
