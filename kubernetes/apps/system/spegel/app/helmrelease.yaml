@@ -15,6 +15,11 @@ spec:
     serviceMonitor:
       enabled: true
     spegel:
-      appendMirrors: true
       containerdRegistryConfigPath: /etc/cri/conf.d/hosts
       containerdSock: /run/containerd/containerd.sock
+      # Exclude registries spegel has no business mirroring: a Talos installer
+      # image is pulled once per node per upgrade, never shared across pods,
+      # so P2P mirroring only adds a cache-miss hang with no real upstream
+      # fallback once spegel claims (but fails to serve) the pull.
+      registryFilters:
+        - "^factory\\.talos\\.dev/"
