@@ -17,9 +17,20 @@ spec:
     spegel:
       containerdRegistryConfigPath: /etc/cri/conf.d/hosts
       containerdSock: /run/containerd/containerd.sock
-      # Exclude registries spegel has no business mirroring: a Talos installer
-      # image is pulled once per node per upgrade, never shared across pods,
-      # so P2P mirroring only adds a cache-miss hang with no real upstream
-      # fallback once spegel claims (but fails to serve) the pull.
-      registryFilters:
-        - "^factory\\.talos\\.dev/"
+      # registryFilters alone doesn't stop spegel writing a hosts.toml entry
+      # for a registry - that's controlled by mirroredRegistries, which
+      # defaults to every registry (empty = all). Switched to an explicit
+      # allowlist so factory.talos.dev never gets a mirror entry at all: a
+      # Talos installer image is pulled once per node per upgrade, never
+      # shared across pods, so it's never actually cached, and the pull
+      # stalls with no upstream fallback once spegel claims (but fails to
+      # serve) it. Keep this list in sync with the registries actually in
+      # use (`grep -rhoE '(repository|url):' kubernetes/apps/`).
+      mirroredRegistries:
+        - https://docker.io
+        - https://gcr.io
+        - https://ghcr.io
+        - https://gsoci.azurecr.io
+        - https://mirror.gcr.io
+        - https://quay.io
+        - https://registry.erwanleboucher.dev
