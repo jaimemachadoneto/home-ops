@@ -20,6 +20,13 @@ spec:
     kubeletPlugin:
       nodeSelector:
         gpu: intel
+      # xpumd is not deployed in this cluster; without it the plugin panics
+      # trying to reach its health-check socket (ghcr.io/intel chart v0.12.0+).
+      # privileged is required so the driver reads hardware details directly
+      # instead of through xpumd when health monitoring is off.
+      privileged: true
+      healthMonitoring:
+        enabled: false
       tolerations:
         - key: "dedicated"
           operator: "Equal"
