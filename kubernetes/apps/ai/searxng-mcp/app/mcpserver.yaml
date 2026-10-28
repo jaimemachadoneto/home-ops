@@ -12,7 +12,7 @@ spec:
   alias: web_search
   workload:
     # renovate: datasource=docker depName=docker.io/isokoliuk/mcp-searxng
-    image: docker.io/isokoliuk/mcp-searxng:2.8.1
+    image: docker.io/isokoliuk/mcp-searxng:2.9.0
     port: 8000
     path: /mcp
     env:
