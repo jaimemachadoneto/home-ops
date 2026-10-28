@@ -29,7 +29,7 @@ spec:
               - /manager
             image:
               repository: ghcr.io/dragonflydb/operator
-              tag: v1.4.0@sha256:b6ceebe49d4687a4fc3e485724a0cfcf0ca2dfba1d5508375543b8db46a66fc1
+              tag: v1.7.1@sha256:bc0067369a456810d00715d7292da32b82f6df491fd51d6c57f2b2b3193ab490
             probes:
               liveness:
                 custom: true
