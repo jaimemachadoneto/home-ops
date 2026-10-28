@@ -80,6 +80,10 @@ spec:
                   name: kopia-secret
             args:
               - --without-password
+              # kopia 0.23.0+ refuses to bind the unauthenticated server to a
+              # non-loopback address; this keeps today's behavior (internal
+              # route only, no new exposure).
+              - --allow-extremely-dangerous-unauthenticated-server-on-the-network
             probes:
               liveness: &probes
                 enabled: true
