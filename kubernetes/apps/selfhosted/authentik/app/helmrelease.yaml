@@ -95,7 +95,9 @@ spec:
               name: envoy-external
               namespace: network
               sectionName: https
-      extraEnv:
+      # The chart's key is `env`, not `extraEnv` (verified against the chart's
+      # own values.yaml - an `extraEnv` key is silently ignored by Helm).
+      env:
         # 2026.8 enforces this: forwarded headers (X-Forwarded-Proto/Host/For)
         # are only trusted from these networks. All real traffic reaches this
         # pod via an Envoy Gateway pod, so the cluster's own pod CIDR covers it.
