@@ -58,6 +58,9 @@ spec:
     loadBalancer:
       algorithm: maglev
       mode: dsr
+      # Required for spegel's node-local "prefer same node" registry mirror
+      # routing (#299) to work correctly with kubeProxyReplacement enabled.
+      serviceTopology: true
     localRedirectPolicies:
       enabled: true
     operator:
