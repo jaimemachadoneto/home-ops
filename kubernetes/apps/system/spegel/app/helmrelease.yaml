@@ -11,8 +11,7 @@ spec:
   interval: 30m
   values:
     service:
-      registry:
-        hostPort: 29999
+      registry: {}
     serviceMonitor:
       enabled: true
     spegel:
