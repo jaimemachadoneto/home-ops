@@ -8,7 +8,11 @@ spec:
   chartRef:
     kind: OCIRepository
     name: openebs
+  install:
+    crds: CreateReplace
   interval: 30m
+  upgrade:
+    crds: CreateReplace
   values:
     alloy:
       enabled: false
