@@ -8,7 +8,11 @@ spec:
   chartRef:
     kind: OCIRepository
     name: externaldns-unifi
+  install:
+    crds: CreateReplace
   interval: 30m
+  upgrade:
+    crds: CreateReplace
   values:
     fullnameOverride: externaldns-unifi
     logLevel: &logLevel info
