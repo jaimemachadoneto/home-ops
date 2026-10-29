@@ -8,8 +8,12 @@ spec:
   chartRef:
     kind: OCIRepository
     name: kube-prometheus-stack
+  install:
+    crds: CreateReplace
   interval: 30m
   timeout: 15m
+  upgrade:
+    crds: CreateReplace
   values:
     crds:
       enabled: true
