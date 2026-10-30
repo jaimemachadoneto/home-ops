@@ -28,11 +28,13 @@ spec:
               # externalsecret.yaml. LLM_* is required, but OCR uses VISION_LLM_*.
               OPENAI_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
               LLM_PROVIDER: openai
-              LLM_MODEL: openrouter/google/gemini-3.5-flash
+              LLM_MODEL: openrouter/google/gemini-2.5-flash-lite
               LLM_LANGUAGE: Spanish
               OCR_PROVIDER: llm
               VISION_LLM_PROVIDER: openai
-              VISION_LLM_MODEL: openrouter/google/gemini-3.5-flash
+              # flash-lite: no reasoning tokens. gemini-3.5-flash used ~3300 per page
+              # (about $0.03 a page) to copy text.
+              VISION_LLM_MODEL: openrouter/google/gemini-2.5-flash-lite
               # No page limit: the new version must have every page.
               OCR_LIMIT_PAGES: 0
               OCR_PROCESS_MODE: image
