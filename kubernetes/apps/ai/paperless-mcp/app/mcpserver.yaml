@@ -1,0 +1,17 @@
+---
+# The Paperless MCP server (selfhosted/paperless/mcp) through the LiteLLM MCP
+# gateway. LiteLLM sends the Paperless token of the user paperless-mcp (view
+# only) as the bearer token; the server uses it for each call to Paperless.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: paperless
+spec:
+  alias: paperless
+  url: http://paperless-mcp.selfhosted.svc.cluster.local:3000/mcp
+  transport: http
+  authType: bearer_token
+  authTokenRef:
+    name: paperless-mcp-secret
+    key: PAPERLESS_MCP_API_TOKEN

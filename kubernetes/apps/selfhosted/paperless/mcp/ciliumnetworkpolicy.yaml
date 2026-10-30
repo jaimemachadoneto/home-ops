@@ -1,0 +1,56 @@
+---
+# The MCP server has no login of its own: the Paperless token in each request
+# is its only check. Only the LiteLLM MCP gateway may call it, and only /mcp.
+# It may call only Paperless (and DNS).
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: paperless-mcp
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: paperless-mcp
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: ai
+            app.kubernetes.io/name: litellm
+            app.kubernetes.io/instance: litellm
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+          rules:
+            http:
+              # The methods of the MCP streamable HTTP transport.
+              - method: GET|POST|DELETE
+                path: /mcp(/.*)?
+    # The kubelet probes come from the node.
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: selfhosted
+            app.kubernetes.io/name: paperless
+            app.kubernetes.io/controller: paperless
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"

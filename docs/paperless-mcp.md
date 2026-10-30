@@ -1,6 +1,7 @@
 # Plan: a Paperless MCP server, for Claude Code and claude.ai
 
-Status: plan only (2026-10-30). Nothing is deployed. Hostnames follow this
+Status: phase 1 in progress (2026-10-30): the manifests are written; the
+Paperless user and the gateway key are not done yet. Hostnames follow this
 repo (`${SECRET_DOMAIN}`).
 
 ## Goal
@@ -63,23 +64,30 @@ Agents work with my Paperless documents through one MCP server:
 
 ## Phase 1: read and organize, Claude Code only
 
-1. In Paperless, make the user `mcp`. Give it view permission on documents,
-   tags, correspondents, document types, storage paths and custom fields.
-   Do not give it delete or admin permissions. Make its API token, and save
-   it in 1Password, item `paperless-mcp`, field `api_token`.
-2. Fork baruchiro/paperless-mcp to my GitHub account. Build its image to
-   GHCR with GitHub Actions, as for the obsidian-mcp fork. Pin the image by
-   digest.
-3. `selfhosted/paperless/mcp/`: app-template HelmRelease, HTTP mode, port
-   3000. `PAPERLESS_URL` is the internal Service. Do not set
-   `PAPERLESS_API_KEY`: each request brings its token. Unset
-   `PAPERLESS_MCP_UPLOAD_PATHS`, or set it to an empty directory, so
+Phase 1 runs the upstream image (2.2.1, pinned by digest): the fork is needed
+only for the upload tools of phase 3.
+
+1. In Paperless, the user `paperless-mcp` in the group `mcp-read`: view
+   permission on documents, tags, correspondents, document types, storage
+   paths, custom fields and notes. No change, delete or admin permission.
+   Paperless hides owned documents from other users, so the group also gets
+   view on the existing objects, the workflow "Share new documents with
+   ai-services" gives it view on each new document, and the default view
+   groups of the superusers include it. Its API token goes in 1Password, item
+   `Paperless`, field `paperless_mcp_api_token`. (Same pattern as the users of
+   paperless-ai and paperless-gpt, group `ai-services`.)
+2. `selfhosted/paperless/mcp/`: app-template HelmRelease, HTTP mode, port
+   3000, user 1000, read-only root file system. `PAPERLESS_URL` is the
+   internal Service. `PAPERLESS_API_KEY` is not set: each request brings its
+   token. `PAPERLESS_MCP_UPLOAD_PATHS` is a directory that does not exist, so
    `file_path` uploads cannot read files of the pod.
-4. A CiliumNetworkPolicy, as for the notes server: ingress only from LiteLLM
-   (and the kubelet probes), egress only to Paperless on port 8000 and to
-   DNS.
-5. `ai/paperless-mcp/`: a `LiteLLMMCPServer` `paperless`
+3. A CiliumNetworkPolicy, as for the notes server: ingress only from LiteLLM
+   on `/mcp` (and the kubelet probes), egress only to the Paperless web pod
+   on port 8000 and to DNS.
+4. `ai/paperless-mcp/`: a `LiteLLMMCPServer` `paperless`
    (`authType: bearer_token`, the token from an ExternalSecret).
+5. In the LiteLLM dashboard, add the MCP server `paperless` to the key of
+   the workstation.
 6. nix-config: add `paperless` to `litellmMcpServers` of the workstation
    only. The work MacBook keeps `[ "notes" ]`.
 
@@ -88,10 +96,11 @@ Done when, from Claude Code on the workstation:
 - a search for a word in a scanned letter finds that letter;
 - the agent can read a document and its metadata;
 - a write tool (a new tag) is refused by Paperless with 403, because the
-  user `mcp` can only view.
+  user `paperless-mcp` can only view.
 
-Then give `mcp` change permission on documents, tags and correspondents, if
-I want agents to organize. Still no delete.
+Then give `mcp-read` change permission on documents, tags and correspondents
+(and the workflow change access for it), if I want agents to organize. Still
+no delete.
 
 ## Phase 2: claude.ai
 
