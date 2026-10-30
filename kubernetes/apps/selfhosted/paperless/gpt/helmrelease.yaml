@@ -45,12 +45,9 @@ spec:
               # Keep the text of pages that are already digital (less cost).
               OCR_SKIP_DIGITAL_PAGES: true
               PDF_SKIP_EXISTING_OCR: false
-              # The searchable PDF becomes a new version of the same document
-              # (Paperless 3.0+), not a second document. Never delete the original.
-              PDF_UPLOAD: true
-              PDF_UPLOAD_MODE: version
-              PDF_REPLACE: false
-              PDF_COPY_METADATA: true
+              # No PDF upload: an LLM is not an hOCR provider, so paperless-gpt
+              # writes the text in the content of the document, and the original
+              # file stays. A PDF upload also turned off OCR_SKIP_DIGITAL_PAGES.
               PDF_OCR_TAGGING: true
               PDF_OCR_COMPLETE_TAG: ai-ocr-done
               AUTO_OCR_TAG: ai-ocr
