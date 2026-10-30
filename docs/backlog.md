@@ -100,6 +100,10 @@ the blueprint, client ID/secret from the app's 1Password item via
       claude.ai connector already has `claude-ai`), check the spend logs
       that nothing still sends the master key, then rotate it in 1Password.
 
+- [ ] TLS on the Ollama host (`ai.local.${SECRET_DOMAIN}:11434`). memini and
+      the notes MCP server send text to it in plain HTTP over the LAN (notes
+      MCP: `EMBEDDING_ALLOW_PLAINTEXT`). With TLS, remove that setting.
+
 ### 8. Smaller items
 
 - [ ] Frigate: notification links never expire (`notification_proxy_expire_after_seconds: 0`

@@ -1,0 +1,16 @@
+---
+# The notes MCP server (obsidian-mcp, a container in the syncthing pod)
+# through the LiteLLM MCP gateway. Agents reach the notes only this way.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: notes
+spec:
+  alias: notes
+  url: http://syncthing-notes-mcp.selfhosted.svc.cluster.local/mcp
+  transport: http
+  authType: bearer_token
+  authTokenRef:
+    name: notes-mcp-secret
+    key: NOTES_MCP_API_KEY

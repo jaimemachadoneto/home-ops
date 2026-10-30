@@ -28,6 +28,25 @@ spec:
         - ports:
             - port: "8384"
               protocol: TCP
+            - port: "8000"
+              protocol: TCP
+    # The notes MCP server. Only the LiteLLM MCP gateway may call it, and only
+    # /mcp: the panel and the API on the same port have no login of their own
+    # in single-user mode, and they can create API keys.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: ai
+            app.kubernetes.io/name: litellm
+            app.kubernetes.io/instance: litellm
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+          rules:
+            http:
+              # The methods of the MCP streamable HTTP transport.
+              - method: GET|POST|DELETE
+                path: /mcp(/.*)?
     # Devices connect through the LoadBalancer, from the LAN or a relay.
     - fromEntities:
         - world

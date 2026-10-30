@@ -7,7 +7,7 @@ LiteLLM operator.
 | --- | --- |
 | `litellm` | One OpenAI-compatible API for every model, and one **MCP gateway** for every MCP server: `https://litellm.${SECRET_DOMAIN}` (envoy-internal, LAN only; only `/mcp` is also on the internet, for claude.ai) |
 | Models | `deepseek/deepseek-chat` (DeepSeek API), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.${SECRET_DOMAIN}`) |
-| MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_<session>` (one per browser-sessions session, e.g. `browser_colegio`), `memini` (agent memory, namespace `personal/jaime`) |
+| MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_<session>` (one per browser-sessions session, e.g. `browser_colegio`), `memini` (agent memory, namespace `personal/jaime`), `notes` (the notes vault, see `notes-mcp.md`) |
 | `memini` | Long-term memory API (`memini.${SECRET_DOMAIN}`); embeddings from Ollama (`qwen3-embedding:4b`), reranker in-cluster (llmkube, `qwen3-reranker-0.6b`) |
 
 ## One URL for all MCP servers
@@ -118,7 +118,7 @@ never `outlook` unless it needs mail).
 - An empty model list gives the key **all** models. For a key without models,
   set the model `no-default-models`.
 - Do not put a tool that fetches any URL (`web_search` has `web_url_read`) in
-  the same key as `memini` or `outlook`. Text that the agent reads can tell
+  the same key as `memini`, `notes` or `outlook`. Text that the agent reads can tell
   it to read data with one tool and send it out with the other.
 - The dashboard shows a key once. If it is lost, regenerate it: the
   permissions stay.

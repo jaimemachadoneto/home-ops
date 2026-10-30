@@ -1,0 +1,49 @@
+---
+# Database of the notes MCP server (obsidian-mcp, a container in the
+# syncthing pod). The role is declared in cluster16.yaml (managed.roles,
+# password from this Secret). The app's DATABASE_URL is built from the same
+# 1Password field in kubernetes/apps/selfhosted/syncthing/app/externalsecret.yaml.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/external-secrets.io/externalsecret_v1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: obsidian-mcp-db
+spec:
+  refreshInterval: 12h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword
+  target:
+    name: obsidian-mcp-db-credentials
+    template:
+      type: kubernetes.io/basic-auth
+      metadata:
+        labels:
+          cnpg.io/reload: "true"
+      data:
+        username: obsidian_mcp
+        password: "{{ .db_password }}"
+  data:
+    - secretKey: db_password
+      remoteRef:
+        key: obsidian-mcp
+        property: db_password
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/postgresql.cnpg.io/database_v1.json
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: obsidian-mcp
+spec:
+  cluster:
+    name: postgres16
+  name: obsidian_mcp
+  owner: obsidian_mcp
+  ensure: present
+  # The app refuses to run as a superuser, so it cannot create the extension
+  # itself. The operator creates it, and the app's migration then finds it.
+  extensions:
+    - name: vector
+      ensure: present
+  # Dropping this resource must never drop the data.
+  databaseReclaimPolicy: retain
