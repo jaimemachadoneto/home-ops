@@ -19,7 +19,7 @@ spec:
   alias: outlook
   workload:
     # renovate: datasource=docker depName=ghcr.io/softeria/ms-365-mcp-server
-    image: ghcr.io/softeria/ms-365-mcp-server:0.176.0
+    image: ghcr.io/softeria/ms-365-mcp-server:0.178.0
     port: 8000
     path: /mcp
     command:
