@@ -1,0 +1,25 @@
+---
+# deepseek-v4.1-flash with reasoning off, for clients that cannot send
+# reasoning_effort themselves (paperless-ai). With reasoning on, it used 700-1600
+# reasoning tokens per document; off, the metadata was as good and it cost about
+# $0.0001 a document (test on the Paperless documents, 2026-10-30).
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-deepseek-deepseek-v4-1-flash-noreason
+spec:
+  modelName: deepseek-v4.1-flash-noreason
+  params:
+    model: openrouter/deepseek/deepseek-v4.1-flash
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+    additional:
+      reasoning_effort: none
+  info:
+    maxTokens: 131072
+    supportsFunctionCalling: true
+    extra:
+      input_cost_per_token: 0.000000045
+      output_cost_per_token: 0.0000005
