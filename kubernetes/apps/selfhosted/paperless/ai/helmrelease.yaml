@@ -62,7 +62,8 @@ spec:
               limits:
                 memory: 1Gi
         initContainers:
-          # Write the provider settings of git into data/.env, so the startup
+          # Write the Paperless user and the provider settings of git (and of
+          # externalsecret.yaml) into data/.env, so the startup
           # check and the web UI show the same values as the runtime. The rest
           # of data/.env (prompt, tags, API keys of the UI) stays as it is.
           sync-env:
@@ -76,14 +77,14 @@ spec:
                 f=/app/data/.env
                 # Before the first setup in the web UI there is no file to sync.
                 [ -f "$f" ] || exit 0
-                for k in AI_PROVIDER CUSTOM_BASE_URL CUSTOM_MODEL CUSTOM_API_KEY TOKEN_LIMIT; do
+                for k in PAPERLESS_API_TOKEN PAPERLESS_USERNAME AI_PROVIDER CUSTOM_BASE_URL CUSTOM_MODEL CUSTOM_API_KEY TOKEN_LIMIT; do
                   awk -v k="$k" 'BEGIN { v = ENVIRON[k]; done = 0 }
                     index($0, k "=") == 1 { print k "=" v; done = 1; next }
                     { print }
                     END { if (!done) print k "=" v }' "$f" > "$f.tmp"
                   mv "$f.tmp" "$f"
                 done
-                grep -E '^(AI_PROVIDER|CUSTOM_MODEL|TOKEN_LIMIT)=' "$f"
+                grep -E '^(PAPERLESS_USERNAME|AI_PROVIDER|CUSTOM_MODEL|TOKEN_LIMIT)=' "$f"
             securityContext: *securityContext
     defaultPodOptions:
       securityContext:
