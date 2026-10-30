@@ -1,8 +1,9 @@
 # Plan: a Paperless MCP server, for Claude Code and claude.ai
 
-Status: phase 1 done (2026-10-30): read-only search and read from Claude
-Code on the workstation and the work MacBook (both LiteLLM keys allow
-`paperless`); a write is refused with 403. Phases 2 and 3 are not started.
+Status: phases 1 and 2 done (2026-10-31): read-only search and read from
+Claude Code on the workstation and the work MacBook, and from claude.ai (the
+keys of all three allow `paperless`); a write is refused with 403. Phase 3
+(uploads) is not started.
 Hostnames follow this repo (`${SECRET_DOMAIN}`).
 
 ## Goal
@@ -159,6 +160,8 @@ Done when:
 
 ## Open questions
 
+- Decided (2026-10-31): yes, the key `claude-ai` has `paperless`, next to
+  `memini`, with view only. The risk below is accepted.
 - Does the key `claude-ai` get `paperless`? claude.ai reads web pages and
   files, and has its own web fetch. Text in a page or in a document can
   tell Claude to read documents and send them out. `docs/ai.md` keeps
