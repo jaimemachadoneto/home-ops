@@ -195,6 +195,11 @@ First start:
    The gateway entry `notes` then starts.
 5. Add `notes` to `litellmMcpServers` in nix-config.
 
+- claude.ai reaches the gateway through its public route (`docs/ai.md`,
+  "claude.ai connector"). That route needs a Cloudflare record; external-dns
+  1.23.0 broke it on 2026-10-29, and the Cloudflare instance is back on
+  1.20.0. Test each newer version before you keep it (`docs/ai.md`, "The
+  public record of litellm and external-dns 1.23.0").
 - claude.ai and the Claude phone app (optional, later): they connect from
   Anthropic's cloud, so this needs a public HTTPS entry point using the
   server's OAuth login, for example through a tunnel, with Authentik in

@@ -151,3 +151,27 @@ From outside the range the route answers 403. If Anthropic changes the range,
 update the `SecurityPolicy`. The route has the annotation
 `home-ops.io/lan-dns: skip`, so the UniFi DNS has only the internal address of
 `litellm`: with both addresses, LAN clients got that 403 at random.
+
+### The public record of litellm and external-dns 1.23.0
+
+From 2026-10-29 to 2026-10-30 the connector did not work: Cloudflare had no
+record for `litellm.${SECRET_DOMAIN}` (NXDOMAIN).
+
+- Cause: the external-dns chart 1.23.0 (app v0.23.0, #262). The Cloudflare
+  instance made `litellm` an A record to the private IP of envoy-external,
+  `10.30.50.200`, not a CNAME to `ingress-ext`. Cloudflare refuses a proxied
+  record to a private IP (error 9003). The failed create is a soft error for
+  the full zone, so no other public record changed either.
+- The annotation `external-dns.alpha.kubernetes.io/target` on the route did
+  not fix it. The route keeps it, as the route of Authentik does.
+- Fix: the Cloudflare instance is back on 1.20.0
+  (`external-dns/cloudflare/ocirepository.yaml`). It made the CNAME at its
+  first sync. UniFi and Pi-hole stay on 1.23.0.
+- There is no Renovate hold, so each new version comes as a PR. Do not
+  merge 1.23.0 again. Merge a newer version only as a test: after Flux
+  applies it, watch the log of the Cloudflare instance for one minute. If
+  error 9003 comes back, revert the PR. To find the cause, set `logLevel:
+  debug` in `external-dns/cloudflare/helmrelease.yaml`.
+
+To check: `dig litellm.${SECRET_DOMAIN} @1.1.1.1` gives Cloudflare addresses,
+and `kubectl -n network logs deploy/externaldns-cloudflare` has no error 9003.
