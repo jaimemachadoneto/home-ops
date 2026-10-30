@@ -296,6 +296,17 @@ class ClassifyPr(unittest.TestCase):
         c = classify("feat(container): update ghcr.io/siderolabs/installer ( v1.12.0 ➔ v1.12.2 )", "kubernetes/talos/nodes/home-ops-00.yaml")
         self.assertEqual((c["category"], c["class"], c["always_ask"]), ("platform", "high", True))
 
+    def test_cloudflare_external_dns_is_always_ask(self):
+        c = classify("feat(helm): update external-dns ( 1.20.0 ➔ 1.24.0 )",
+                     "kubernetes/apps/network/external-dns/unifi/ocirepository.yaml",
+                     "kubernetes/apps/network/external-dns/cloudflare/ocirepository.yaml")
+        self.assertEqual((c["class"], c["always_ask"]), ("high", True))
+
+    def test_other_external_dns_is_not_always_ask(self):
+        c = classify("feat(helm): update external-dns ( 1.20.0 ➔ 1.24.0 )",
+                     "kubernetes/apps/network/external-dns/unifi/ocirepository.yaml")
+        self.assertFalse(c["always_ask"])
+
     def test_riskiest_file_decides_the_category(self):
         c = classify("feat(container): update x ( 1.0.0 ➔ 1.0.1 )", APP, "kubernetes/apps/database/x/app/helmrelease.yaml")
         self.assertEqual(c["category"], "data")

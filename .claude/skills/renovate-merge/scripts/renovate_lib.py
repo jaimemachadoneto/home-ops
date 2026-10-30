@@ -226,6 +226,9 @@ CATEGORY_RISK = ("ci", "leaf", "ai", "infra", "data", "secrets", "platform")
 # A change to these categories always needs the user. A major version or a new
 # calendar year of a data store also needs the user (see classify_pr).
 ALWAYS_ASK_CATEGORIES = {"platform", "secrets"}
+# A change to these files always needs the user too. external-dns 1.23.0 broke the
+# public record of litellm (docs/ai.md), so the user tests each new version.
+ALWAYS_ASK_PATHS = ("kubernetes/apps/network/external-dns/cloudflare/",)
 # The merge sequence: CI, leaf apps, the AI stack, infrastructure. Phase 5 holds the
 # major, calendar and unknown updates of class review or high.
 PHASES = {"ci": 1, "leaf": 2, "ai": 3, "infra": 4, "data": 4, "secrets": 4, "platform": 4}
@@ -278,7 +281,8 @@ def classify_pr(title, files):
     update = _update_type(match)
     categories = [c for c in (_file_category(f) for f in files) if c] or ["infra"]
     category = max(categories, key=CATEGORY_RISK.index)
-    always_ask = category in ALWAYS_ASK_CATEGORIES or (category == "data" and update in ("major", "calendar"))
+    always_ask = (category in ALWAYS_ASK_CATEGORIES or (category == "data" and update in ("major", "calendar"))
+                  or any(f.startswith(ALWAYS_ASK_PATHS) for f in files))
     if always_ask:
         risk = "high"
     elif update in ("unknown", "major", "calendar"):
