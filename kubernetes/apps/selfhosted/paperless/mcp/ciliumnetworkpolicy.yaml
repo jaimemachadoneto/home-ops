@@ -43,6 +43,17 @@ spec:
         - ports:
             - port: "8000"
               protocol: TCP
+    # The server calls the Service, not the pod. A rule on the pod alone
+    # dropped connections to the Service address (ETIMEDOUT) after Paperless
+    # restarted; the pod address worked.
+    - toServices:
+        - k8sService:
+            serviceName: paperless
+            namespace: selfhosted
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
