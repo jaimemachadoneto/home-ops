@@ -1,8 +1,9 @@
 # Plan: a Paperless MCP server, for Claude Code and claude.ai
 
-Status: phase 1 in progress (2026-10-30): the manifests are written; the
-Paperless user and the gateway key are not done yet. Hostnames follow this
-repo (`${SECRET_DOMAIN}`).
+Status: phase 1 done (2026-10-30): read-only search and read from Claude
+Code on the workstation and the work MacBook (both LiteLLM keys allow
+`paperless`); a write is refused with 403. Phases 2 and 3 are not started.
+Hostnames follow this repo (`${SECRET_DOMAIN}`).
 
 ## Goal
 
@@ -88,8 +89,9 @@ only for the upload tools of phase 3.
    (`authType: bearer_token`, the token from an ExternalSecret).
 5. In the LiteLLM dashboard, add the MCP server `paperless` to the key of
    the workstation.
-6. nix-config: add `paperless` to `litellmMcpServers` of the workstation
-   only. The work MacBook keeps `[ "notes" ]`.
+6. nix-config: add `paperless` to `litellmMcpServers`: the default list (the
+   workstation) and the work MacBook (`[ "notes" "paperless" ]`), with
+   `paperless` on its key `litellm-mac` too.
 
 Done when, from Claude Code on the workstation:
 
@@ -169,3 +171,15 @@ Done when:
 - Should upstream get the upload tools as a PR, so the fork can end?
 - Paperless itself stays internal. Only the upload page and LiteLLM's
   `/mcp` are public.
+
+## Notes from the deploy (2026-10-30)
+
+- The MCP pod has ingress rules. When Paperless runs on the same node,
+  Cilium checked the SYN-ACK of the Service connection against them and
+  dropped it, so every call timed out. The policy now allows ingress from
+  the Paperless pod (replies only; Paperless opens no connection to it).
+- Full-text search filters by the permissions stored in the search index.
+  Access given in the database (not through the API) needs
+  `document_index reindex`. Run it as the user `paperless`
+  (`su paperless -s /bin/sh -c "..."`), never as root through
+  `kubectl exec`: a root-owned index breaks every save.
