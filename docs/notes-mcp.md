@@ -164,8 +164,8 @@ What is in git (2026-10-30):
 | --- | --- |
 | `postgres16` on `16.15-standard-bullseye` (pgvector 0.8.6, the same glibc as before) | `database/cloudnative-pg/cluster/cluster16.yaml` |
 | Role `obsidian_mcp`, database `obsidian_mcp` with the extension `vector` | `cluster16.yaml`, `database/cloudnative-pg/cluster/obsidian-mcp.yaml` |
-| Container `obsidian-mcp`, Service `syncthing-notes-mcp` (port 80) | `selfhosted/syncthing/app/helmrelease.yaml` |
-| Only LiteLLM (only `/mcp`) and the kubelet can reach port 8000 | `selfhosted/syncthing/app/ciliumnetworkpolicy.yaml` |
+| Container `obsidian-mcp`, Service `syncthing-notes-mcp` (port 80), panel route `notes.${SECRET_DOMAIN}` | `selfhosted/syncthing/app/helmrelease.yaml` |
+| Only Envoy, LiteLLM (only `/mcp`) and the kubelet can reach port 8000 | `selfhosted/syncthing/app/ciliumnetworkpolicy.yaml` |
 | Gateway entry `notes` | `ai/notes-mcp/` |
 
 Facts found during the work:
@@ -175,10 +175,11 @@ Facts found during the work:
   and delete. Agents cannot change `.obsidian/plugins/*/main.js`.
 - `WRITE_PRECONDITION_REQUIRED=true` makes the hash required. No fork change
   is necessary for it.
-- In single-user mode the panel has no login, and it can create API keys. It
-  has no route. Only the LiteLLM gateway and the kubelet probes can call port
-  8000, and the gateway can call only `/mcp` (an L7 rule in the
-  CiliumNetworkPolicy).
+- In single-user mode the panel has no login, and it can create API keys.
+  Authentik forward auth is its gate: `https://notes.${SECRET_DOMAIN}/admin`,
+  for `authentik Admins` only. On port 8000, the CiliumNetworkPolicy lets in
+  only Envoy (behind Authentik), the kubelet probes and the LiteLLM gateway.
+  The gateway can call only `/mcp` (an L7 rule).
 - The `sync` Service publishes the pod when it is not ready, so a failure of
   the MCP container does not stop Syncthing.
 
@@ -188,9 +189,8 @@ First start:
    `db_password` and `secret_key`. For each, use `openssl rand -hex 32`.
 2. Merge. Check that the pod starts and that the index has all notes:
    `kubectl -n selfhosted logs deploy/syncthing -c obsidian-mcp`.
-3. Open the panel through a port forward:
-   `kubectl -n selfhosted port-forward deploy/syncthing 8000:8000`, then
-   `http://localhost:8000/admin`. Create a read-write key and a read-only key.
+3. Open `https://notes.${SECRET_DOMAIN}/admin` (Homepage, group AI) and sign
+   in with Authentik. Create a read-write key and a read-only key.
 4. Put the read-write key in the field `api_key` of the item `obsidian-mcp`.
    The gateway entry `notes` then starts.
 5. Add `notes` to `litellmMcpServers` in nix-config.

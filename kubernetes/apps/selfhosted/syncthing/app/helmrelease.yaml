@@ -69,10 +69,11 @@ spec:
               - -c
               - alembic upgrade head && exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 1 --no-proxy-headers
             env:
-              # No MCP_HOSTNAME: it makes the app build https:// links, and
-              # nothing terminates TLS for this Service. OAuth and the transfer
-              # links are not used here.
-              ALLOWED_HOSTS: '["syncthing-notes-mcp.selfhosted.svc.cluster.local","localhost"]'
+              # The panel's HTTPS name (route notes-mcp below, behind Authentik).
+              # The app builds its links and its allowed origin from it.
+              MCP_HOSTNAME: notes.${SECRET_DOMAIN}
+              # The panel's name, and the name the LiteLLM gateway calls.
+              ALLOWED_HOSTS: '["notes.${SECRET_DOMAIN}","syncthing-notes-mcp.selfhosted.svc.cluster.local","localhost"]'
               INDEX_INTERVAL_SECONDS: "60"
               # Every edit, move and delete must give the hash of the last read,
               # so an agent cannot overwrite an edit made on the phone.
@@ -165,8 +166,8 @@ spec:
           sync-udp:
             port: 22000
             protocol: UDP
-      # For the LiteLLM MCP gateway only. Port 80, so that the Host header has
-      # no port and matches ALLOWED_HOSTS.
+      # For the LiteLLM MCP gateway and the panel route. Port 80, so that the
+      # Host header has no port and matches ALLOWED_HOSTS.
       notes-mcp:
         controller: syncthing
         ports:
@@ -190,6 +191,9 @@ spec:
           - path: /tmp
     route:
       app:
+        # With a second route the chart adds "-app" to the name. Keep the old
+        # name: Authentik's SecurityPolicy targets the HTTPRoute "syncthing".
+        forceRename: syncthing
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Infrastructure
@@ -207,3 +211,24 @@ spec:
           - backendRefs:
               - identifier: app
                 port: *gui
+      # The panel of the notes MCP server. In single-user mode it has no login
+      # and it can create API keys, so Authentik forward auth (admins only) is
+      # the gate: authentik/forward-auth/selfhosted.yaml.
+      notes-mcp:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: AI
+          gethomepage.dev/name: Notes MCP
+          gethomepage.dev/icon: obsidian.svg
+          gethomepage.dev/description: Notes vault for agents (panel, API keys)
+          gethomepage.dev/href: https://notes.${SECRET_DOMAIN}/admin
+        hostnames:
+          - "notes.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: notes-mcp
+                port: 80

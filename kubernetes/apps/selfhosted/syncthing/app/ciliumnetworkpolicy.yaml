@@ -21,6 +21,9 @@ spec:
         - ports:
             - port: "8384"
               protocol: TCP
+            # The panel of the notes MCP server, behind Authentik as well.
+            - port: "8000"
+              protocol: TCP
     # The kubelet probes come from the node.
     - fromEntities:
         - host
