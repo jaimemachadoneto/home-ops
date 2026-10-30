@@ -47,7 +47,7 @@ Agents work with my Paperless documents through one MCP server:
     downloads. But its `/mcp` has no authentication and one server token
     for all clients, so the network policy would be its only gate.
 - **One server, two ways in:** `/mcp` only through the LiteLLM gateway;
-  the upload page `/upload/<token>` on its own route. The upload page
+  the upload route `/upload/<token>` on its own public route. The upload route
   cannot go through LiteLLM: `litellm-external` lets in only Anthropic's
   addresses, and LiteLLM proxies only MCP.
 - **Paperless users decide the permissions, not the MCP server.** The server
@@ -127,36 +127,47 @@ Add two tools to the fork, as in the notes server:
 - `check_upload(upload_id)` tells if the file arrived, and gives the task
   ID of Paperless and then the document ID.
 
-The upload page is one small HTML form at `/upload/<token>`. It sends the
-file to `POST /api/documents/post_document/` of Paperless with the stored
-values, as the user `mcp`.
+`/upload/<token>` takes the file in two ways: `GET` gives one small HTML
+form (for a person on the phone), and `POST` with `multipart/form-data`
+(field `file`) takes the file directly (for an agent with `curl`). Both send
+it to `POST /api/documents/post_document/` of Paperless with the stored
+values, as the user `paperless-mcp`.
 
-Rules for the upload page:
+Decided (2026-10-31): the single-use link is the only gate, with no
+Authentik login. A login would stop `curl` from OpenCode and Claude Code.
+The worst case of a leaked link is one unwanted file in Paperless: the link
+cannot read or change anything.
 
-- The token is for one upload only, and it expires after 15 minutes.
-- Keep the token in the URL fragment, not in the query string, as the
-  notes server does, so logs and proxies do not see it.
+Rules for the upload route:
+
+- The token is for one upload only (the first try uses it, also when it
+  fails), and it expires after 15 minutes.
+- The token is in the path, not in a URL fragment: `curl` does not send the
+  fragment. The proxy logs can show the path, but a token in a log is
+  already used or expired.
 - A size limit (for example 50 MB) and a list of permitted types (PDF and
-  images).
-- The route: envoy-external with Authentik forward auth in front, so an
-  upload works from the phone away from home. I log in once. A token
-  without an Authentik login does nothing.
-- The user `mcp` needs add permission on documents for this.
+  images); anything else is refused before Paperless sees it.
+- Each upload gets the tag `via-mcp`, so I can find it.
+- The route: envoy-external, only the path `/upload/`, so an upload works
+  away from home. `/mcp` stays behind LiteLLM.
+- The user `paperless-mcp` needs add permission on documents for this.
 
 Flow from claude.ai: Claude calls `request_upload` and gives me the link. I
 open it on the phone and pick the file. Claude calls `check_upload` and
 then sets the metadata with the normal tools.
 
-From Claude Code there is a second way: `curl` to the Paperless API with a
-local path. The file does not go through the conversation, but the machine
-needs a Paperless token. The upload link works there too.
+Flow from an agent with a shell (OpenCode, Claude Code): it calls
+`request_upload`, then `curl -F file=@<path> <link>`, then `check_upload`.
+The file goes from disk to Paperless and never through the conversation,
+and the machine needs no Paperless token.
 
 Done when:
 
 - a PDF uploaded through the link from the phone, away from home, is in
-  Paperless with the tags of `request_upload`;
+  Paperless with the tags of `request_upload` and `via-mcp`;
+- `curl -F file=@x.pdf <link>` from Claude Code does the same;
 - a second use of the same link is refused, and an old link is refused;
-- the upload page without an Authentik login is refused.
+- a file that is too large or of another type is refused.
 
 ## Open questions
 
