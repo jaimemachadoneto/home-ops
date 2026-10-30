@@ -16,5 +16,6 @@ resources:
   - ./llmkube/ks.yaml
   - ./memini/ks.yaml
   - ./memini-mcp/ks.yaml
+  - ./notes-mcp/ks.yaml
   - ./outlook-mcp/ks.yaml
   - ./searxng-mcp/ks.yaml

@@ -70,6 +70,33 @@ entries:
       negate: false
       timeout: 30
 
+  # --- Notes MCP panel (selfhosted/syncthing, route syncthing-notes-mcp)
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-notes-mcp
+    identifiers:
+      name: notes-mcp
+    attrs:
+      <<: *forward-auth
+      external_host: https://notes.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-notes-mcp
+    identifiers:
+      slug: notes-mcp
+    attrs:
+      name: Notes MCP
+      provider: !KeyOf provider-notes-mcp
+      meta_launch_url: https://notes.${SECRET_DOMAIN}/admin
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-notes-mcp
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
   # --- Argus (selfhosted/argus)
   - model: authentik_providers_proxy.proxyprovider
     id: provider-argus
@@ -953,6 +980,7 @@ entries:
         - !KeyOf provider-zigbee-casa-radio
         - !KeyOf provider-vpn-ui
         - !KeyOf provider-syncthing
+        - !KeyOf provider-notes-mcp
         - !KeyOf provider-vpn-torrent
         - !KeyOf provider-vpn-streaming-casal
         - !KeyOf provider-vpn-tv-escritorio

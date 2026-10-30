@@ -53,9 +53,97 @@ spec:
               capabilities:
                 drop:
                   - ALL
+          # The notes MCP server: the only way agents read and change the vault
+          # (docs/notes-mcp.md). It is in this pod because the RWO volume
+          # attaches to one pod only.
+          obsidian-mcp:
+            image:
+              repository: ghcr.io/jaimemachado/obsidian-mcp
+              tag: main@sha256:6b16ea9efa5eb2de2ba47a6bc1862623212f690db00a87fb48709dc57a51a771
+            # The migration runs here, not in an init container: a failed
+            # migration must not stop Syncthing. Keep --workers 1 and
+            # --no-proxy-headers: the rate limits live in one process, and
+            # TRUSTED_PROXY_IPS must be the only control of forwarded headers.
+            command:
+              - sh
+              - -c
+              - alembic upgrade head && exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --workers 1 --no-proxy-headers
+            env:
+              # The panel's HTTPS name (route notes-mcp below, behind Authentik).
+              # The app builds its links and its allowed origin from it.
+              MCP_HOSTNAME: notes.${SECRET_DOMAIN}
+              # The panel's name, and the name the LiteLLM gateway calls.
+              ALLOWED_HOSTS: '["notes.${SECRET_DOMAIN}","syncthing-notes-mcp.selfhosted.svc.cluster.local","localhost"]'
+              INDEX_INTERVAL_SECONDS: "60"
+              # Every edit, move and delete must give the hash of the last read,
+              # so an agent cannot overwrite an edit made on the phone.
+              WRITE_PRECONDITION_REQUIRED: "true"
+              MCP_REJECT_UNKNOWN_ARGUMENTS: "true"
+              # The same model as memini, on the Ollama host. 1024 dimensions
+              # stay inside the pgvector HNSW limit.
+              EMBEDDING_PROVIDER: openai
+              OPENAI_BASE_URL: http://ai.local.${SECRET_DOMAIN}:11434/v1
+              OPENAI_API_KEY: ollama
+              OPENAI_EMBEDDING_MODEL: qwen3-embedding:4b
+              EMBEDDING_DIMENSIONS: "1024"
+              EMBEDDING_ALLOW_PLAINTEXT: "true"
+              LOG_FORMAT: json
+            envFrom:
+              - secretRef:
+                  name: obsidian-mcp-secret
+            probes:
+              # The app accepts only the Host headers in ALLOWED_HOSTS, and the
+              # kubelet sends the pod IP by default.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: &notesHealth
+                    path: /health
+                    port: &notesPort 8000
+                    httpHeaders:
+                      - name: Host
+                        value: localhost
+                  periodSeconds: 5
+                  timeoutSeconds: 5
+                  # 10 minutes: the migration runs first, in the same budget.
+                  failureThreshold: 120
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *notesHealth
+                  periodSeconds: 30
+                  timeoutSeconds: 10
+                  failureThreshold: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet: *notesHealth
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 3
+            resources:
+              requests:
+                cpu: 50m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+              seccompProfile:
+                type: RuntimeDefault
     service:
       app:
         controller: syncthing
+        # As for sync: the GUI must stay up when the obsidian-mcp container is
+        # not ready.
+        publishNotReadyAddresses: true
         ports:
           http:
             port: *gui
@@ -64,6 +152,10 @@ spec:
         # Local discovery does not reach the pod, so the phone and the PC
         # connect to this address at home. Away from home, they use a relay.
         type: LoadBalancer
+        # The pod is not ready while the obsidian-mcp container is not ready.
+        # Sync must continue in that case. Syncthing's own liveness probe still
+        # restarts it.
+        publishNotReadyAddresses: true
         annotations:
           lbipam.cilium.io/ips: 10.30.50.209
           external-dns.alpha.kubernetes.io/hostname: sync.${SECRET_DOMAIN}
@@ -74,17 +166,34 @@ spec:
           sync-udp:
             port: 22000
             protocol: UDP
+      # For the LiteLLM MCP gateway and the panel route. Port 80, so that the
+      # Host header has no port and matches ALLOWED_HOSTS.
+      notes-mcp:
+        controller: syncthing
+        ports:
+          http:
+            port: 80
+            targetPort: *notesPort
     persistence:
       data:
         existingClaim: syncthing
-        globalMounts:
-          - path: /var/syncthing
+        advancedMounts:
+          syncthing:
+            app:
+              - path: /var/syncthing
+            # Only the vault: config/ holds the device keys of Syncthing.
+            obsidian-mcp:
+              - path: /obsidian
+                subPath: notes
       tmp:
         type: emptyDir
         globalMounts:
           - path: /tmp
     route:
       app:
+        # With a second route the chart adds "-app" to the name. Keep the old
+        # name: Authentik's SecurityPolicy targets the HTTPRoute "syncthing".
+        forceRename: syncthing
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/group: Infrastructure
@@ -102,3 +211,24 @@ spec:
           - backendRefs:
               - identifier: app
                 port: *gui
+      # The panel of the notes MCP server. In single-user mode it has no login
+      # and it can create API keys, so Authentik forward auth (admins only) is
+      # the gate: authentik/forward-auth/selfhosted.yaml.
+      notes-mcp:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/group: AI
+          gethomepage.dev/name: Notes MCP
+          gethomepage.dev/icon: obsidian.svg
+          gethomepage.dev/description: Notes vault for agents (panel, API keys)
+          gethomepage.dev/href: https://notes.${SECRET_DOMAIN}/admin
+        hostnames:
+          - "notes.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: notes-mcp
+                port: 80

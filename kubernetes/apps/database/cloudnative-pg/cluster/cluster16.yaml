@@ -6,7 +6,11 @@ metadata:
   name: postgres16
 spec:
   instances: 2
-  imageName: ghcr.io/cloudnative-pg/postgresql:16.4-29
+  # Keep the Debian release of the running image (bullseye). A different
+  # release has a different glibc, and its collations can make text indexes
+  # incorrect.
+  # The standard image has pgvector 0.8+, which the notes MCP server needs.
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.15-standard-bullseye
   primaryUpdateStrategy: unsupervised
   storage:
     size: 20Gi
@@ -43,6 +47,15 @@ spec:
         connectionLimit: 40
         passwordSecret:
           name: litellm-db-credentials
+      # The notes MCP server (obsidian-mcp.yaml). It must not be a superuser:
+      # the app refuses to run as one.
+      - name: obsidian_mcp
+        ensure: present
+        login: true
+        inherit: true
+        connectionLimit: 20
+        passwordSecret:
+          name: obsidian-mcp-db-credentials
 
   # PodDisruptionBudget on the primary (CNPG's default, explicit here): a
   # drain waits for a switchover instead of evicting the primary.

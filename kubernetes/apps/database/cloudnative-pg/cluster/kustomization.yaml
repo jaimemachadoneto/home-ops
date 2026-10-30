@@ -6,6 +6,7 @@ resources:
   - ./objectstore.yaml
   - ./cluster16.yaml
   - ./litellm.yaml
+  - ./obsidian-mcp.yaml
   - ./scheduledbackup.yaml
   - ./podmonitor.yaml
   - ./prometheusrule.yaml

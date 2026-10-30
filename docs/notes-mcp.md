@@ -1,8 +1,9 @@
 # Plan: a notes MCP server, the only way agents use my notes
 
-Status: proposed (2026-10-30). Moved here from nix-config, where phases 1
-and 2 are carried out; phase 3 and 4 are home-ops work. Hostnames follow
-this repo (`${SECRET_DOMAIN}`); nix-config reads its own from nix-secrets.
+Status: phase 3 is in progress (2026-10-30); see the "Deploy" section. Moved
+here from nix-config, where phases 1 and 2 are carried out; phase 3 and 4 are
+home-ops work. Hostnames follow this repo (`${SECRET_DOMAIN}`); nix-config
+reads its own from nix-secrets.
 
 ## Goal
 
@@ -157,6 +158,43 @@ outside its tools.
 - Two API keys: one read-write for my agents, one read-only for testing.
 - Register it as a server in the LiteLLM MCP gateway, and add its name to
   `litellmMcpServers` in nix-config.
+What is in git (2026-10-30):
+
+| Piece | File |
+| --- | --- |
+| `postgres16` on `16.15-standard-bullseye` (pgvector 0.8.6, the same glibc as before) | `database/cloudnative-pg/cluster/cluster16.yaml` |
+| Role `obsidian_mcp`, database `obsidian_mcp` with the extension `vector` | `cluster16.yaml`, `database/cloudnative-pg/cluster/obsidian-mcp.yaml` |
+| Container `obsidian-mcp`, Service `syncthing-notes-mcp` (port 80), panel route `notes.${SECRET_DOMAIN}` | `selfhosted/syncthing/app/helmrelease.yaml` |
+| Only Envoy, LiteLLM (only `/mcp`) and the kubelet can reach port 8000 | `selfhosted/syncthing/app/ciliumnetworkpolicy.yaml` |
+| Gateway entry `notes` | `ai/notes-mcp/` |
+
+Facts found during the work:
+
+- Upstream already refuses every path with a part that starts with a dot
+  (`is_hidden_path` in `src/services/vault.py`), for read, list, write, move
+  and delete. Agents cannot change `.obsidian/plugins/*/main.js`.
+- `WRITE_PRECONDITION_REQUIRED=true` makes the hash required. No fork change
+  is necessary for it.
+- In single-user mode the panel has no login, and it can create API keys.
+  Authentik forward auth is its gate: `https://notes.${SECRET_DOMAIN}/admin`,
+  for `authentik Admins` only. On port 8000, the CiliumNetworkPolicy lets in
+  only Envoy (behind Authentik), the kubelet probes and the LiteLLM gateway.
+  The gateway can call only `/mcp` (an L7 rule).
+- The `sync` Service publishes the pod when it is not ready, so a failure of
+  the MCP container does not stop Syncthing.
+
+First start:
+
+1. In 1Password, create the item `obsidian-mcp` with the fields
+   `db_password` and `secret_key`. For each, use `openssl rand -hex 32`.
+2. Merge. Check that the pod starts and that the index has all notes:
+   `kubectl -n selfhosted logs deploy/syncthing -c obsidian-mcp`.
+3. Open `https://notes.${SECRET_DOMAIN}/admin` (Homepage, group AI) and sign
+   in with Authentik. Create a read-write key and a read-only key.
+4. Put the read-write key in the field `api_key` of the item `obsidian-mcp`.
+   The gateway entry `notes` then starts.
+5. Add `notes` to `litellmMcpServers` in nix-config.
+
 - claude.ai and the Claude phone app (optional, later): they connect from
   Anthropic's cloud, so this needs a public HTTPS entry point using the
   server's OAuth login, for example through a tunnel, with Authentik in
