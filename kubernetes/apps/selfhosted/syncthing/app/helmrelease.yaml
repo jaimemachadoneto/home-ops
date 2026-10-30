@@ -128,8 +128,11 @@ spec:
               requests:
                 cpu: 50m
                 memory: 256Mi
+              # The app sets its memory budget for request bodies from this
+              # limit. With 1Gi the budget cannot hold one maximum request, and
+              # the app refuses to start. 2Gi is the upstream reference.
               limits:
-                memory: 1Gi
+                memory: 2Gi
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
