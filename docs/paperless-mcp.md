@@ -131,7 +131,11 @@ Add two tools to the fork, as in the notes server:
 form (for a person on the phone), and `POST` with `multipart/form-data`
 (field `file`) takes the file directly (for an agent with `curl`). Both send
 it to `POST /api/documents/post_document/` of Paperless with the stored
-values, as the user `paperless-mcp`.
+values, as the user `paperless-upload`. An upload brings no Paperless token
+(the phone and `curl` have none), so the server keeps the token of this
+user, which can only add documents (`add_document`, and view on tags,
+correspondents and document types to set them). The read user
+`paperless-mcp` stays view only.
 
 Decided (2026-10-31): the single-use link is the only gate, with no
 Authentik login. A login would stop `curl` from OpenCode and Claude Code.
@@ -150,7 +154,9 @@ Rules for the upload route:
 - Each upload gets the tag `via-mcp`, so I can find it.
 - The route: envoy-external, only the path `/upload/`, so an upload works
   away from home. `/mcp` stays behind LiteLLM.
-- The user `paperless-mcp` needs add permission on documents for this.
+- The new user `paperless-upload` is in the sharing workflow like the other
+  users, and its token is in 1Password (item `Paperless`, field
+  `paperless_upload_api_token`).
 
 Flow from claude.ai: Claude calls `request_upload` and gives me the link. I
 open it on the phone and pick the file. Claude calls `check_upload` and
