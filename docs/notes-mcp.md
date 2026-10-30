@@ -116,10 +116,10 @@ outside its tools.
   volume; the vault is at `/var/syncthing/notes`. The alternative, moving the
   PVC to `ceph-filesystem` (RWX), changes the backup and restore of the
   vault, so prefer the shared pod.
-- Meaning search with a local model (no outside service): point its
-  embedding provider at Ollama through LiteLLM. memini already uses
-  `qwen3-embedding:4b` (see `ai.md`); use the same model unless another one
-  tests better on my notes.
+- Meaning search with a local model (no outside service): `bge-m3` on the
+  Ollama host, through the native Ollama provider. The first choice was
+  `qwen3-embedding:4b`, as memini uses, but one batch of chunks took longer
+  than the request timeout of the server.
 - Word search for exact names, codes and numbers: built in.
 - Storage: PostgreSQL 16+ with pgvector 0.8+, outside the synced folder.
   A database on the CNPG cluster `cluster16`
