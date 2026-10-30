@@ -16,17 +16,18 @@ spec:
           reloader.stakater.com/auto: "true"
         containers:
           app:
-            image:
+            image: &image
               repository: docker.io/clusterzx/paperless-ai
               tag: 3.0.9@sha256:2b65888163fd59716f1c8285b31c5bd0b30c9c3c192c42b516688e3887d4ba60
-            env:
+            env: &env
               TZ: ${TIMEZONE}
               PAPERLESS_API_URL: http://paperless.selfhosted.svc.cluster.local:8000/api
               TAGS: process
               # The model through LiteLLM (ai/litellm), with its own virtual key
               # (CUSTOM_API_KEY in externalsecret.yaml). These win over the
               # settings that the web UI writes in data/.env, at runtime. The
-              # startup check reads data/.env only: set the same values there.
+              # startup check reads data/.env only, so the init container
+              # sync-env copies them there.
               AI_PROVIDER: custom
               CUSTOM_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
               # deepseek-v4.1-flash with reasoning off (a LiteLLM model entry). In a
@@ -37,7 +38,7 @@ spec:
               # paperless-ai cuts the end of a longer document. About 35 pages
               # of text; at most about $0.002 a document.
               TOKEN_LIMIT: "40000"
-            envFrom:
+            envFrom: &envFrom
               - secretRef:
                   name: paperless-ai-secret
             probes:
@@ -50,7 +51,7 @@ spec:
                 spec:
                   failureThreshold: 30
                   periodSeconds: 5
-            securityContext:
+            securityContext: &securityContext
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities: { drop: ["ALL"] }
@@ -60,6 +61,30 @@ spec:
                 memory: 256Mi
               limits:
                 memory: 1Gi
+        initContainers:
+          # Write the provider settings of git into data/.env, so the startup
+          # check and the web UI show the same values as the runtime. The rest
+          # of data/.env (prompt, tags, API keys of the UI) stays as it is.
+          sync-env:
+            image: *image
+            env: *env
+            envFrom: *envFrom
+            command: ["sh", "-c"]
+            args:
+              - |
+                set -eu
+                f=/app/data/.env
+                # Before the first setup in the web UI there is no file to sync.
+                [ -f "$f" ] || exit 0
+                for k in AI_PROVIDER CUSTOM_BASE_URL CUSTOM_MODEL CUSTOM_API_KEY TOKEN_LIMIT; do
+                  awk -v k="$k" 'BEGIN { v = ENVIRON[k]; done = 0 }
+                    index($0, k "=") == 1 { print k "=" v; done = 1; next }
+                    { print }
+                    END { if (!done) print k "=" v }' "$f" > "$f.tmp"
+                  mv "$f.tmp" "$f"
+                done
+                grep -E '^(AI_PROVIDER|CUSTOM_MODEL|TOKEN_LIMIT)=' "$f"
+            securityContext: *securityContext
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
