@@ -25,10 +25,16 @@ spec:
               TAGS: process
               # The model through LiteLLM (ai/litellm), with its own virtual key
               # (CUSTOM_API_KEY in externalsecret.yaml). These win over the
-              # settings that the web UI writes in data/.env.
+              # settings that the web UI writes in data/.env, at runtime. The
+              # startup check reads data/.env only: set the same values there.
               AI_PROVIDER: custom
               CUSTOM_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
-              CUSTOM_MODEL: openrouter/google/gemini-3.5-flash
+              # No reasoning tokens, and good Portuguese, Spanish and English.
+              CUSTOM_MODEL: openrouter/google/gemini-2.5-flash-lite
+              # The full request (prompt, tag list, answer and document text).
+              # paperless-ai cuts the end of a longer document. About 35 pages
+              # of text; at most about $0.004 a document.
+              TOKEN_LIMIT: "40000"
             envFrom:
               - secretRef:
                   name: paperless-ai-secret
