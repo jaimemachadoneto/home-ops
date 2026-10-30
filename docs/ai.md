@@ -148,4 +148,6 @@ The connector sends a virtual key, never the master key:
 3. To stop access, delete the key in the dashboard.
 
 From outside the range the route answers 403. If Anthropic changes the range,
-update the `SecurityPolicy`.
+update the `SecurityPolicy`. The route has the annotation
+`home-ops.io/lan-dns: skip`, so the UniFi DNS has only the internal address of
+`litellm`: with both addresses, LAN clients got that 403 at random.

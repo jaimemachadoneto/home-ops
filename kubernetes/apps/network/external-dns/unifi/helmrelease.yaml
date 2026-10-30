@@ -23,6 +23,10 @@ spec:
     policy: sync
     extraArgs:
       - --ingress-class=internal-nginx
+      # A route with this annotation gets no LAN record. Use it when the same
+      # name has a route on envoy-internal too: two LAN records send clients
+      # at random to the gateway that refuses them.
+      - --annotation-filter=home-ops.io/lan-dns notin (skip)
     provider:
       name: webhook
       webhook:
