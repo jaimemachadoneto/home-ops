@@ -22,8 +22,8 @@ spec:
               TZ: Europe/Madrid
               PAPERLESS_BASE_URL: http://paperless.selfhosted.svc.cluster.local:8000
               PAPERLESS_PUBLIC_URL: https://paperless.${SECRET_DOMAIN}
-              # OCR only: paperless-ai does titles, tags and correspondents (tag
-              # "process"). Tag a bad scan "ai-ocr" to read it again.
+              # OCR only: paperless-ai does titles, tags and correspondents of every
+              # new document. Tag a bad scan "ai-ocr" to read it again.
               # Models through LiteLLM (ai/litellm), key OPENAI_API_KEY in
               # externalsecret.yaml. LLM_* is required, but OCR uses VISION_LLM_*.
               OPENAI_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
@@ -57,7 +57,6 @@ spec:
               AUTO_GENERATE_CORRESPONDENTS: false
               AUTO_GENERATE_CREATED_DATE: false
               AUTO_TAG: ai-auto
-              # Not "process": that tag starts paperless-ai.
               MANUAL_TAG: gpt-review
             envFrom:
               - secretRef:

@@ -22,7 +22,12 @@ spec:
             env: &env
               TZ: ${TIMEZONE}
               PAPERLESS_API_URL: http://paperless.selfhosted.svc.cluster.local:8000/api
-              TAGS: process
+              # Process every new document, not only documents with a tag. The
+              # database of paperless-ai keeps each document to one run.
+              PROCESS_PREDEFINED_DOCUMENTS: "no"
+              # Set topic tags. With tagging on, paperless-ai adds no
+              # "ai-processed" tag; see its history page for what it did.
+              ACTIVATE_TAGGING: "yes"
               # The model through LiteLLM (ai/litellm), with its own virtual key
               # (CUSTOM_API_KEY in externalsecret.yaml). These win over the
               # settings that the web UI writes in data/.env, at runtime. The
@@ -77,14 +82,14 @@ spec:
                 f=/app/data/.env
                 # Before the first setup in the web UI there is no file to sync.
                 [ -f "$f" ] || exit 0
-                for k in PAPERLESS_API_TOKEN PAPERLESS_USERNAME AI_PROVIDER CUSTOM_BASE_URL CUSTOM_MODEL CUSTOM_API_KEY TOKEN_LIMIT; do
+                for k in PAPERLESS_API_TOKEN PAPERLESS_USERNAME PROCESS_PREDEFINED_DOCUMENTS ACTIVATE_TAGGING AI_PROVIDER CUSTOM_BASE_URL CUSTOM_MODEL CUSTOM_API_KEY TOKEN_LIMIT; do
                   awk -v k="$k" 'BEGIN { v = ENVIRON[k]; done = 0 }
                     index($0, k "=") == 1 { print k "=" v; done = 1; next }
                     { print }
                     END { if (!done) print k "=" v }' "$f" > "$f.tmp"
                   mv "$f.tmp" "$f"
                 done
-                grep -E '^(PAPERLESS_USERNAME|AI_PROVIDER|CUSTOM_MODEL|TOKEN_LIMIT)=' "$f"
+                grep -E '^(PAPERLESS_USERNAME|PROCESS_PREDEFINED_DOCUMENTS|ACTIVATE_TAGGING|AI_PROVIDER|CUSTOM_MODEL|TOKEN_LIMIT)=' "$f"
             securityContext: *securityContext
     defaultPodOptions:
       securityContext:
