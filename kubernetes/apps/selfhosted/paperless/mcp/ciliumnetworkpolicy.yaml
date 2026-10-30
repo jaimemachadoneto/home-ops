@@ -33,23 +33,21 @@ spec:
         - ports:
             - port: "3000"
               protocol: TCP
+    # Replies of Paperless to the calls of the server. When both pods run on
+    # the same node, Cilium checked the SYN-ACK of the Service connection
+    # against these ingress rules and dropped it ("Policy denied"), so every
+    # call timed out. Paperless itself never opens a connection to the server.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: selfhosted
+            app.kubernetes.io/name: paperless
+            app.kubernetes.io/controller: paperless
   egress:
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: selfhosted
             app.kubernetes.io/name: paperless
             app.kubernetes.io/controller: paperless
-      toPorts:
-        - ports:
-            - port: "8000"
-              protocol: TCP
-    # The server calls the Service, not the pod. A rule on the pod alone
-    # dropped connections to the Service address (ETIMEDOUT) after Paperless
-    # restarted; the pod address worked.
-    - toServices:
-        - k8sService:
-            serviceName: paperless
-            namespace: selfhosted
       toPorts:
         - ports:
             - port: "8000"
