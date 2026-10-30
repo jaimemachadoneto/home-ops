@@ -29,11 +29,13 @@ spec:
               # startup check reads data/.env only: set the same values there.
               AI_PROVIDER: custom
               CUSTOM_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
-              # No reasoning tokens, and good Portuguese, Spanish and English.
-              CUSTOM_MODEL: openrouter/google/gemini-2.5-flash-lite
+              # deepseek-v4.1-flash with reasoning off (a LiteLLM model entry). In a
+              # test on the Paperless documents it found the correspondents that
+              # gemini-2.5-flash-lite missed, at about 60% of its cost.
+              CUSTOM_MODEL: deepseek-v4.1-flash-noreason
               # The full request (prompt, tag list, answer and document text).
               # paperless-ai cuts the end of a longer document. About 35 pages
-              # of text; at most about $0.004 a document.
+              # of text; at most about $0.002 a document.
               TOKEN_LIMIT: "40000"
             envFrom:
               - secretRef:
