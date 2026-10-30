@@ -36,6 +36,10 @@ spec:
               # No page limit: the new version must have every page.
               OCR_LIMIT_PAGES: 0
               OCR_PROCESS_MODE: image
+              # The default is 600 DPI: a 600 DPI scan rendered as 4959x7009
+              # pages and the container hit its memory limit (OOMKilled).
+              # 200 DPI is enough for the vision model.
+              IMAGE_MAX_RENDER_DPI: 200
               # Keep the text of pages that are already digital (less cost).
               OCR_SKIP_DIGITAL_PAGES: true
               PDF_SKIP_EXISTING_OCR: false
@@ -68,7 +72,8 @@ spec:
                 cpu: 10m
                 memory: 256Mi
               limits:
-                memory: 1Gi
+                # OCR renders every page of a document to an image in memory.
+                memory: 2Gi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
