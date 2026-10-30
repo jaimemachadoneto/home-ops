@@ -10,5 +10,6 @@ spec:
     mediaType: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     operation: copy
   ref:
-    tag: 1.23.0
+    # Test: 1.23.0 makes litellm an A record to a private IP (error 9003).
+    tag: 1.20.0
   url: oci://ghcr.io/home-operations/charts-mirror/external-dns
