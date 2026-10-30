@@ -16,7 +16,7 @@ Proxmox host `jmn-medusa`. It runs Docker stacks that use the three GeForce GTX
 
 | Stack | Port | Used by |
 | --- | --- | --- |
-| `ollama` | 11434 | memini embeddings (`qwen3-embedding:4b`), LiteLLM `ollama/local` (`qwen3:8b`) |
+| `ollama` | 11434 | memini embeddings (`qwen3-embedding:4b`), notes MCP embeddings (`bge-m3`), LiteLLM `ollama/local` (`qwen3:8b`) |
 | `fast-whisper-pt-br` | 10300 | speech to text (Wyoming), Home Assistant |
 | `piper-pt-br` | 10200 | text to speech (Wyoming), Home Assistant |
 | `ocr-service` (`ocr`) | 8000 | OCR |
@@ -73,7 +73,7 @@ at boot.
 3. Copy `dockge/` to `/opt/dockge` and `stacks/` to `/opt/stacks`, then
    `docker compose up -d` in `/opt/dockge`. Start the stacks from Dockge.
 4. Pull the models: `docker exec ollama ollama pull qwen3:8b` and
-   `qwen3-embedding:4b`.
+   `qwen3-embedding:4b`, and `bge-m3` for the notes MCP server.
 
 ## Open issues
 
