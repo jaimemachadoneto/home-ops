@@ -3,8 +3,9 @@
 Status: phases 1 and 2 done (2026-10-31): read-only search and read from
 Claude Code on the workstation and the work MacBook, and from claude.ai (the
 keys of all three allow `paperless`); a write is refused with 403. Phase 3
-(uploads) is in the fork `jaimemachado/paperless-mcp`, but it is not in the
-cluster yet (see "Deploy of phase 3").
+(uploads) is in the fork `jaimemachado/paperless-mcp` (image `sha-f8a8a99`),
+with the Paperless user, the tag and the 1Password field in place (2026-10-31).
+See "Deploy of phase 3".
 Hostnames follow this repo (`${SECRET_DOMAIN}`).
 
 ## Goal
