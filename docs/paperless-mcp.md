@@ -3,9 +3,9 @@
 Status: phases 1 and 2 done (2026-10-31): read-only search and read from
 Claude Code on the workstation and the work MacBook, and from claude.ai (the
 keys of all three allow `paperless`); a write is refused with 403. Phase 3
-(uploads) is in the fork `jaimemachado/paperless-mcp` (image `sha-f8a8a99`),
-with the Paperless user, the tag and the 1Password field in place (2026-10-31).
-See "Deploy of phase 3".
+is done (2026-10-31): uploads through a single-use link work from `curl` and
+from the phone away from home. The server is the fork
+`jaimemachado/paperless-mcp` (image `sha-f8a8a99`). See "Deploy of phase 3".
 Hostnames follow this repo (`${SECRET_DOMAIN}`).
 
 ## Goal
@@ -222,6 +222,11 @@ clients together. Envoy refuses the next request with 429, before the
 server sees it, so a refused request does not use the link. Do not turn on
 the Cloudflare Bot Fight Mode or a challenge for this hostname: it stops
 `curl` from the agents.
+
+The test after the deploy (2026-10-31) passed. Through the public URL, a
+PDF went in as document 5 with the tag `via-mcp`. A second use of the link
+received 404, and a text file received 415. `/mcp` on the upload hostname
+received 404.
 
 ## Open questions
 
