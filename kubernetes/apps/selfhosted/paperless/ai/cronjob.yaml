@@ -7,7 +7,8 @@
 # paperless-ai owns; an object with no owner is visible to every user with
 # view permission. The owner can change the owner of its own objects, so the
 # job needs only the token of paperless-ai and the change permission of the
-# group ai-services on these objects (docs/paperless-mcp.md).
+# group ai-services on these objects (docs/paperless-mcp.md). Flux substitutes
+# ${...}, so each $ of the script is written as $$.
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/batch/cronjob_v1.json
 apiVersion: batch/v1
 kind: CronJob
@@ -49,13 +50,13 @@ spec:
                 - -c
                 - |
                   set -eu
-                  auth="Authorization: Token ${PAPERLESS_API_TOKEN}"
-                  me=$(curl -fsS -H "$auth" "${PAPERLESS_API}/users/?username__iexact=${PAPERLESS_USERNAME}" | jq -e '.results[0].id')
+                  auth="Authorization: Token $${PAPERLESS_API_TOKEN}"
+                  me=$$(curl -fsS -H "$$auth" "$${PAPERLESS_API}/users/?username__iexact=$${PAPERLESS_USERNAME}" | jq -e '.results[0].id')
                   for kind in tags correspondents document_types; do
-                    ids=$(curl -fsS -H "$auth" "${PAPERLESS_API}/${kind}/?page_size=10000" | jq -r --argjson me "$me" '.results[] | select(.owner == $me) | .id')
-                    for id in $ids; do
-                      curl -fsS -o /dev/null -X PATCH -H "$auth" -H "Content-Type: application/json" -d '{"owner": null}' "${PAPERLESS_API}/${kind}/${id}/"
-                      echo "${kind} ${id}: owner removed"
+                    ids=$$(curl -fsS -H "$$auth" "$${PAPERLESS_API}/$${kind}/?page_size=10000" | jq -r --argjson me "$$me" '.results[] | select(.owner == $$me) | .id')
+                    for id in $$ids; do
+                      curl -fsS -o /dev/null -X PATCH -H "$$auth" -H "Content-Type: application/json" -d '{"owner": null}' "$${PAPERLESS_API}/$${kind}/$${id}/"
+                      echo "$${kind} $${id}: owner removed"
                     done
                   done
               securityContext:
