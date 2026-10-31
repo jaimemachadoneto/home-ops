@@ -1,7 +1,8 @@
 ---
 # The MCP server has no login of its own: the Paperless token in each request
-# is its only check. Only the LiteLLM MCP gateway may call it, and only /mcp.
-# It may call only Paperless (and DNS).
+# is its only check. Only the LiteLLM MCP gateway can call /mcp. Only
+# envoy-external can call /upload/, where the single-use link is the check.
+# The server can call only Paperless (and DNS).
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -26,6 +27,19 @@ spec:
               # The methods of the MCP streamable HTTP transport.
               - method: GET|POST|DELETE
                 path: /mcp(/.*)?
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: envoy-external
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+          rules:
+            http:
+              # GET gives the form, POST takes the file.
+              - method: GET|POST
+                path: /upload/[A-Za-z0-9_-]+
     # The kubelet probes come from the node.
     - fromEntities:
         - host

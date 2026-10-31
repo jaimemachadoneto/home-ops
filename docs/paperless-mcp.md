@@ -3,7 +3,9 @@
 Status: phases 1 and 2 done (2026-10-31): read-only search and read from
 Claude Code on the workstation and the work MacBook, and from claude.ai (the
 keys of all three allow `paperless`); a write is refused with 403. Phase 3
-(uploads) is not started.
+(uploads) is in the fork `jaimemachado/paperless-mcp` (image `sha-f8a8a99`),
+with the Paperless user, the tag and the 1Password field in place (2026-10-31).
+See "Deploy of phase 3".
 Hostnames follow this repo (`${SECRET_DOMAIN}`).
 
 ## Goal
@@ -40,7 +42,8 @@ Agents work with my Paperless documents through one MCP server:
   `post_document` for uploads, and an HTTP mode with `POST /mcp`. In HTTP
   mode the client sends a Paperless API token in `Authorization: Bearer`,
   so the permissions of that Paperless user are the permissions of the
-  agent. The server keeps no token of its own.
+  agent. The only token of the server is the token of `paperless-upload`
+  for the upload links (phase 3).
   - Not chosen: [barryw/PaperlessMCP](https://github.com/barryw/PaperlessMCP)
     (.NET, MIT, about 50 stars). It has good guards (a delete needs a
     confirmation, bulk edits start as a dry run) and an outbox for
@@ -131,11 +134,11 @@ Add two tools to the fork, as in the notes server:
 form (for a person on the phone), and `POST` with `multipart/form-data`
 (field `file`) takes the file directly (for an agent with `curl`). Both send
 it to `POST /api/documents/post_document/` of Paperless with the stored
-values, as the user `paperless-upload`. An upload brings no Paperless token
-(the phone and `curl` have none), so the server keeps the token of this
-user, which can only add documents (`add_document`, and view on tags,
-correspondents and document types to set them). The read user
-`paperless-mcp` stays view only.
+values, as the user `paperless-upload`. An upload brings no Paperless token:
+the phone and `curl` have none. So the server keeps the token of this user.
+The user can only add documents (`add_document`). It can also view tags,
+correspondents and document types to set them, and tasks for
+`check_upload`. The read user `paperless-mcp` stays view only.
 
 Decided (2026-10-31): the single-use link is the only gate, with no
 Authentik login. A login would stop `curl` from OpenCode and Claude Code.
@@ -174,6 +177,51 @@ Done when:
 - `curl -F file=@x.pdf <link>` from Claude Code does the same;
 - a second use of the same link is refused, and an old link is refused;
 - a file that is too large or of another type is refused.
+
+## Deploy of phase 3
+
+The fork is `jaimemachado/paperless-mcp` (`repos/paperless-mcp`), branch
+`feat/upload-links`. The tools exist only when the server has
+`PAPERLESS_UPLOAD_API_KEY` and `PAPERLESS_UPLOAD_PUBLIC_URL`. The links
+are in memory, so a restart of the pod makes the open links not valid.
+Keep one replica.
+
+`request_upload` and `check_upload` first read `/api/tags/` with the token
+of the caller, so a Bearer value that Paperless does not know gets
+nothing. Do not use `/api/ui_settings/` for this check: it needs the
+permission `view_uisettings`, and `mcp-read` does not have it.
+
+The server streams each file to `/tmp` and then to Paperless. In a local
+test (2026-10-31), two uploads of 50 MB at the same time added about
+45 MB of memory to the server, so the limit of 256Mi stays.
+
+Do these steps in this sequence:
+
+1. In the fork, enable GitHub Actions. A fork starts with Actions off.
+2. Merge `feat/upload-links` into `main`. `docker-publish.yml` pushes
+   `ghcr.io/jaimemachado/paperless-mcp:sha-<commit>`.
+3. Make the package public in GHCR, or give the cluster a pull secret.
+4. In Paperless, make the tag `via-mcp` and the user `paperless-upload`.
+   The user gets `add_document`, and view on tags, correspondents,
+   document types and tasks. Without view on tasks, `check_upload` fails.
+5. Add `paperless-upload` to the workflow "Share new documents with
+   ai-services", so `paperless-mcp` can see its uploads.
+6. In 1Password, put the API token of `paperless-upload` in the item
+   `Paperless`, field `paperless_upload_api_token`. Do this before the
+   merge in home-ops: the pod does not start without this secret.
+7. In `selfhosted/paperless/mcp/helmrelease.yaml`, set the image of the
+   fork, pinned by digest.
+8. Merge the home-ops branch.
+
+The route `paperless-upload.${SECRET_DOMAIN}` is on envoy-external with
+the path prefix `/upload/`. The CiliumNetworkPolicy lets envoy-external
+send only `GET` and `POST` to `/upload/<token>`, so `/mcp` stays behind
+LiteLLM.
+A BackendTrafficPolicy limits the route to 30 requests a minute, for all
+clients together. Envoy refuses the next request with 429, before the
+server sees it, so a refused request does not use the link. Do not turn on
+the Cloudflare Bot Fight Mode or a challenge for this hostname: it stops
+`curl` from the agents.
 
 ## Open questions
 

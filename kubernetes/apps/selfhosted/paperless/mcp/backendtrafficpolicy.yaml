@@ -1,0 +1,25 @@
+---
+# The upload route is public, with the single-use link as its only check. This
+# limit keeps a flood of requests away from the server and Paperless. It counts
+# all clients together (a local limit), and an upload is rare, so a person
+# never meets it. Envoy refuses with 429 before the server sees the request,
+# so a refused request does not use the link. StrategicMerge keeps the timeout
+# and buffer settings of the policy of the Gateway.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.envoyproxy.io/backendtrafficpolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: paperless-mcp-upload
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: paperless-mcp
+  mergeType: StrategicMerge
+  rateLimit:
+    type: Local
+    local:
+      rules:
+        - limit:
+            requests: 30
+            unit: Minute
