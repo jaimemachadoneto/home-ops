@@ -228,6 +228,73 @@ PDF went in as document 5 with the tag `via-mcp`. A second use of the link
 received 404, and a text file received 415. `/mcp` on the upload hostname
 received 404.
 
+## Phase 4: semantic search for the agents (plan)
+
+Goal: an agent finds a document by its meaning, not only by its words. The
+agent does the retrieval-augmented generation itself: a tool gives it the
+passages that match a question, and the agent writes the answer from them.
+
+Paperless 3.3.4 has AI features of its own (`PAPERLESS_AI_ENABLED`), with an
+embedding index and a chat at `POST /api/documents/chat/`. Do not use them
+for this phase:
+
+- The chat gives an answer from the LLM of Paperless, not the passages.
+- The vector index is a SQLite file on the volume of Paperless, and no API
+  path gives the search results without the answer.
+- A second index in Paperless would only use more GPU time. Enable the AI of
+  Paperless later only if the chat in the web UI is useful.
+
+### Design
+
+Add the tool `semantic_search(query, limit?)` to the fork. It gives the best
+chunks: the document ID, the title, the text of the chunk and a score. The
+agent then reads a full document with `get_document_content` if necessary.
+
+- **Index.** The MCP server keeps its own index. Every 10 minutes it reads
+  the documents that changed since the last run (`modified__gt`) with the
+  token of `paperless-mcp`. It cuts their text into chunks, and gets an
+  embedding for each chunk. A document that is not there any more leaves the
+  index.
+- **Embeddings.** The index gets embeddings from Ollama on the AI host
+  (`ai.local.${SECRET_DOMAIN}`), model `bge-m3`, because the documents are in Spanish, Portuguese and English. The
+  text of the documents does not leave home. The CiliumNetworkPolicy of the
+  MCP pod gets one egress rule to the Ollama port of that host.
+- **Storage.** The archive has a few hundred documents, so the vectors fit in
+  memory. A search compares the query with each chunk (cosine similarity),
+  which takes a few milliseconds. The server writes the vectors to a small
+  volume, so a restart does not make all the embeddings again. No vector
+  database is necessary.
+- **Permissions.** Before it gives the results, the tool asks Paperless
+  (`/api/documents/?id__in=...`) with the token of the caller, and drops each
+  document that the caller cannot view.
+- **Hybrid search.** The search merges the semantic results with the full-text
+  results of Paperless (reciprocal rank fusion), as the notes server does. A search by
+  meaning alone does not find exact codes, names and numbers.
+
+### Steps
+
+1. On the AI host, pull `bge-m3`. Measure the time of one embedding, and of
+   all the documents.
+2. In the fork, test first: the chunks, the index sync, the search, the merge,
+   and the permission filter.
+3. In home-ops, add a volume for the index, the Ollama URL and the model to the
+   HelmRelease, and the egress rule to the CiliumNetworkPolicy.
+4. In LiteLLM, add `semantic_search` to the keys that limit the tools.
+
+Done when:
+
+- a question with different words from the document (for example "the contract
+  of the flat" for a "contrato de arrendamiento") finds the document;
+- a search for an exact number still finds its document;
+- a new document is in the index in 10 minutes or less;
+- a caller does not get a document that it cannot view.
+
+Open points:
+
+- Is a chunk size of about 1000 characters correct for scanned letters?
+- Which documents go in the index: all the documents that `mcp-read` can
+  view (today, every shared document), or only some tags?
+
 ## Open questions
 
 - Decided (2026-10-31): yes, the key `claude-ai` has `paperless`, next to
