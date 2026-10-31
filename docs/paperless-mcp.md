@@ -251,3 +251,10 @@ the Cloudflare Bot Fight Mode or a challenge for this hostname: it stops
   `document_index reindex`. Run it as the user `paperless`
   (`su paperless -s /bin/sh -c "..."`), never as root through
   `kubectl exec`: a root-owned index breaks every save.
+- paperless-ai creates tags, correspondents and document types as its own
+  user, so nobody else could see them ("Private" in the UI and for the
+  agents). The CronJob `paperless-ai-share-objects`
+  (`selfhosted/paperless/ai/cronjob.yaml`) removes the owner from these
+  objects five minutes after each scan of paperless-ai. It uses the token of
+  paperless-ai, and needs the change permission on tags, correspondents and
+  document types in the group `ai-services`.
