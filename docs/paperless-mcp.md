@@ -216,6 +216,11 @@ The route `paperless-upload.${SECRET_DOMAIN}` is on envoy-external with
 the path prefix `/upload/`. The CiliumNetworkPolicy lets envoy-external
 send only `GET` and `POST` to `/upload/<token>`, so `/mcp` stays behind
 LiteLLM.
+A BackendTrafficPolicy limits the route to 30 requests a minute, for all
+clients together. Envoy refuses the next request with 429, before the
+server sees it, so a refused request does not use the link. Do not turn on
+the Cloudflare Bot Fight Mode or a challenge for this hostname: it stops
+`curl` from the agents.
 
 ## Open questions
 
