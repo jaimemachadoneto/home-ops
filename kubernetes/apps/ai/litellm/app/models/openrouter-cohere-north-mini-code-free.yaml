@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-cohere-north-mini-code-free
 spec:
-  modelName: openrouter/cohere/north-mini-code:free
+  modelName: opr/north-mini-code:free
   params:
     model: openrouter/cohere/north-mini-code:free
     apiKeyRef:

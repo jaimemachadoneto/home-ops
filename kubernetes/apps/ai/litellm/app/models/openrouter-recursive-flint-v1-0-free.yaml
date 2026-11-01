@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-recursive-flint-v1-0-free
 spec:
-  modelName: openrouter/recursive/flint-v1.0:free
+  modelName: opr/flint-v1.0:free
   params:
     model: openrouter/recursive/flint-v1.0:free
     apiKeyRef:

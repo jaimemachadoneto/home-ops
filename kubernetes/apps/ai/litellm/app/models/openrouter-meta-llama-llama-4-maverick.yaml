@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-meta-llama-llama-4-maverick
 spec:
-  modelName: openrouter/meta-llama/llama-4-maverick
+  modelName: opr/llama-4-maverick
   params:
     model: openrouter/meta-llama/llama-4-maverick
     apiKeyRef:

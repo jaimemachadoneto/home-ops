@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-poolside-laguna-s-2-1-free
 spec:
-  modelName: openrouter/poolside/laguna-s-2.1:free
+  modelName: opr/laguna-s-2.1:free
   params:
     model: openrouter/poolside/laguna-s-2.1:free
     apiKeyRef:

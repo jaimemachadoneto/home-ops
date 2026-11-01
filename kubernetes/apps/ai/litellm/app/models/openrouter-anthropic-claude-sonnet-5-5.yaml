@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-anthropic-claude-sonnet-5-5
 spec:
-  modelName: openrouter/anthropic/claude-sonnet-5.5
+  modelName: opr/claude-sonnet-5.5
   params:
     model: openrouter/anthropic/claude-sonnet-5.5
     apiKeyRef:

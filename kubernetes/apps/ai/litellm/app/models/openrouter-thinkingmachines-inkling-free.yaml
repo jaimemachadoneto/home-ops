@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-thinkingmachines-inkling-free
 spec:
-  modelName: openrouter/thinkingmachines/inkling:free
+  modelName: opr/inkling:free
   params:
     model: openrouter/thinkingmachines/inkling:free
     apiKeyRef:

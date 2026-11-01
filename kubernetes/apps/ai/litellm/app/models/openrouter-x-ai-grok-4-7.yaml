@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-x-ai-grok-4-7
 spec:
-  modelName: openrouter/x-ai/grok-4.7
+  modelName: opr/grok-4.7
   params:
     model: openrouter/x-ai/grok-4.7
     apiKeyRef:

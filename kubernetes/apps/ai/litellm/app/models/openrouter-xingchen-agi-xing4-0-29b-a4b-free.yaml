@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-xingchen-agi-xing4-0-29b-a4b-free
 spec:
-  modelName: openrouter/xingchen-agi/xing4.0-29b-a4b:free
+  modelName: opr/xing4.0-29b-a4b:free
   params:
     model: openrouter/xingchen-agi/xing4.0-29b-a4b:free
     apiKeyRef:

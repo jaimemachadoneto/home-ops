@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-deepseek-deepseek-v4-pro
 spec:
-  modelName: openrouter/deepseek/deepseek-v4-pro
+  modelName: opr/deepseek-v4-pro
   params:
     model: openrouter/deepseek/deepseek-v4-pro
     apiKeyRef:

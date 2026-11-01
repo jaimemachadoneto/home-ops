@@ -118,7 +118,7 @@ OpenCode Go model of the same tier.
 | Part | File |
 | --- | --- |
 | Model groups `opus`, `sonnet`, `haiku` (`anthropic/claude-*-5-5`, no key) | `litellm/app/models/claude-*.yaml` |
-| Fallback chains, router settings | `litellm/app/litellmproxy.yaml` |
+| Fallback chains, router settings | `litellm/app/litellmproxy.yaml`, `routerSettings` (the UI shows them; edit them in git, not in the UI) |
 | `go-*` models (`opencode_go/…`), with Go's prices | `litellm/app/models/opencode-go.yaml`, generated |
 | Daily sync of the Go models and prices | `go-catalog-sync/` |
 

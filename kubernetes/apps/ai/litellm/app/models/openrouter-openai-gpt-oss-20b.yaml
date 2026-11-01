@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-openai-gpt-oss-20b
 spec:
-  modelName: openrouter/openai/gpt-oss-20b
+  modelName: opr/gpt-oss-20b
   params:
     model: openrouter/openai/gpt-oss-20b
     apiKeyRef:

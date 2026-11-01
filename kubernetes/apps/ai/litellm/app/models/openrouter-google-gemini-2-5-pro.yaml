@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-google-gemini-2-5-pro
 spec:
-  modelName: openrouter/google/gemini-2.5-pro
+  modelName: opr/gemini-2.5-pro
   params:
     model: openrouter/google/gemini-2.5-pro
     apiKeyRef:

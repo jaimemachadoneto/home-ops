@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-qwen-qwen3-7-flash
 spec:
-  modelName: openrouter/qwen/qwen3.7-flash
+  modelName: opr/qwen3.7-flash
   params:
     model: openrouter/qwen/qwen3.7-flash
     apiKeyRef:
