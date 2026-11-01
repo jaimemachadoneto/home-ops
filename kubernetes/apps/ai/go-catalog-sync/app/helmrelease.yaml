@@ -41,7 +41,7 @@ spec:
             image:
               # The release workflow of go-catalog-sync sets the tag (sha-<commit>).
               repository: ghcr.io/jaimemachadoneto/go-catalog-sync
-              tag: sha-1400163606a941cbab22e2c35b845e9588cdfc1a
+              tag: sha-163de530053858aa0a9871d1e06b4e50f93a8bba
             env:
               GO_MODEL_IDS: "kimi-k3.1-pro glm-5.3 qwen3.8-max deepseek-v4-pro gemini-4-argon kimi-k2.7-code minimax-m3 qwen3.7-plus mimo-v2.6-pro glm-5.2 claude-haiku-5-5 gpt-6-luna glm-5.3-flash deepseek-v4.1-flash"
               OPENROUTER_PROVIDERS: "anthropic openai google deepseek qwen x-ai mistralai meta-llama moonshotai minimax z-ai"
