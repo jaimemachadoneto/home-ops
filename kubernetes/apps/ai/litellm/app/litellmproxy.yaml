@@ -26,18 +26,6 @@ spec:
     allowed_fails: 1
     cooldown_time: 300
     timeout: 600
-    # Claude subscription (models/claude-*.yaml) -> OpenCode Go, tier for tier.
-    # Here, not in litellmSettings, so that the LiteLLM UI shows them; edit
-    # them here, not in the UI. go-catalog-sync reads these chains: it writes
-    # one go-* model in models/opencode-go.yaml for each go-* target.
-    # Fallbacks also catch 401, so an expired Claude login moves everything
-    # to Go (fix: /login). Left out on purpose (they train on prompts):
-    # muse-spark-*, iceman-contributor-free. Never set
-    # forward_client_headers_to_llm_api.
-    fallbacks:
-      - opus: [go-kimi-k3.1-pro, go-glm-5.3, go-qwen3.8-max, go-deepseek-v4-pro, go-gemini-4-argon,openrouter/deepseek/deepseek-v4-pro]
-      - sonnet: [go-kimi-k2.7-code, go-minimax-m3, go-qwen3.7-plus, go-mimo-v2.6-pro, go-glm-5.2, openrouter/deepseek/deepseek-v4.1-flash]
-      - haiku: [go-claude-haiku-5-5, go-gpt-6-luna, go-glm-5.3-flash, go-deepseek-v4.1-flash, openrouter/deepseek/deepseek-v4.1-flash]
   litellmSettings:
     success_callback:
       - prometheus
