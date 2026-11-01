@@ -43,7 +43,7 @@ spec:
             image:
               # The release workflow of go-catalog-sync sets the tag (sha-<commit>).
               repository: ghcr.io/jaimemachadoneto/go-catalog-sync
-              tag: sha-ea0c0a3b2d64e03aa317c3170cedd3f38eeac79b
+              tag: sha-305ef190808c988a6f48f093103aa65a601b9e70
             env:
               GITHUB_REPO: jaimemachadoneto/home-ops
               LITELLM_DIR: kubernetes/apps/ai/litellm/app
