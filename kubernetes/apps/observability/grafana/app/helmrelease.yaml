@@ -155,7 +155,7 @@ spec:
             url: postgres16-rw.database.svc.cluster.local:5432
             user: litellm_grafana
             secureJsonData:
-              password: ${LITELLM_DB_PASSWORD}
+              password: $${LITELLM_DB_PASSWORD}
             jsonData:
               database: litellm
               sslmode: disable
