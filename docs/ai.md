@@ -118,7 +118,8 @@ OpenCode Go model of the same tier.
 | Part | File |
 | --- | --- |
 | Model groups `opus`, `sonnet`, `haiku` (`anthropic/claude-*-5-5`, no key) | `litellm/app/models/claude-*.yaml` |
-| Fallback chains, router settings | `litellm/app/litellmproxy.yaml`, `routerSettings` (the UI shows them; edit them in git, not in the UI) |
+| Fallback chains | the LiteLLM UI (Router Settings). The database keeps them. Do not set `fallbacks` in `routerSettings`: then LiteLLM ignores the chains in the database. |
+| Router settings (retries, cooldown, timeout) | `litellm/app/litellmproxy.yaml`, `routerSettings` |
 | `go-*` models (`opencode_go/…`) and `opr/*` models (`openrouter/…`) | managed by go-catalog-sync via LiteLLM admin API — no CRDs |
 | Daily sync of Go and OpenRouter models and prices | `go-catalog-sync/` |
 
