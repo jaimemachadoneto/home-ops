@@ -11,5 +11,9 @@ spec:
   params:
     model: ollama/qwen3.5:4b
     apiBase: http://ai.local.${SECRET_DOMAIN}:11434
+    # With thinking, qwen3.5:4b fills the 4096-token context of Ollama and
+    # returns no answer. Without it, it answers in seconds.
+    additional:
+      reasoning_effort: none
   info:
     supportsFunctionCalling: true
