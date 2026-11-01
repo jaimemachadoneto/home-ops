@@ -29,6 +29,33 @@ spec:
         key: LiteLLM
         property: db_password
 ---
+# Grafana reads only public.litellm_grafana_spend, never the LiteLLM tables.
+# The view and its GRANT are applied once; see docs/ai.md.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: litellm-grafana-db
+spec:
+  refreshInterval: 12h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword
+  target:
+    name: litellm-grafana-db-credentials
+    template:
+      type: kubernetes.io/basic-auth
+      metadata:
+        labels:
+          cnpg.io/reload: "true"
+      data:
+        username: litellm_grafana
+        password: "{{ .grafana_db_password }}"
+  data:
+    - secretKey: grafana_db_password
+      remoteRef:
+        key: LiteLLM
+        property: grafana_db_password
+---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/postgresql.cnpg.io/database_v1.json
 apiVersion: postgresql.cnpg.io/v1
 kind: Database
