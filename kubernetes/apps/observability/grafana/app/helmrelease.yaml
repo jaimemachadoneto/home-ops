@@ -76,6 +76,12 @@ spec:
             - name: DS_PROMETHEUS
               value: Prometheus
           url: https://grafana.com/api/dashboards/1860/revisions/46/download
+        # Shows the GPUs of the ai host, which the ScrapeConfig nvidia-gpu-exporter scrapes.
+        nvidia-gpu:
+          datasource:
+            - name: DS_PROMETHEUS
+              value: Prometheus
+          url: https://grafana.com/api/dashboards/14574/revisions/18/download
         prometheus:
           datasource: Prometheus
           url: https://grafana.com/api/dashboards/19105/revisions/9/download
