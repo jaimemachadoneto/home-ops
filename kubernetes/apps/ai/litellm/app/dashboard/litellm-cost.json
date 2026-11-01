@@ -174,7 +174,7 @@
         "displayLabels": ["percent"],
         "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"] },
         "pieType": "donut",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": { "calcs": ["sum"], "fields": "value", "values": true },
         "tooltip": { "mode": "single", "sort": "none" }
       },
       "targets": [
