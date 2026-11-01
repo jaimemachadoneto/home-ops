@@ -6,10 +6,10 @@ metadata:
   name: ollama-chat
 spec:
   # Ollama host ai.local.${SECRET_DOMAIN}; `ollama list` there shows what is
-  # pulled (qwen3:8b, qwen3:4b, qwen2.5-coder:7b, llama3.2-vision:11b, ...).
+  # pulled. qwen3.5:4b uses about 3 GB, so it fits on one GTX 1660 SUPER.
   modelName: ollama/local
   params:
-    model: ollama/qwen3:8b
+    model: ollama/qwen3.5:4b
     apiBase: http://ai.local.${SECRET_DOMAIN}:11434
   info:
     supportsFunctionCalling: true
