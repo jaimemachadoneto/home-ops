@@ -182,7 +182,6 @@
           "datasource": { "type": "postgres", "uid": "litellm-postgres" },
           "rawSql": "SELECT provider AS metric, sum(spend) AS value FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring}) GROUP BY provider",
           "format": "table",
-          "legendFormat": "{{metric}}",
           "refId": "A"
         }
       ],
