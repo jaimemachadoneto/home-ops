@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-google-gemma-4-31b-it-free
 spec:
-  modelName: openrouter/google/gemma-4-31b-it:free
+  modelName: opr/gemma-4-31b-it:free
   params:
     model: openrouter/google/gemma-4-31b-it:free
     apiKeyRef:

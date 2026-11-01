@@ -6,7 +6,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-google-gemini-2-5-flash-lite
 spec:
-  modelName: openrouter/google/gemini-2.5-flash-lite
+  modelName: opr/gemini-2.5-flash-lite
   params:
     model: openrouter/google/gemini-2.5-flash-lite
     apiKeyRef:

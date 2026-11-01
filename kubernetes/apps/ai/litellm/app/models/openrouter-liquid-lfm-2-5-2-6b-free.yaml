@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-liquid-lfm-2-5-2-6b-free
 spec:
-  modelName: openrouter/liquid/lfm-2.5-2.6b:free
+  modelName: opr/lfm-2.5-2.6b:free
   params:
     model: openrouter/liquid/lfm-2.5-2.6b:free
     apiKeyRef:

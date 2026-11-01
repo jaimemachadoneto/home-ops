@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-dots-studio-dots-3-note-preview-free
 spec:
-  modelName: openrouter/dots-studio/dots-3-note-preview:free
+  modelName: opr/dots-3-note-preview:free
   params:
     model: openrouter/dots-studio/dots-3-note-preview:free
     apiKeyRef:

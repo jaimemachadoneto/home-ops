@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-inclusionai-ling-3-0-flash
 spec:
-  modelName: openrouter/inclusionai/ling-3.0-flash
+  modelName: opr/ling-3.0-flash
   params:
     model: openrouter/inclusionai/ling-3.0-flash
     apiKeyRef:

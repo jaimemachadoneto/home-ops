@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-nvidia-nemotron-3-5-lightning-free
 spec:
-  modelName: openrouter/nvidia/nemotron-3.5-lightning:free
+  modelName: opr/nemotron-3.5-lightning:free
   params:
     model: openrouter/nvidia/nemotron-3.5-lightning:free
     apiKeyRef:

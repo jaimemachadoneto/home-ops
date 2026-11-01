@@ -5,7 +5,7 @@ kind: LiteLLMModel
 metadata:
   name: openrouter-mistralai-mistral-nemo
 spec:
-  modelName: openrouter/mistralai/mistral-nemo
+  modelName: opr/mistral-nemo
   params:
     model: openrouter/mistralai/mistral-nemo
     apiKeyRef:
