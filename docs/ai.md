@@ -70,7 +70,7 @@ Each app has its own ExternalSecret; a missing item only breaks that app.
 | `memini` | `API_KEY` | memini |
 | `browser-sessions` | one field per session, named like the session (`colegio`) | that session's bearer token, from the browser-sessions admin UI |
 | `opencode-go` | `credential` | the `go-*` models and go-catalog-sync (OpenCode console API key) |
-| `go-sync-deploy-key` | `private_key`, `known_hosts` | go-catalog-sync: a deploy key with write access to this repository, and the `github.com` host keys from `ssh_keys` of `https://api.github.com/meta` (compare them with the fingerprints in the GitHub docs; do not use `ssh-keyscan`) |
+| `go-catalog-sync` | `github_token` | go-catalog-sync: a fine-grained token for this repository only, with Contents and Pull requests (read and write) |
 | `mqtt` | `mqtt_username`, `mqtt_password` | go-catalog-sync (the login of ha-status) |
 
 ## Outlook MCP: one-time sign-in
@@ -161,8 +161,9 @@ Sign in with "Claude account with subscription".
 
 ### go-catalog-sync
 
-A CronJob in `ai`, every day at 07:00 Europe/Madrid. It clones this
-repository with the deploy key and does these steps:
+A CronJob in `ai`, every day at 07:00 Europe/Madrid. The code and the
+image are in [go-catalog-sync](https://github.com/jaimemachadoneto/go-catalog-sync).
+It reads this repository through the GitHub API and does these steps:
 
 1. It reads the `go-*` targets of the fallbacks in `litellmproxy.yaml`.
 2. It gets the Go model list and compares it with `go-catalog.json`. It
@@ -170,7 +171,9 @@ repository with the deploy key and does these steps:
 3. It writes `models/opencode-go.yaml` with the current prices. If a price
    changes by more than 3 times, it keeps the old price and sends
    `price_change_suspicious`.
-4. It commits to `main` and pushes. Flux applies the change.
+4. It opens one PR on the branch `go-catalog-sync`, with changes only under
+   `kubernetes/apps/ai/litellm/app/`. It makes the branch again from `main`
+   at each run. After you merge the PR, Flux applies the change.
 5. It sends a status and the events to MQTT (`homelab/opencode-go/…`). Home
    Assistant gets the device "OpenCode Go sync" through MQTT discovery.
 
