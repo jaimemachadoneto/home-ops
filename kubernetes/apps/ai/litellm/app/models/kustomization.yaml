@@ -3,8 +3,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - ./claude-haiku.yaml
+  - ./claude-opus.yaml
+  - ./claude-sonnet.yaml
   - ./deepseek-chat.yaml
   - ./ollama-chat.yaml
+  - ./opencode-go.yaml
   - ./openrouter.yaml
   - ./openrouter-anthropic-claude-haiku-4-5.yaml
   - ./openrouter-anthropic-claude-opus-5-5.yaml

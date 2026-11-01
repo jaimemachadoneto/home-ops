@@ -6,7 +6,7 @@ LiteLLM operator.
 | Piece | What it is |
 | --- | --- |
 | `litellm` | One OpenAI-compatible API for every model, and one **MCP gateway** for every MCP server: `https://litellm.${SECRET_DOMAIN}` (envoy-internal, LAN only; only `/mcp` is also on the internet, for claude.ai) |
-| Models | `deepseek/deepseek-chat` (DeepSeek API), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.${SECRET_DOMAIN}`) |
+| Models | `deepseek/deepseek-chat` (DeepSeek API), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.${SECRET_DOMAIN}`), `opus` / `sonnet` / `haiku` (Claude subscription with OpenCode Go fallback, see "Claude Code through LiteLLM") |
 | MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_<session>` (one per browser-sessions session, e.g. `browser_colegio`), `memini` (agent memory, namespace `personal/jaime`), `notes` (the notes vault, see `notes-mcp.md`) |
 | `memini` | Long-term memory API (`memini.${SECRET_DOMAIN}`); embeddings from Ollama (`qwen3-embedding:4b`), reranker in-cluster (llmkube, `qwen3-reranker-0.6b`) |
 
@@ -69,6 +69,9 @@ Each app has its own ExternalSecret; a missing item only breaks that app.
 | `home-assistant` | `ha_mcp_token` | Home Assistant MCP (a long-lived HA token) |
 | `memini` | `API_KEY` | memini |
 | `browser-sessions` | one field per session, named like the session (`colegio`) | that session's bearer token, from the browser-sessions admin UI |
+| `opencode-go` | `credential` | the `go-*` models and go-catalog-sync (OpenCode console API key) |
+| `go-catalog-sync` | `github_token` | go-catalog-sync: a fine-grained token for this repository only, with Contents and Pull requests (read and write) |
+| `mqtt` | `mqtt_username`, `mqtt_password` | go-catalog-sync (the login of ha-status) |
 
 ## Outlook MCP: one-time sign-in
 
@@ -105,6 +108,108 @@ session `<name>`:
 A virtual key reaches only the MCP servers it lists, so give a session only
 to the key of the client that needs it. The per-session approval switch in
 browser-sessions still holds anything that sends.
+
+## Claude Code through LiteLLM, with OpenCode Go fallback
+
+Claude Code uses the Claude subscription through LiteLLM. When the
+subscription gets to its usage limit, LiteLLM sends the request to an
+OpenCode Go model of the same tier.
+
+| Part | File |
+| --- | --- |
+| Model groups `opus`, `sonnet`, `haiku` (`anthropic/claude-*-5-5`, no key) | `litellm/app/models/claude-*.yaml` |
+| Fallback chains, router settings | `litellm/app/litellmproxy.yaml` |
+| `go-*` models (`opencode_go/…`), with Go's prices | `litellm/app/models/opencode-go.yaml`, generated |
+| Daily sync of the Go models and prices | `go-catalog-sync/` |
+
+- The `anthropic/` models have no key. LiteLLM forwards the OAuth token
+  (`sk-ant-oat…`) that Claude Code sends. LiteLLM v1.106.5 forwards this
+  token to each `anthropic/` model, also with a different `api_base`. Thus
+  never point an `anthropic/` model at a provider that is not Anthropic.
+- No LiteLLM release has the `opencode_go/` provider yet, so the proxy runs
+  `main-latest` at a fixed digest. When a release has it, go back to a
+  version tag.
+- The router settings are `num_retries: 0`, `allowed_fails: 1` and
+  `cooldown_time: 300` for all models. One failure of a model group sends
+  the next requests to its fallbacks for 5 minutes.
+- Fallbacks catch all errors, also 401. If the Claude login expires,
+  all requests go to Go and nothing tells you. The spend logs show
+  `attempted_fallbacks`. To correct it, run `/login` in Claude Code.
+- Do not add `muse-spark-*` or `iceman-contributor-free` models: they train
+  on prompts. Do not set `forward_client_headers_to_llm_api`.
+
+### Claude Code settings
+
+Make a virtual key that can call `opus`, `sonnet`, `haiku` and every `go-*`
+model group. If the key cannot call a `go-*` group, LiteLLM skips that
+fallback. Then set this in `~/.claude/settings.json` (from `~/nix-config`):
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://litellm.${SECRET_DOMAIN}",
+    "ANTHROPIC_CUSTOM_HEADERS": "x-litellm-api-key: <virtual key>",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "opus",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "sonnet",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "haiku"
+  }
+}
+```
+
+Do not set `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` or `apiKeyHelper`.
+Sign in with "Claude account with subscription".
+
+### go-catalog-sync
+
+A CronJob in `ai`, every day at 07:00 Europe/Madrid. The code and the
+image are in [go-catalog-sync](https://github.com/jaimemachadoneto/go-catalog-sync).
+It reads this repository through the GitHub API and does these steps:
+
+1. It reads the `go-*` targets of the fallbacks in `litellmproxy.yaml`.
+2. It gets the Go model list and compares it with `go-catalog.json`. It
+   makes this file on the first run (event `baseline_created`).
+3. It writes `models/opencode-go.yaml` with the current prices. If a price
+   changes by more than 3 times, it keeps the old price and sends
+   `price_change_suspicious`.
+4. It opens one PR on the branch `go-catalog-sync`, with changes only under
+   `kubernetes/apps/ai/litellm/app/`. It makes the branch again from `main`
+   at each run. After you merge the PR, Flux applies the change.
+5. It sends a status and the events to MQTT (`homelab/opencode-go/…`). Home
+   Assistant gets the device "OpenCode Go sync" through MQTT discovery.
+
+To add a Go model, add it to a chain in `litellmproxy.yaml`. The next run
+writes its `go-*` model. If Go removes a model that is in a chain, the job
+sends `tracked_model_removed`. Then remove the model from the chain.
+
+Run it now: `kubectl -n ai create job --from=cronjob/go-catalog-sync go-sync-test`.
+
+The phone notification is a Home Assistant automation. Change the
+`notify.mobile_app_*` action to your phone:
+
+```yaml
+alias: OpenCode Go catalog change
+mode: queued
+triggers:
+  - trigger: mqtt
+    topic: homelab/opencode-go/event
+actions:
+  - action: notify.mobile_app_YOUR_PHONE
+    data:
+      title: "OpenCode Go: {{ trigger.payload_json.event_type | replace('_', ' ') }}"
+      message: "{{ trigger.payload_json.message }}"
+      data:
+        tag: opencode-go-{{ trigger.payload_json.event_type }}
+```
+
+### Make sure that it works
+
+1. Call each `go-*` model through LiteLLM. Each one must give 200.
+2. Make a temporary model group to Anthropic with a key that is not
+   correct, with a fallback to a `go-*` model. Call it and look for the
+   response header `x-litellm-attempted-fallbacks`. Then remove the group.
+   (Since v1.85.0 the proxy removes `mock_testing_fallbacks` from requests.)
+3. In the LiteLLM logs, a request to Go must not have an `sk-ant-oat`
+   `Authorization` header.
 
 ## LiteLLM database: per-client keys
 

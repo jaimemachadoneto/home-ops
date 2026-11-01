@@ -1,0 +1,72 @@
+---
+# Keeps the OpenCode Go fallback of LiteLLM current: it reads the go-*
+# targets of the fallbacks in litellm/app/litellmproxy.yaml and opens a PR
+# that updates litellm/app/models/opencode-go.yaml and go-catalog.json. It
+# sends the status and change events to Home Assistant through MQTT.
+# Source: github.com/jaimemachadoneto/go-catalog-sync.
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: go-catalog-sync
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: go-catalog-sync
+  interval: 30m
+  values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+
+    controllers:
+      go-catalog-sync:
+        type: cronjob
+        cronjob:
+          schedule: "0 7 * * *"
+          timeZone: Europe/Madrid
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 3
+          failedJobsHistory: 3
+          backoffLimit: 1
+
+        pod:
+          restartPolicy: Never
+
+        containers:
+          app:
+            image:
+              # The release workflow of go-catalog-sync sets the tag (sha-<commit>).
+              repository: ghcr.io/jaimemachadoneto/go-catalog-sync
+              tag: 0.1.0
+            env:
+              GITHUB_REPO: jaimemachadoneto/home-ops
+              LITELLM_DIR: kubernetes/apps/ai/litellm/app
+              MQTT_HOST: mqtt.jaimenet.com
+              MQTT_PORT: "1883"
+              MQTT_TOPIC_PREFIX: homelab/opencode-go
+              OPENCODE_GO_API_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: opencode-go
+                    key: OPENCODE_GO_API_KEY
+            envFrom:
+              - secretRef:
+                  name: go-catalog-sync-secret
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+              limits:
+                memory: 128Mi
