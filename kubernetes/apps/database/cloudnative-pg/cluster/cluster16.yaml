@@ -47,6 +47,14 @@ spec:
         connectionLimit: 40
         passwordSecret:
           name: litellm-db-credentials
+      # Grafana's read-only access to the LiteLLM spend view (litellm.yaml).
+      - name: litellm_grafana
+        ensure: present
+        login: true
+        inherit: true
+        connectionLimit: 5
+        passwordSecret:
+          name: litellm-grafana-db-credentials
       # The notes MCP server (obsidian-mcp.yaml). It must not be a superuser:
       # the app refuses to run as one.
       - name: obsidian_mcp

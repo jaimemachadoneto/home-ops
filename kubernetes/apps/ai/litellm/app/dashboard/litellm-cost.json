@@ -1,0 +1,470 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Cost, token and request history comes from the LiteLLM Postgres spend log, so it is not limited by Prometheus retention. Costs are LiteLLM's estimates: for anthropic (Claude subscription) and opencode_go (Go allowance) they are list-price equivalents, not money billed. Traffic status, fallbacks and latency still use Prometheus and are not affected by the dashboard filters.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+      "description": "Estimated cost in the selected time range.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "fixed", "fixedColor": "blue" }, "decimals": 2, "unit": "currencyUSD" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT sum(spend) AS value FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring})",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "title": "Total cost",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+      "description": "Estimated cost in the selected time range, per provider.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "decimals": 2, "unit": "currencyUSD" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 12, "x": 4, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "vertical",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT provider AS metric, sum(spend) AS value FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring}) GROUP BY provider",
+          "format": "table",
+          "legendFormat": "{{api_provider}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Cost by provider",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+      "description": "LLM requests in the selected time range (MCP tool calls left out).",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "fixed", "fixedColor": "purple" }, "decimals": 0, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT count(*) AS value FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring})",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "title": "Requests",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+      "description": "Input + output tokens in the selected time range.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "fixed", "fixedColor": "green" }, "decimals": 1, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT sum(total_tokens) AS value FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring})",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "title": "Tokens",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+      "description": "Estimated cost per interval, stacked by provider.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "lineWidth": 1, "showPoints": "never", "stacking": { "group": "A", "mode": "normal" } },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 16, "x": 0, "y": 4 },
+      "id": 5,
+      "interval": "1h",
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true, "sortBy": "Total", "sortDesc": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT $__timeGroupAlias(time, '1h'), sum(spend) AS value, provider AS metric FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring}) GROUP BY 1, provider ORDER BY 1",
+          "legendFormat": "{{api_provider}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Cost over time by provider",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+      "description": "Share of the estimated cost in the selected time range.",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "decimals": 2, "unit": "currencyUSD" },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 8, "x": 16, "y": 4 },
+      "id": 6,
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT provider AS metric, sum(spend) AS value FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring}) GROUP BY provider",
+          "format": "table",
+          "legendFormat": "{{api_provider}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Cost share by provider",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+      "description": "Estimated cost per interval, stacked by provider and upstream model.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "lineWidth": 1, "showPoints": "never", "stacking": { "group": "A", "mode": "normal" } },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 13 },
+      "id": 7,
+      "interval": "1h",
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true, "sortBy": "Total", "sortDesc": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT $__timeGroupAlias(time, '1h'), sum(spend) AS value, provider || ' / ' || model AS metric FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring}) GROUP BY 1, provider, model ORDER BY 1",
+          "legendFormat": "{{api_provider}} / {{model}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Cost over time by model",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+      "description": "Per upstream model in the selected time range. Cost per request = cost / requests.",
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" } }, "decimals": 0, "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Cost" }, "properties": [ { "id": "unit", "value": "currencyUSD" }, { "id": "decimals", "value": 4 }, { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "basic" } }, { "id": "color", "value": { "mode": "continuous-BlYlRd" } } ] },
+          { "matcher": { "id": "byName", "options": "Cost / request" }, "properties": [ { "id": "unit", "value": "currencyUSD" }, { "id": "decimals", "value": 4 } ] }
+        ]
+      },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 23 },
+      "id": 8,
+      "options": { "cellHeight": "sm", "footer": { "countRows": false, "enablePagination": false, "fields": ["Cost", "Requests", "Cost / request", "Input tokens", "Output tokens"], "reducer": ["sum"], "show": true }, "showHeader": true, "sortBy": [ { "desc": true, "displayName": "Cost" } ] },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT provider AS \"Provider\", model AS \"Model\", sum(spend) AS \"Cost\", count(*) AS \"Requests\", sum(spend) / count(*) AS \"Cost / request\", sum(prompt_tokens) AS \"Input tokens\", sum(completion_tokens) AS \"Output tokens\" FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring}) GROUP BY provider, model ORDER BY \"Cost\" DESC",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "title": "Models",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+      "description": "Estimated cost in the selected time range, per LiteLLM virtual key (None = master key).",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "continuous-BlPu" }, "decimals": 2, "min": 0, "unit": "currencyUSD" },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 35 },
+      "id": 9,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT api_key_alias AS metric, sum(spend) AS value FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring}) GROUP BY api_key_alias ORDER BY value DESC",
+          "format": "table",
+          "legendFormat": "{{api_key_alias}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Cost by API key",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+      "description": "Estimated cost in the selected time range, per model name the client asked for (opus, sonnet, go-*, opr/*...).",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "continuous-BlPu" }, "decimals": 2, "min": 0, "unit": "currencyUSD" },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 35 },
+      "id": 10,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT requested_model AS metric, sum(spend) AS value FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring}) GROUP BY requested_model ORDER BY value DESC",
+          "format": "table",
+          "legendFormat": "{{requested_model}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Cost by requested model",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+      "description": "Input and output tokens per interval, by provider.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "lineWidth": 1, "showPoints": "never", "stacking": { "group": "A", "mode": "normal" } },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 44 },
+      "id": 11,
+      "interval": "1h",
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT $__timeGroupAlias(time, '1h'), sum(prompt_tokens) AS value, provider || ' input' AS metric FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring}) GROUP BY 1, provider ORDER BY 1",
+          "legendFormat": "{{api_provider}} input",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+          "rawSql": "SELECT $__timeGroupAlias(time, '1h'), sum(completion_tokens) AS value, provider || ' output' AS metric FROM public.litellm_grafana_spend WHERE $__timeFilter(time) AND provider IN (${provider:sqlstring}) AND model IN (${model:sqlstring}) AND api_key_alias IN (${key:sqlstring}) GROUP BY 1, provider ORDER BY 1",
+          "legendFormat": "{{api_provider}} output",
+          "refId": "B"
+        }
+      ],
+      "title": "Tokens over time by provider",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Live proxy requests per interval by HTTP status code. Prometheus data; the provider, model and key filters do not apply.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "lineWidth": 1, "showPoints": "never", "stacking": { "group": "A", "mode": "normal" } },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 44 },
+      "id": 12,
+      "interval": "1h",
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "expr": "sum by (status_code) (increase(litellm_proxy_total_requests_metric_total{job=\"litellm\"}[$__interval]))",
+          "legendFormat": "{{status_code}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Requests by status code",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Requests that went to a fallback in the selected time range (for example the Claude subscription hitting its limit and moving to OpenCode Go). Prometheus data; the dashboard filters do not apply.",
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" } }, "decimals": 0, "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 53 },
+      "id": 13,
+      "options": { "cellHeight": "sm", "showHeader": true, "sortBy": [ { "desc": true, "displayName": "Fallbacks" } ] },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "expr": "sum by (requested_model, fallback_model) (increase(litellm_deployment_successful_fallbacks_total{job=\"litellm\"}[$__range])) > 0",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fallbacks",
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "Time": true }, "renameByName": { "requested_model": "Requested", "fallback_model": "Fallback", "Value": "Fallbacks" } } }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "95th percentile of the upstream API latency, by provider and model. Prometheus data; the dashboard filters do not apply.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 0, "lineWidth": 2, "showPoints": "never", "spanNulls": true },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 53 },
+      "id": 14,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "expr": "histogram_quantile(0.95, sum by (le, api_provider, model) (rate(litellm_llm_api_latency_metric_bucket{job=\"litellm\", api_provider!=\"None\"}[$__rate_interval])))",
+          "legendFormat": "{{api_provider}} / {{model}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Upstream latency p95",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "tags": ["litellm", "ai", "cost"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+        "definition": "SELECT DISTINCT provider AS __text, provider AS __value FROM public.litellm_grafana_spend ORDER BY 1",
+        "includeAll": true,
+        "label": "Provider",
+        "multi": true,
+        "name": "provider",
+        "query": "SELECT DISTINCT provider AS __text, provider AS __value FROM public.litellm_grafana_spend ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+        "definition": "SELECT DISTINCT model AS __text, model AS __value FROM public.litellm_grafana_spend WHERE provider IN (${provider:sqlstring}) ORDER BY 1",
+        "includeAll": true,
+        "label": "Model",
+        "multi": true,
+        "name": "model",
+        "query": "SELECT DISTINCT model AS __text, model AS __value FROM public.litellm_grafana_spend WHERE provider IN (${provider:sqlstring}) ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "datasource": { "type": "postgres", "uid": "litellm-postgres" },
+        "definition": "SELECT DISTINCT api_key_alias AS __text, api_key_alias AS __value FROM public.litellm_grafana_spend ORDER BY 1",
+        "includeAll": true,
+        "label": "API key",
+        "multi": true,
+        "name": "key",
+        "query": "SELECT DISTINCT api_key_alias AS __text, api_key_alias AS __value FROM public.litellm_grafana_spend ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-30d", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "LiteLLM Cost",
+  "uid": "litellm-cost",
+  "version": 1
+}

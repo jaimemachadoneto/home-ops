@@ -62,6 +62,7 @@ Each app has its own ExternalSecret; a missing item only breaks that app.
 | --- | --- | --- |
 | `LiteLLM` | `master_key` | gateway key for clients (and break-glass dashboard login) |
 | `LiteLLM` | `db_password` | its Postgres role `litellm` (CNPG `managed.roles`, database `litellm`) |
+| `LiteLLM` | `grafana_db_password` | Grafana's read-only Postgres role `litellm_grafana` for the cost dashboard |
 | `LiteLLM` | `salt_key` | encrypts credentials LiteLLM stores in its DB — **never change it** |
 | `LiteLLM` | `oidc_client_secret` | Authentik OIDC client `litellm` (read by both apps) |
 | `deepseek` | `API_KEY` | DeepSeek model |
@@ -227,6 +228,50 @@ never `outlook` unless it needs mail).
   it to read data with one tool and send it out with the other.
 - The dashboard shows a key once. If it is lost, regenerate it: the
   permissions stay.
+
+## LiteLLM cost dashboard
+
+The **AI / LiteLLM Cost** dashboard reads spend history from Postgres, not
+Prometheus (which keeps only seven days). The traffic, fallback and latency
+panels still use Prometheus. Costs are LiteLLM's estimates: for the Claude
+subscription and OpenCode Go they are list-price equivalents, not invoices.
+
+Before reconciling Grafana, generate a password in 1Password item `LiteLLM`,
+field `grafana_db_password`. Two ExternalSecrets use it: the CNPG role's
+`litellm-grafana-db-credentials` and Grafana's `grafana-litellm-db`.
+
+After CNPG has created the role, create the restricted view and grant once.
+The view deliberately omits API keys, prompts, responses and request metadata;
+Grafana has SELECT only on this view, not on any LiteLLM table.
+
+```bash
+PRIMARY=$(kubectl -n database get pods -l cnpg.io/cluster=postgres16,role=primary -o jsonpath='{.items[0].metadata.name}')
+kubectl -n database exec -i "$PRIMARY" -c postgres -- psql -v ON_ERROR_STOP=1 -U postgres -d litellm <<'SQL'
+BEGIN;
+CREATE OR REPLACE VIEW public.litellm_grafana_spend
+WITH (security_invoker = false) AS
+SELECT
+  "startTime" AS time,
+  custom_llm_provider AS provider,
+  model,
+  model_group AS requested_model,
+  COALESCE(metadata->>'user_api_key_alias', 'None') AS api_key_alias,
+  spend,
+  total_tokens,
+  prompt_tokens,
+  completion_tokens
+FROM public."LiteLLM_SpendLogs"
+WHERE custom_llm_provider IS NOT NULL;
+GRANT CONNECT ON DATABASE litellm TO litellm_grafana;
+GRANT USAGE ON SCHEMA public TO litellm_grafana;
+GRANT SELECT ON public.litellm_grafana_spend TO litellm_grafana;
+COMMIT;
+SQL
+```
+
+There is no spend-log cleanup configured; the history grows until LiteLLM's
+`maximum_spend_logs_retention_period` is set. Re-run the SQL only if the
+`litellm` database is recreated, or to change the view.
 
 ## claude.ai connector
 

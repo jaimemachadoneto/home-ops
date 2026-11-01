@@ -14,7 +14,7 @@ spec:
       existingSecret: grafana-admin-secret
     annotations:
       configmap.reloader.stakater.com/reload: grafana
-      secret.reloader.stakater.com/reload: grafana-admin-secret
+      secret.reloader.stakater.com/reload: grafana-admin-secret,grafana-litellm-db
     replicas: 1
     dashboardProviders:
       dashboardproviders.yaml:
@@ -148,6 +148,21 @@ spec:
             isDefault: true
             jsonData:
               prometheusType: Prometheus
+          - name: LiteLLM Spend
+            uid: litellm-postgres
+            type: postgres
+            access: proxy
+            url: postgres16-rw.database.svc.cluster.local:5432
+            user: litellm_grafana
+            secureJsonData:
+              password: ${LITELLM_DB_PASSWORD}
+            jsonData:
+              database: litellm
+              sslmode: disable
+              postgresVersion: 1600
+              maxOpenConns: 5
+              maxIdleConns: 2
+              connMaxLifetime: 14400
           - name: VictoriaLogs
             type: victoriametrics-logs-datasource
             access: proxy
@@ -182,6 +197,12 @@ spec:
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: natel-discrete-panel,pr0ps-trackmap-panel,panodata-map-panel
       GF_SECURITY_COOKIE_SAMESITE: grafana
       GF_SERVER_ROOT_URL: https://grafana.${SECRET_DOMAIN}
+
+    envValueFrom:
+      LITELLM_DB_PASSWORD:
+        secretKeyRef:
+          name: grafana-litellm-db
+          key: password
 
     imageRenderer:
       enabled: true
