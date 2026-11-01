@@ -65,6 +65,19 @@ spec:
         secretKeyRef:
           name: litellm
           key: DATABASE_URL
+    # The go-* and opr/* models are in the database (go-catalog-sync), not
+    # CRDs, so the operator gives them no key. Their api_key is
+    # os.environ/OPENCODE_GO_API_KEY or os.environ/OPENROUTER_API_KEY.
+    - name: OPENCODE_GO_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: opencode-go
+          key: OPENCODE_GO_API_KEY
+    - name: OPENROUTER_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: litellm
+          key: OPENROUTER_API_KEY
     # Dashboard sign-in with Authentik (provider "litellm" in
     # authentik/app/blueprints/oidc.yaml). Only authentik Admins may sign in
     # and they get proxy_admin through the litellm_role claim. The master
