@@ -1,8 +1,6 @@
 ---
-# Keeps the OpenCode Go fallback of LiteLLM current: it reads the go-*
-# targets of the fallbacks in litellm/app/litellmproxy.yaml and opens a PR
-# that updates litellm/app/models/opencode-go.yaml and go-catalog.json. It
-# sends the status and change events to Home Assistant through MQTT.
+# Syncs OpenCode Go and OpenRouter model catalogs into LiteLLM's database
+# through the admin API so models can be enabled/disabled from the dashboard.
 # Source: github.com/jaimemachadoneto/go-catalog-sync.
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
@@ -43,21 +41,25 @@ spec:
             image:
               # The release workflow of go-catalog-sync sets the tag (sha-<commit>).
               repository: ghcr.io/jaimemachadoneto/go-catalog-sync
-              tag: sha-ea0c0a3b2d64e03aa317c3170cedd3f38eeac79b
+              tag: sha-305ef190808c988a6f48f093103aa65a601b9e70
             env:
-              GITHUB_REPO: jaimemachadoneto/home-ops
-              LITELLM_DIR: kubernetes/apps/ai/litellm/app
+              GO_MODEL_IDS: "kimi-k3.1-pro glm-5.3 qwen3.8-max deepseek-v4-pro gemini-4-argon kimi-k2.7-code minimax-m3 qwen3.7-plus mimo-v2.6-pro glm-5.2 claude-haiku-5-5 gpt-6-luna glm-5.3-flash deepseek-v4.1-flash"
+              OPENROUTER_PROVIDERS: "anthropic openai google deepseek qwen x-ai mistralai meta-llama moonshotai minimax z-ai"
+              LITELLM_ADMIN_URL: "http://litellm.ai.svc:4000"
               MQTT_HOST: mqtt.jaimenet.com
               MQTT_PORT: "1883"
               MQTT_TOPIC_PREFIX: homelab/opencode-go
+              MQTT_OPENROUTER_TOPIC_PREFIX: homelab/openrouter
               OPENCODE_GO_API_KEY:
                 valueFrom:
                   secretKeyRef:
                     name: opencode-go
                     key: OPENCODE_GO_API_KEY
-            envFrom:
-              - secretRef:
-                  name: go-catalog-sync-secret
+              LITELLM_MASTER_KEY:
+                valueFrom:
+                  secretKeyRef:
+                    name: litellm
+                    key: LITELLM_MASTER_KEY
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
