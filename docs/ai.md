@@ -71,7 +71,6 @@ Each app has its own ExternalSecret; a missing item only breaks that app.
 | `memini` | `API_KEY` | memini |
 | `browser-sessions` | one field per session, named like the session (`colegio`) | that session's bearer token, from the browser-sessions admin UI |
 | `opencode-go` | `credential` | the `go-*` models and go-catalog-sync (OpenCode console API key) |
-| `go-catalog-sync` | `github_token` | go-catalog-sync: a fine-grained token for this repository only, with Contents and Pull requests (read and write) |
 | `mqtt` | `mqtt_username`, `mqtt_password` | go-catalog-sync (the login of ha-status) |
 
 ## Outlook MCP: one-time sign-in
@@ -120,8 +119,8 @@ OpenCode Go model of the same tier.
 | --- | --- |
 | Model groups `opus`, `sonnet`, `haiku` (`anthropic/claude-*-5-5`, no key) | `litellm/app/models/claude-*.yaml` |
 | Fallback chains, router settings | `litellm/app/litellmproxy.yaml`, `routerSettings` (the UI shows them; edit them in git, not in the UI) |
-| `go-*` models (`opencode_go/…`), with Go's prices | `litellm/app/models/opencode-go.yaml`, generated |
-| Daily sync of the Go models and prices | `go-catalog-sync/` |
+| `go-*` models (`opencode_go/…`) and `opr/*` models (`openrouter/…`) | managed by go-catalog-sync via LiteLLM admin API — no CRDs |
+| Daily sync of Go and OpenRouter models and prices | `go-catalog-sync/` |
 
 - The `anthropic/` models have no key. LiteLLM forwards the OAuth token
   (`sk-ant-oat…`) that Claude Code sends. LiteLLM v1.106.5 forwards this
@@ -164,23 +163,30 @@ Sign in with "Claude account with subscription".
 
 A CronJob in `ai`, every day at 07:00 Europe/Madrid. The code and the
 image are in [go-catalog-sync](https://github.com/jaimemachadoneto/go-catalog-sync).
-It reads this repository through the GitHub API and does these steps:
+It writes to the LiteLLM database through the admin API:
 
-1. It reads the `go-*` targets of the fallbacks in `litellmproxy.yaml`.
-2. It gets the Go model list and compares it with `go-catalog.json`. It
-   makes this file on the first run (event `baseline_created`).
-3. It writes `models/opencode-go.yaml` with the current prices. If a price
-   changes by more than 3 times, it keeps the old price and sends
-   `price_change_suspicious`.
-4. It opens one PR on the branch `go-catalog-sync`, with changes only under
-   `kubernetes/apps/ai/litellm/app/`. It makes the branch again from `main`
-   at each run. After you merge the PR, Flux applies the change.
-5. It sends a status and the events to MQTT (`homelab/opencode-go/…`). Home
-   Assistant gets the device "OpenCode Go sync" through MQTT discovery.
+1. It fetches the Go model list (with the `opencode-go` API key) and the
+   OpenRouter public catalog.
+2. It lists existing managed models from LiteLLM (`/model/list`).
+3. It creates, updates and deletes models via `/model/new`, `/model/update`
+   and `/model/delete`. A model you disabled in the dashboard stays disabled
+   through updates; stale models are removed.
+4. It publishes status and events to MQTT for both `homelab/opencode-go` and
+   `homelab/openrouter`. Home Assistant gets the devices through MQTT
+   discovery.
 
-To add a Go model, add it to a chain in `litellmproxy.yaml`. The next run
-writes its `go-*` model. If Go removes a model that is in a chain, the job
-sends `tracked_model_removed`. Then remove the model from the chain.
+**Go models:** `GO_MODEL_IDS` (space-separated Go model IDs in the
+helmrelease) controls which Go models are synced. Model name `go-<id>`,
+params `opencode_go/<id>`, API key from the `opencode-go` secret.
+
+**OpenRouter models:** `OPENROUTER_PROVIDERS` (space-separated vendor
+prefixes) filters the OpenRouter catalog, plus all `:free` models. Model
+name `opr/<model>`, params `openrouter/<vendor>/<model>`, API key from the
+`litellm` secret.
+
+If a Go price changes by more than 3 times, the sync keeps the old price
+and sends `price_change_suspicious`. To add a Go model, add its id to
+`GO_MODEL_IDS` in the helmrelease.
 
 Run it now: `kubectl -n ai create job --from=cronjob/go-catalog-sync go-sync-test`.
 
@@ -201,6 +207,9 @@ actions:
       data:
         tag: opencode-go-{{ trigger.payload_json.event_type }}
 ```
+
+Add a second automation for the OpenRouter topic
+`homelab/openrouter/event` with tag `openrouter-…`.
 
 ### Make sure that it works
 
