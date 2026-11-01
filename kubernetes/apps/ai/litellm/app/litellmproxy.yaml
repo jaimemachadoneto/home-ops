@@ -34,9 +34,9 @@ spec:
     # muse-spark-*, iceman-contributor-free. Never set
     # forward_client_headers_to_llm_api.
     fallbacks:
-      - opus: [go-kimi-k3.1-pro, go-glm-5.3, go-qwen3.8-max, go-deepseek-v4-pro, go-gemini-4-argon]
-      - sonnet: [go-kimi-k2.7-code, go-minimax-m3, go-qwen3.7-plus, go-mimo-v2.6-pro, go-glm-5.2]
-      - haiku: [go-claude-haiku-5-5, go-gpt-6-luna, go-glm-5.3-flash, go-deepseek-v4.1-flash]
+      - opus: [go-kimi-k3.1-pro, go-glm-5.3, go-qwen3.8-max, go-deepseek-v4-pro, go-gemini-4-argon,openrouter/deepseek/deepseek-v4-pro]
+      - sonnet: [go-kimi-k2.7-code, go-minimax-m3, go-qwen3.7-plus, go-mimo-v2.6-pro, go-glm-5.2, openrouter/deepseek/deepseek-v4.1-flash]
+      - haiku: [go-claude-haiku-5-5, go-gpt-6-luna, go-glm-5.3-flash, go-deepseek-v4.1-flash, openrouter/deepseek/deepseek-v4.1-flash]
   litellmSettings:
     success_callback:
       - prometheus
