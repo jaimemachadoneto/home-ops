@@ -16,16 +16,6 @@ spec:
     health_check_endpoint: /v1/health
     # Per worker; the litellm role is capped at 40 connections.
     database_connection_pool_limit: 10
-  routerSettings:
-    routing_strategy: simple-shuffle
-    redis_host: os.environ/REDIS_HOST
-    redis_port: os.environ/REDIS_PORT
-    # No retries and a 5 minute cooldown after one failure: when the Claude
-    # subscription hits its usage limit, requests go to the fallbacks at once.
-    num_retries: 0
-    allowed_fails: 1
-    cooldown_time: 300
-    timeout: 600
   litellmSettings:
     success_callback:
       - prometheus
