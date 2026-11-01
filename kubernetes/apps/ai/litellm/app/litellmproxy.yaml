@@ -6,7 +6,8 @@ metadata:
   name: litellm
 spec:
   # main-latest of 2026-10-30 (commit d302096): the opencode_go/ provider of
-  # models/opencode-go.yaml is in no release yet (v1.106.6, v1.107.0-rc.2).
+  # the go-* models (go-catalog-sync) is in no release yet (v1.106.6,
+  # v1.107.0-rc.2).
   # TODO: Go back to a version tag when a release has llms/opencode/chat.
   # renovate: datasource=docker depName=ghcr.io/berriai/litellm
   image: ghcr.io/berriai/litellm:main-latest@sha256:8a1e132563ef9cae391f0518f652eb7c643fac39ded5c40a0106ee3e06945986
