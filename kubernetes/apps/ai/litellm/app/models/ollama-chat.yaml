@@ -6,13 +6,15 @@ metadata:
   name: ollama-chat
 spec:
   # Ollama host ai.local.${SECRET_DOMAIN}; `ollama list` there shows what is
-  # pulled. qwen3.5:4b uses about 3 GB, so it fits on one GTX 1660 SUPER.
+  # pulled. qwen3:8b uses about 5 GB, so it fits on one GTX 1660 SUPER.
+  # Without thinking, it keeps the correct memory in the memini tests, and
+  # qwen3.5:4b does not.
   modelName: ollama/local
   params:
-    model: ollama/qwen3.5:4b
+    model: ollama/qwen3:8b
     apiBase: http://ai.local.${SECRET_DOMAIN}:11434
-    # With thinking, qwen3.5:4b fills the 4096-token context of Ollama and
-    # returns no answer. Without it, it answers in seconds.
+    # With thinking, a qwen3 model can fill the 4096-token context of Ollama
+    # and return no answer. Without it, it answers in seconds.
     additional:
       reasoning_effort: none
   info:
