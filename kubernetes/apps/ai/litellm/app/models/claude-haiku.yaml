@@ -7,7 +7,7 @@ metadata:
 spec:
   # Claude Code tier "haiku" on the Claude subscription. No key on purpose:
   # LiteLLM forwards the OAuth token (sk-ant-oat) that Claude Code sends.
-  # When it fails (usage limit), the fallbacks in ../litellmproxy.yaml go to
+  # When it fails (usage limit), the fallbacks in the LiteLLM UI go to
   # OpenCode Go.
   modelName: haiku
   params:
