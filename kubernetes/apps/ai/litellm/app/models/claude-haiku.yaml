@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: claude-haiku
+spec:
+  # Claude Code tier "haiku" on the Claude subscription. No key on purpose:
+  # LiteLLM forwards the OAuth token (sk-ant-oat) that Claude Code sends.
+  # When it fails (usage limit), the fallbacks in ../litellmproxy.yaml go to
+  # OpenCode Go.
+  modelName: haiku
+  params:
+    model: anthropic/claude-haiku-5-5

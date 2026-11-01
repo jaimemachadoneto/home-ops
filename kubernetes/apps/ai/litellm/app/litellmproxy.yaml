@@ -5,8 +5,11 @@ kind: LiteLLMProxy
 metadata:
   name: litellm
 spec:
+  # main-latest of 2026-10-30 (commit d302096): the opencode_go/ provider of
+  # models/opencode-go.yaml is in no release yet (v1.106.6, v1.107.0-rc.2).
+  # TODO: Go back to a version tag when a release has llms/opencode/chat.
   # renovate: datasource=docker depName=ghcr.io/berriai/litellm
-  image: ghcr.io/berriai/litellm:v1.106.5@sha256:7d6ae6c8d73d1b6aea4cb75d07c4a8a953f0809b0764522b8eab693734c5e905
+  image: ghcr.io/berriai/litellm:main-latest@sha256:8a1e132563ef9cae391f0518f652eb7c643fac39ded5c40a0106ee3e06945986
   replicas: 1
   generalSettings:
     health_check_endpoint: /v1/health
@@ -16,7 +19,11 @@ spec:
     routing_strategy: simple-shuffle
     redis_host: os.environ/REDIS_HOST
     redis_port: os.environ/REDIS_PORT
-    num_retries: 3
+    # No retries and a 5 minute cooldown after one failure: when the Claude
+    # subscription hits its usage limit, requests go to the fallbacks at once.
+    num_retries: 0
+    allowed_fails: 1
+    cooldown_time: 300
     timeout: 600
   litellmSettings:
     success_callback:
@@ -28,6 +35,16 @@ spec:
       host: os.environ/REDIS_HOST
       port: os.environ/REDIS_PORT
     drop_params: true
+    # Claude subscription (models/claude-*.yaml) -> OpenCode Go, tier for tier.
+    # go-catalog-sync reads these chains: it writes one go-* model in
+    # models/opencode-go.yaml for each go-* target. Fallbacks also catch 401,
+    # so an expired Claude login moves everything to Go (fix: /login).
+    # Left out on purpose (they train on prompts): muse-spark-*,
+    # iceman-contributor-free. Never set forward_client_headers_to_llm_api.
+    fallbacks:
+      - opus: [go-kimi-k3.1-pro, go-glm-5.3, go-qwen3.8-max, go-deepseek-v4-pro, go-gemini-4-argon]
+      - sonnet: [go-kimi-k2.7-code, go-minimax-m3, go-qwen3.7-plus, go-mimo-v2.6-pro, go-glm-5.2]
+      - haiku: [go-claude-haiku-5-5, go-gpt-6-luna, go-glm-5.3-flash, go-deepseek-v4.1-flash]
     merge_reasoning_content_in_choices: true
     set_verbose: false
   env:
