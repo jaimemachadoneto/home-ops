@@ -70,7 +70,7 @@ Each app has its own ExternalSecret; a missing item only breaks that app.
 | `memini` | `API_KEY` | memini |
 | `browser-sessions` | one field per session, named like the session (`colegio`) | that session's bearer token, from the browser-sessions admin UI |
 | `opencode-go` | `credential` | the `go-*` models and go-catalog-sync (OpenCode console API key) |
-| `go-sync-deploy-key` | `private_key`, `known_hosts` | go-catalog-sync: a deploy key with write access to this repository, and the `github.com` lines of `ssh-keyscan github.com` |
+| `go-sync-deploy-key` | `private_key`, `known_hosts` | go-catalog-sync: a deploy key with write access to this repository, and the `github.com` host keys from `ssh_keys` of `https://api.github.com/meta` (compare them with the fingerprints in the GitHub docs; do not use `ssh-keyscan`) |
 | `mqtt` | `mqtt_username`, `mqtt_password` | go-catalog-sync (the login of ha-status) |
 
 ## Outlook MCP: one-time sign-in

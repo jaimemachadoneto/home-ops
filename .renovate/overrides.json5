@@ -13,5 +13,13 @@
       matchPackageNames: ["/factory\\.talos\\.dev/"],
       overridePackageName: "ghcr.io/siderolabs/installer",
     },
+    {
+      description: "Hold LiteLLM main-latest at its digest: unreleased builds are not reviewed. Go back to a version tag (litellmproxy.yaml TODO).",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/berriai/litellm"],
+      matchCurrentValue: "main-latest",
+      matchUpdateTypes: ["digest"],
+      enabled: false,
+    },
   ],
 }

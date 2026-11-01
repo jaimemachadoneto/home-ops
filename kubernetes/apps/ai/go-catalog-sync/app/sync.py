@@ -12,6 +12,7 @@ Runs daily as a CronJob:
 """
 import datetime
 import json
+import math
 import os
 import pathlib
 import shutil
@@ -89,6 +90,9 @@ def extract_cost(meta):
     try:
         out = {k: float(cost[k]) for k in COST_KEYS if cost.get(k) is not None}
     except (TypeError, ValueError):
+        return None
+    # float() accepts "nan" and "inf"; a NaN ratio would pass the x3 check in diff_prices.
+    if not all(math.isfinite(v) and 0 <= v < 1000 for v in out.values()):
         return None
     return out if "input" in out and "output" in out else None
 
@@ -186,7 +190,8 @@ def diff_prices(tracked, new_prices, old_infos):
         if new == old:
             continue
         ratios = [new[k] / old[k] for k in new if old.get(k) and new[k] > 0]
-        if any(r > MAX_PRICE_RATIO or r < 1 / MAX_PRICE_RATIO for r in ratios):
+        # A price of 0 or less is a bad source value, never a real rate.
+        if any(v <= 0 for v in new.values()) or any(r > MAX_PRICE_RATIO or r < 1 / MAX_PRICE_RATIO for r in ratios):
             suspicious[mid] = (old, new)
         else:
             applied[mid] = (old, new)
