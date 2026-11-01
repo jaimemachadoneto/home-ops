@@ -16,18 +16,12 @@ spec:
     health_check_endpoint: /v1/health
     # Per worker; the litellm role is capped at 40 connections.
     database_connection_pool_limit: 10
+  # Only Redis is here. The LiteLLM UI (Router Settings) owns the fallbacks,
+  # the routing strategy, retries, cooldown and timeout: LiteLLM refuses a UI
+  # change to a key that this file sets.
   routerSettings:
-    routing_strategy: simple-shuffle
     redis_host: os.environ/REDIS_HOST
     redis_port: os.environ/REDIS_PORT
-    # No retries and a 5 minute cooldown after one failure: when the Claude
-    # subscription hits its usage limit, requests go to the fallbacks at once.
-    num_retries: 0
-    allowed_fails: 1
-    cooldown_time: 300
-    timeout: 600
-    # Fallbacks are set in the LiteLLM UI, not here. When the file sets
-    # router_settings.fallbacks, LiteLLM ignores the value in the database.
   litellmSettings:
     success_callback:
       - prometheus
