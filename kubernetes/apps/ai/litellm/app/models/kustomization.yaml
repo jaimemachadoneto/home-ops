@@ -8,5 +8,4 @@ resources:
   - ./claude-sonnet.yaml
   - ./deepseek-chat.yaml
   - ./ollama-chat.yaml
-  - ./openrouter.yaml
   - ./openrouter-deepseek-deepseek-v4-1-flash-noreason.yaml
