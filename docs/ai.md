@@ -118,8 +118,8 @@ OpenCode Go model of the same tier.
 | Part | File |
 | --- | --- |
 | Model groups `opus`, `sonnet`, `haiku` (`anthropic/claude-*-5-5`, no key) | `litellm/app/models/claude-*.yaml` |
-| Fallback chains | the LiteLLM UI (Router Settings). The database keeps them. Do not set `fallbacks` in `routerSettings`: then LiteLLM ignores the chains in the database. |
-| Router settings (retries, cooldown, timeout) | `litellm/app/litellmproxy.yaml`, `routerSettings` |
+| Fallback chains, routing strategy, retries, cooldown, timeout | the LiteLLM UI (Router Settings). The database keeps them. Do not set these keys in `routerSettings`: then the file owns them and LiteLLM refuses a change in the UI. |
+| Redis of the router | `litellm/app/litellmproxy.yaml`, `routerSettings` |
 | `go-*` models (`opencode_go/…`) and `opr/*` models (`openrouter/…`) | managed by go-catalog-sync via LiteLLM admin API — no CRDs |
 | Daily sync of Go and OpenRouter models and prices | `go-catalog-sync/` |
 
@@ -130,9 +130,10 @@ OpenCode Go model of the same tier.
 - No LiteLLM release has the `opencode_go/` provider yet, so the proxy runs
   `main-latest` at a fixed digest. When a release has it, go back to a
   version tag.
-- The router settings are `num_retries: 0`, `allowed_fails: 1` and
-  `cooldown_time: 300` for all models. One failure of a model group sends
-  the next requests to its fallbacks for 5 minutes.
+- The router settings in the UI are `num_retries: 0`, `allowed_fails: 1`
+  and `cooldown_time: 300` for all models. One failure of a model group
+  sends the next requests to its fallbacks for 5 minutes. If you clear them,
+  LiteLLM uses its defaults and retries the Claude subscription first.
 - Fallbacks catch all errors, also 401. If the Claude login expires,
   all requests go to Go and nothing tells you. The spend logs show
   `attempted_fallbacks`. To correct it, run `/login` in Claude Code.
