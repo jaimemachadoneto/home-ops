@@ -48,7 +48,7 @@ spec:
               MEMINI_WRITE_EMBED_TIMEOUT: 15s
               MEMINI_RECALL_EMBED_TIMEOUT: 10s
               # Consolidation (contradictions, distillation) through LiteLLM,
-              # where all models are managed. qwen3:8b thinks before it answers,
+              # where all models are managed. qwen3.5:4b thinks before it answers,
               # so it needs a larger token budget and time on these GPUs.
               MEMINI_LLM_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
               MEMINI_LLM_MODEL: ollama/local
