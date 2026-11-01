@@ -12,6 +12,7 @@ spec:
   image: ghcr.io/berriai/litellm:main-latest@sha256:8a1e132563ef9cae391f0518f652eb7c643fac39ded5c40a0106ee3e06945986
   replicas: 1
   generalSettings:
+    store_model_in_db: true
     health_check_endpoint: /v1/health
     # Per worker; the litellm role is capped at 40 connections.
     database_connection_pool_limit: 10
