@@ -10,4 +10,5 @@ resources:
   - ./observability.yaml
   - ./renovate.yaml
   - ./selfhosted.yaml
+  - ./syncthing.yaml
   - ./system.yaml

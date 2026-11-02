@@ -21,9 +21,7 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: paperless-gpt
-    - group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      name: syncthing
+    # The route "syncthing" has its own policy: ./syncthing.yaml.
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: syncthing-notes-mcp
