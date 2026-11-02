@@ -50,6 +50,16 @@ spec:
               # The methods of the MCP streamable HTTP transport.
               - method: GET|POST|DELETE
                 path: /mcp(/.*)?
+    # Replies from Postgres to obsidian-mcp. When the primary runs on the same
+    # node, Cilium (socketLB.hostNamespaceOnly) drops its SYN-ACK as a new
+    # ingress flow, and the migration times out. No toPorts: the reply goes
+    # to an ephemeral port.
+    # shortcut: Postgres pods may also open connections to this pod; remove
+    # this rule once Cilium tracks same-node Service replies again.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: database
+            cnpg.io/cluster: postgres16
     # Devices connect through the LoadBalancer, from the LAN or a relay.
     - fromEntities:
         - world
