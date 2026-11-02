@@ -13,7 +13,7 @@ spec:
     controllers:
       bank-report:
         annotations:
-          reloader.stakater.com/auto: 'true'
+          reloader.stakater.com/auto: "true"
 
         # One replica, and Recreate rather than RollingUpdate. Two reasons that
         # each would be sufficient: the data volume is ReadWriteOnce, and
@@ -48,7 +48,7 @@ spec:
               # X-Forwarded-Host, which the client controls.
               PUBLIC_BASE_URL: https://bank-report.${SECRET_DOMAIN}
               # The session cookie is only sent back over TLS.
-              COOKIE_SECURE: 'true'
+              COOKIE_SECURE: "true"
               # In-cluster and plain http on purpose: the gateway terminates TLS
               # for browsers, and this path never leaves the cluster.
               ACTUAL_SERVER_URL: http://actual.selfhosted.svc.cluster.local:5006
@@ -56,11 +56,11 @@ spec:
               # a VACUUMed database rather than a live WAL. Spelled out rather
               # than left to the defaults, because a backup schedule is the kind
               # of thing that should be readable from the manifest.
-              BACKUP_INTERVAL_HOURS: '24'
+              BACKUP_INTERVAL_HOURS: "24"
               # Two, not a week's worth: volsync snapshots this volume hourly
               # into kopia and retains 24 hourly / 7 daily, so history lives
               # there. These are only what that snapshot picks up.
-              BACKUP_KEEP: '2'
+              BACKUP_KEEP: "2"
             # ACTUAL_SYNC_ID rides along in here rather than as a plain env
             # var. The plan put it in the ConfigMap on the grounds that it is
             # not a credential, but that costs a second place to configure and
@@ -106,7 +106,7 @@ spec:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
               capabilities:
-                drop: ['ALL']
+                drop: ["ALL"]
 
     service:
       app:
@@ -129,7 +129,7 @@ spec:
     route:
       app:
         annotations:
-          gethomepage.dev/enabled: 'true'
+          gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Bank statements into Actual
           gethomepage.dev/group: Apps
           gethomepage.dev/icon: si-actualbudget.svg

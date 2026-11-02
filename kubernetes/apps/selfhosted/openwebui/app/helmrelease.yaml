@@ -138,4 +138,3 @@ spec:
           - name: envoy-internal
             namespace: network
             sectionName: https
-

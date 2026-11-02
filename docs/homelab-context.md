@@ -191,7 +191,7 @@ Then add UniFi DNS record: `<name>.${SECRET_DOMAIN} → 10.30.50.200`
 
 ### File Layout
 
-```
+```text
 k8s/
 ├── networking/           # Gateway, GatewayClass, cert
 ├── cert-manager/         # Issuers, Cloudflare secret

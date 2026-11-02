@@ -30,7 +30,7 @@ Recover through git only. Do not use `helm rollback`, `kubectl edit`, `kubectl a
 
 Return these six lines, in this sequence, and nothing more:
 
-```
+```text
 DECISION: merged | config-pr-merged | intermediate-pr-merged | reverted | deferred | ask-user
 REASON: <one or two sentences>
 ACTIONS: <the commands that you ran, or "none">

@@ -14,7 +14,7 @@ spec:
     - name: rook-ceph-cluster
       namespace: rook-ceph
   interval: 1h
-  path: './kubernetes/apps/selfhosted/bank-report/app'
+  path: "./kubernetes/apps/selfhosted/bank-report/app"
   postBuild:
     substitute:
       APP: bank-report

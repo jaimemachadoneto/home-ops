@@ -58,7 +58,6 @@ metadata:
     gethomepage.dev/icon: "si-proxmox.svg"
 
 
-
 spec:
   ingressClassName: internal-nginx
   rules:

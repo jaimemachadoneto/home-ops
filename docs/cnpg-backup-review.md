@@ -4,7 +4,7 @@ This is a briefing for a Claude Code session running on a machine with
 `kubectl` access to the cluster. It continues a review that was done without
 cluster access, so everything below about the live state is still unverified.
 
-Related PR: https://github.com/jaimemachadoneto/home-ops/pull/308
+Related PR: <https://github.com/jaimemachadoneto/home-ops/pull/308>
 (branch `claude/optimistic-hamilton-r3z7v6`)
 
 ## How to start the session

@@ -27,7 +27,7 @@ Copy the sentence as it is, with the version that it comes from. Do not explain,
 
 Return these sections, in this sequence, and nothing more. Write "none found" in a section without facts.
 
-```
+```text
 PR: #<number> <package> <old> -> <new>
 VERSIONS READ: <each version whose release notes you read>
 BREAKING:

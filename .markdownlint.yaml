@@ -1,0 +1,12 @@
+---
+# Read by .github/workflows/lint.yaml. Formatting is Prettier's job (the same
+# base as .trunk/configs/.markdownlint.yaml, which git ignores).
+extends: markdownlint/style/prettier
+# Table pipe alignment: newer than the Prettier preset; Prettier aligns tables.
+MD060: false
+# The README header is HTML; the .claude/agents prompts start with plain text.
+MD033: false
+MD041: false
+# The README has two top-level parts; "**Last updated: ...**" is not a heading.
+MD025: false
+MD036: false

@@ -26,7 +26,7 @@
 
 ## 1. Network Architecture Overview
 
-```
+```text
 Internet
     │
     ▼
@@ -168,7 +168,7 @@ The Proxmox host switch port trunks VLANs 98 (its own management IP), 50 (K8s an
 
 For all static IPs, use UniFi DHCP reservations rather than OS-level static config:
 
-```
+```text
 Settings → Networks → [Network] → DHCP → Fixed IP Assignments → Add
 ```
 
@@ -180,7 +180,7 @@ The UCG-Fiber acts as DNS resolver for all VLANs. All `*.${SECRET_DOMAIN}` subdo
 
 ### 4.1 Upstream Resolvers
 
-```
+```text
 UniFi → Settings → Internet → WAN → DNS
 Primary:   1.1.1.1
 Secondary: 9.9.9.9
@@ -188,7 +188,7 @@ Secondary: 9.9.9.9
 
 ### 4.2 Custom DNS Records
 
-```
+```text
 UniFi → Settings → DNS → Local DNS Records
 ```
 
@@ -229,7 +229,7 @@ It does **not** need VLANs 10, 30, 40, or 98. Main and Media users reach HA via 
 
 ### 5.1 Architecture
 
-```
+```text
 Proxmox Node (VLAN 98: 10.30.3.x)
 └── Home Assistant VM
       └── eth0 (trunk: VLAN 50 + VLAN 20)
@@ -257,7 +257,7 @@ iface vmbr0 inet manual
 
 **VM config (`/etc/pve/qemu-server/<vmid>.conf`):**
 
-```
+```text
 net0: virtio=XX:XX:XX:XX:XX:XX,bridge=vmbr0,trunks=50;20
 ```
 
@@ -288,7 +288,7 @@ iface eth0.20 inet static
 
 Resulting routing table:
 
-```
+```text
 10.30.50.0/23 dev eth0.50    # Services — on-link
 10.30.20.0/23 dev eth0.20    # IoT — on-link
 0.0.0.0/0 via 10.30.50.1    # default via Services
@@ -360,7 +360,7 @@ Plex runs on a VM in Services VLAN (`10.30.50.6`, port `32400`). It is exposed v
 
 ### 6.1 How Media VLAN Devices Reach Plex
 
-```
+```text
 TV / Alexa / streaming stick (VLAN 30)
     → DNS: plex.${SECRET_DOMAIN} → 10.30.50.200 (Gateway)
     → Firewall: Media → 10.30.50.200:443 ✓
@@ -416,7 +416,7 @@ spec:
 
 ### 6.3 Firewall Rule
 
-```
+```text
 Allow: Media (10.30.30.0/23) → 10.30.50.200 (Gateway) port 443
 ```
 
@@ -424,7 +424,7 @@ This single rule gives Media VLAN access to Plex and any other service exposed v
 
 ### 6.4 UniFi DNS Record
 
-```
+```text
 UniFi → Settings → DNS → Local DNS Records
 plex.${SECRET_DOMAIN} → 10.30.50.200
 ```
@@ -433,7 +433,7 @@ plex.${SECRET_DOMAIN} → 10.30.50.200
 
 On each streaming device, set the Plex server address manually:
 
-```
+```text
 Server URL: https://plex.${SECRET_DOMAIN}
 ```
 
@@ -719,7 +719,7 @@ spec:
 
 ### 11.1 Default Deny Inter-VLAN
 
-```
+```text
 Rule: Default inter-VLAN deny
 Source:      RFC1918
 Destination: RFC1918
@@ -850,7 +850,7 @@ kubectl get endpoints -n external-services
 
 ## Appendix: File/Resource Inventory
 
-```
+```text
 k8s/
 ├── networking/
 │   ├── namespace.yaml
