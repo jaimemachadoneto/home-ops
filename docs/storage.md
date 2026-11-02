@@ -25,6 +25,7 @@
 - **Risk**: Data lost if node fails — use only with apps that have backup (volsync) or are tolerant of data loss
 
 ### rook-ceph (StorageClasses)
+
 | Class                      | Type      | Access | Replicas        |
 | -------------------------- | --------- | ------ | --------------- |
 | `ceph-block` (**default**) | RBD block | RWO    | 3x across hosts |

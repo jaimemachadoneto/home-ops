@@ -304,7 +304,7 @@ The connector sends a virtual key, never the master key:
 2. claude.ai → Customize → Connectors → Add → Add custom connector: URL
    `https://litellm.${SECRET_DOMAIN}/mcp/`, Authentication **No sign-in**,
    and under Request headers `x-litellm-api-key` with the key. The value of
-   an `Authorization` header must start with `Bearer `, or LiteLLM answers
+   an `Authorization` header must start with `Bearer `, or LiteLLM answers <!-- markdownlint-disable-line MD038 -->
    401 "Malformed API Key".
 3. To stop access, delete the key in the dashboard.
 

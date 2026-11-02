@@ -4,7 +4,7 @@ Syncthing in the namespace `selfhosted` keeps the notes vault (`~/Notes`)
 the same on each device of the user. The cluster is always on, so the other
 devices do not have to be online at the same time.
 
-```
+```text
 PC (~/Notes)  ⇄  syncthing (cluster)  ⇄  Android phone (Obsidian)
                         ⇅
                  Windows PC (optional)
@@ -109,7 +109,7 @@ Add these lines to the ignore patterns of the folder on each device. These
 files are different on each device. Each device has its own Obsidian layout
 and its own git data:
 
-```
+```text
 .git
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json

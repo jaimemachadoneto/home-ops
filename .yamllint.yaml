@@ -5,6 +5,9 @@ ignore: |
 extends: default
 
 rules:
+  braces:
+    max-spaces-inside: 1
+    min-spaces-inside: 0
   brackets:
     max-spaces-inside: 1
     min-spaces-inside: 0
@@ -13,12 +16,15 @@ rules:
     min-spaces-from-content: 1
   indentation:
     spaces: consistent
-    indent-sequences: consistent
+    # Files mix indented and flush lists; each list must still be even.
+    indent-sequences: whatever
     check-multi-line-strings: false
   line-length: disable
   quoted-strings:
     quote-type: double
     required: false
+    # '["a","b"]': single quotes save escaping the double ones.
+    allow-quoted-quotes: true
   truthy:
     allowed-values:
       - "true"
