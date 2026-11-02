@@ -51,6 +51,8 @@ entries:
     attrs:
       <<: *forward-auth
       external_host: https://syncthing.${SECRET_DOMAIN}
+      # HTTP Basic auth with an app password, for syncthing-join (below).
+      intercept_header_auth: true
   - model: authentik_core.application
     id: app-syncthing
     identifiers:
@@ -65,6 +67,36 @@ entries:
       target: !KeyOf app-syncthing
       group: !Find [authentik_core.group, [name, authentik Admins]]
       order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+  # syncthing-join (nix-config) adds a new machine through Syncthing's REST
+  # API. It signs in as this service account with the app password below
+  # (1Password Home-Ops/syncthing, field join_token). The account can open
+  # only Syncthing; the REST API also needs Syncthing's own API key.
+  - model: authentik_core.user
+    id: user-syncthing-join
+    identifiers:
+      username: syncthing-join
+    attrs:
+      name: Syncthing join (nix-config)
+      type: service_account
+      is_active: true
+  - model: authentik_core.token
+    identifiers:
+      identifier: syncthing-join
+    attrs:
+      user: !KeyOf user-syncthing-join
+      intent: app_password
+      expiring: false
+      key: !Env SYNCTHING_JOIN_TOKEN
+      description: syncthing-join in nix-config (docs/syncthing.md)
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-syncthing
+      user: !KeyOf user-syncthing-join
+      order: 1
     attrs:
       enabled: true
       negate: false
