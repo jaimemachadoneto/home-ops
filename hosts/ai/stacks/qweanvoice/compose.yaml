@@ -4,7 +4,7 @@
 # this stack on the host if the studio is ever exposed.
 services:
   qwen-tts:
-    image: hangrylabs/faster-qwen3-tts-studio:v1.0_tiny@sha256:29f06b3226da4a55244727e111e7700786e53049a54560efeef4bb12a62bd0bd
+    image: hangrylabs/faster-qwen3-tts-studio:v1.0@sha256:a8a3643b077e05c2ccf33e9b97978f082d2e89ac33b3d1368ab0e25df628899d
     container_name: qwen-tts
     restart: unless-stopped
     ports:
