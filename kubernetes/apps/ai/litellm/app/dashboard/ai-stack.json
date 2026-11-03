@@ -215,7 +215,7 @@
       },
       "targets": [
         {
-          "expr": "nvidia_smi_utilization_gpu_ratio{job=\"nvidia-gpu-exporter\"}",
+          "expr": "nvidia_smi_utilization_gpu_ratio{job=\"nvidia-gpu-exporter\"} * on(uuid) group_left(index) nvidia_smi_gpu_info{job=\"nvidia-gpu-exporter\"}",
           "legendFormat": "GPU {{index}}",
           "refId": "A"
         }
@@ -301,7 +301,7 @@
       },
       "targets": [
         {
-          "expr": "nvidia_smi_memory_used_bytes{job=\"nvidia-gpu-exporter\"}",
+          "expr": "nvidia_smi_memory_used_bytes{job=\"nvidia-gpu-exporter\"} * on(uuid) group_left(index) nvidia_smi_gpu_info{job=\"nvidia-gpu-exporter\"}",
           "legendFormat": "GPU {{index}}",
           "refId": "A"
         }
@@ -497,8 +497,8 @@
       },
       "targets": [
         {
-          "expr": "sum by (process_name, pid) (nvidia_smi_compute_app_used_memory_bytes{job=\"nvidia-gpu-exporter\"})",
-          "legendFormat": "{{process_name}} ({{pid}})",
+          "expr": "sum by (process_name, pid, index) (nvidia_smi_compute_app_used_memory_bytes{job=\"nvidia-gpu-exporter\"} * on(uuid) group_left(index) nvidia_smi_gpu_info{job=\"nvidia-gpu-exporter\"})",
+          "legendFormat": "GPU {{index}}: {{process_name}} ({{pid}})",
           "refId": "A"
         }
       ]
@@ -583,8 +583,8 @@
       },
       "targets": [
         {
-          "expr": "count by (uuid) (nvidia_smi_compute_app_info{job=\"nvidia-gpu-exporter\"})",
-          "legendFormat": "GPU {{uuid}}",
+          "expr": "count by (index) (nvidia_smi_compute_app_info{job=\"nvidia-gpu-exporter\"} * on(uuid) group_left(index) nvidia_smi_gpu_info{job=\"nvidia-gpu-exporter\"})",
+          "legendFormat": "GPU {{index}}",
           "refId": "A"
         }
       ]
