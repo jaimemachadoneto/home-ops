@@ -29,10 +29,11 @@ spec:
           app:
             image:
               # The fork with the upload links, the download links, the search
-              # index, the metrics and the traces (repos/paperless-mcp), built
-              # on each push to its main.
+              # index, the metrics (with the time of each tool, route and
+              # Paperless call) and the traces (repos/paperless-mcp), built on
+              # each push to its main.
               repository: ghcr.io/jaimemachado/paperless-mcp
-              tag: sha-c303c18@sha256:6c4e0d2f63f8bd712c45cce9c08e49c8de22cf84385a0d97d51e29d0e23dc954
+              tag: sha-c5178bf@sha256:47fc890424a8b0b9095aea322d8c3ae4bd9a0b88a1e06fcb55de74024fb8ec53
             # The image starts HTTP mode itself: node build/index.js --http --port 3000.
             env:
               TZ: ${TIMEZONE}

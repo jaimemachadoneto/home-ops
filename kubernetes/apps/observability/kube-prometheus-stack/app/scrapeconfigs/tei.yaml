@@ -1,0 +1,24 @@
+---
+# The embedding servers of the ai host (hosts/ai/stacks/embeddings): one
+# Text Embeddings Inference container for each model. The label "model" tells
+# the dashboard "AI Stack" which one answers.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/scrapeconfig_v1alpha1.json
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: &name tei
+spec:
+  staticConfigs:
+    - targets:
+        - ai.local.${SECRET_DOMAIN}:11435
+      labels:
+        model: qwen3-embedding-0.6b
+    - targets:
+        - ai.local.${SECRET_DOMAIN}:11436
+      labels:
+        model: bge-m3
+  metricsPath: /metrics
+  relabelings:
+    - action: replace
+      targetLabel: job
+      replacement: *name

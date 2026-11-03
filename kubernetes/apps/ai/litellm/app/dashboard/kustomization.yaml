@@ -6,6 +6,12 @@ configMapGenerator:
   - name: litellm-cost-dashboard
     files:
       - litellm-cost.json
+  # The AI stack: the GPUs of the ai host, the embedding servers and the
+  # requests through LiteLLM. It lives next to the LiteLLM dashboard because
+  # the LiteLLM panels are its largest part.
+  - name: ai-stack-dashboard
+    files:
+      - ai-stack.json
 generatorOptions:
   disableNameSuffixHash: true
   annotations:

@@ -26,3 +26,22 @@ spec:
     staticConfig:
       static:
         - nas.jaimenet.com:2049
+---
+# The AI host (hosts/ai/). Gatus is not deployed, so these probes feed the
+# alerts AiHostOllamaDown and AiHostTeiDown (kube-prometheus-stack). The embedding
+# servers must answer: without one, the Paperless MCP search uses words only.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/probe_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: ai-host
+spec:
+  module: http_2xx
+  prober:
+    url: blackbox-exporter.observability.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      static:
+        - http://ai.local.${SECRET_DOMAIN}:11434/api/version
+        - http://ai.local.${SECRET_DOMAIN}:11435/health
+        - http://ai.local.${SECRET_DOMAIN}:11436/health
