@@ -1,0 +1,30 @@
+---
+# Speech to text for Home Assistant (Wyoming). The model downloads at the
+# first start into ./whisper-data.
+services:
+  wyoming-whisper:
+    image: rhasspy/wyoming-whisper:latest
+    container_name: wyoming-whisper-ptbr
+    restart: unless-stopped
+    ports:
+      - 10300:10300
+    volumes:
+      - ./whisper-data:/data
+    environment:
+      - TZ=Europe/Madrid
+    command:
+      - --model
+      - large-v3-turbo
+      - --language
+      - pt
+      - --device
+      - cuda
+      - --compute-type
+      - float16
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

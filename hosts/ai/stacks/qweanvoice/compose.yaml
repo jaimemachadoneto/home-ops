@@ -1,0 +1,26 @@
+---
+# Text to speech with a small web studio, a test next to the piper stack.
+# QWEN_STUDIO_API_KEY is a placeholder: keep the real value in the .env of
+# this stack on the host if the studio is ever exposed.
+services:
+  qwen-tts:
+    image: hangrylabs/faster-qwen3-tts-studio:v1.0_tiny@sha256:29f06b3226da4a55244727e111e7700786e53049a54560efeef4bb12a62bd0bd
+    container_name: qwen-tts
+    restart: unless-stopped
+    ports:
+      - 7860:7860
+    environment:
+      CUDA_VISIBLE_DEVICES: "0"
+      QWEN_STUDIO_API_KEY: ${QWEN_STUDIO_API_KEY:-change-this-secret}
+    volumes:
+      - qwen_tts_data:/app/persistent
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  qwen_tts_data: {}

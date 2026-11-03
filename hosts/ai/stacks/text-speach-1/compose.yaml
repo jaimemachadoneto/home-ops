@@ -1,0 +1,16 @@
+---
+# Text to speech for Home Assistant (Wyoming), a test next to the piper stack.
+services:
+  pocket-tts-wyoming:
+    image: ghcr.io/ikidd/pocket-tts-wyoming:latest
+    container_name: pocket-tts-wyoming
+    restart: unless-stopped
+    ports:
+      - 10201:10201
+    volumes:
+      - ./pocket-cache:/root/.cache
+    environment:
+      - WYOMING_PORT=10201
+      - WYOMING_HOST=0.0.0.0
+      - DEFAULT_VOICE=alba
+      - MODEL_VARIANT=english
