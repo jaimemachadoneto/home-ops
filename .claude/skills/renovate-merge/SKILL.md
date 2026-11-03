@@ -116,6 +116,7 @@ The `renovate-escalation` agent does not decide these cases. Set the status of t
 - A change to credentials.
 - A new version of the Cloudflare instance of external-dns (`kubernetes/apps/network/external-dns/cloudflare/`). Version 1.23.0 broke the public record of `litellm`, and the claude.ai connector stopped (`docs/ai.md`, "The public record of litellm and external-dns 1.23.0"). `classify.sh` gives these PRs the "always ask" mark. For a PR to 1.23.0, tell the user to close it. For a newer version, give the user the test steps of `docs/ai.md`.
 - A revert after the new version started, if the new version migrates its database when it starts.
+- A change to `kubernetes/apps/ai/outlook-mcp/`. Its rollout stops at `Init:0/1`, and `wait.sh` does not find this. After the merge, tell the user to run the follow-up command in `docs/ai.md`, "Outlook MCP: an update needs a follow-up command".
 
 ## Recover through git only
 

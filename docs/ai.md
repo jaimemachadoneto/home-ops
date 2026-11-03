@@ -94,6 +94,30 @@ put its ID in an ExternalSecret and set `MS365_MCP_CLIENT_ID`, then sign in
 again. To make it read-only, add `--read-only` to the server command in
 `outlook-mcp/app/mcpserver.yaml`.
 
+## Outlook MCP: an update needs a follow-up command
+
+Each change to `outlook-mcp` (for example a Renovate image update) stops in
+the rollout. The new pod stays at `Init:0/1`, and Flux still shows Ready.
+The cause: litellm-operator sets no Deployment strategy, so the default
+`RollingUpdate` keeps the old pod. The old pod holds the RWO `outlook-mcp`
+PVC, and the new pod on a different node cannot attach it.
+
+After the merge, scale the old ReplicaSets to 0. Do not delete the old pod:
+its ReplicaSet makes a new pod that can attach the volume first.
+
+```bash
+REV=$(kubectl -n ai get deploy outlook-mcp -o jsonpath='{.metadata.annotations.deployment\.kubernetes\.io/revision}')
+kubectl -n ai get rs -l app.kubernetes.io/name=outlook-mcp \
+  -o jsonpath='{range .items[*]}{.metadata.name} {.metadata.annotations.deployment\.kubernetes\.io/revision}{"\n"}{end}' |
+  awk -v rev="$REV" '$2 != rev {print $1}' | xargs kubectl -n ai scale rs --replicas=0
+kubectl -n ai rollout status deploy/outlook-mcp
+kubectl -n ai exec deploy/outlook-mcp -c mcp -- ms-365-mcp-server --verify-login
+```
+
+The mail tools are not available for a minute or two. Remove this section
+when litellm-operator has a `strategy` field and `mcpserver.yaml` sets
+`strategy: {type: Recreate}`.
+
 ## browser-sessions sessions
 
 Each session has its own MCP URL and token by design, so each is its own MCP

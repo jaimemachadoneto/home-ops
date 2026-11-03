@@ -18,6 +18,9 @@ metadata:
 spec:
   alias: outlook
   workload:
+    # A change here stops in the rollout (RWO PVC, no Recreate strategy in
+    # litellm-operator). After the merge, run the follow-up command in
+    # docs/ai.md, "Outlook MCP: an update needs a follow-up command".
     # renovate: datasource=docker depName=ghcr.io/softeria/ms-365-mcp-server
     image: ghcr.io/softeria/ms-365-mcp-server:0.178.0
     port: 8000
