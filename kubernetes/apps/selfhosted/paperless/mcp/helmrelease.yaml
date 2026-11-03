@@ -6,7 +6,9 @@
 # (docs/paperless-mcp.md, "Deploy of phase 3") are the exception:
 # /upload/<token> is public and sends the file as the user paperless-upload.
 # This user can only add documents, and view tags, correspondents, document
-# types and tasks.
+# types and tasks. The server also keeps the token of paperless-mcp: it uses
+# the token to sync the documents into its search index (hybrid search), and
+# /download/<token> gives a single-use link to a file.
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -28,7 +30,7 @@ spec:
               # The fork with the upload links (repos/paperless-mcp), built on each
               # push to its main.
               repository: ghcr.io/jaimemachado/paperless-mcp
-              tag: sha-f8a8a99@sha256:bf648e7a48d81a448be3b504b225f354cab281e87c13aeeeef646c7d20a22074
+              tag: sha-8a0a66e@sha256:f32e53f7838c75004337374c70211713918307e110614d356b8f6ba9eb5eb233
             # The image starts HTTP mode itself: node build/index.js --http --port 3000.
             env:
               TZ: ${TIMEZONE}
@@ -39,9 +41,13 @@ spec:
               # directory is allowed.
               PAPERLESS_MCP_UPLOAD_PATHS: /nonexistent
               PAPERLESS_UPLOAD_PUBLIC_URL: https://paperless-upload.${SECRET_DOMAIN}
+              OLLAMA_URL: http://ai.local.${SECRET_DOMAIN}:11434
+              EMBEDDING_MODEL: qwen3-embedding:0.6b
             envFrom:
               - secretRef:
                   name: paperless-mcp-upload-secret
+              - secretRef:
+                  name: paperless-mcp-search-secret
             probes:
               liveness: &probe
                 enabled: true
@@ -71,8 +77,8 @@ spec:
             port: 3000
     route:
       upload:
-        # Only the single-use upload links are public: /mcp stays behind LiteLLM.
-        # The link is the only check (docs/paperless-mcp.md, phase 3).
+        # Only the single-use upload and download links are public: /mcp stays
+        # behind LiteLLM. The link is the only check (docs/paperless-mcp.md).
         hostnames:
           - paperless-upload.${SECRET_DOMAIN}
         parentRefs:
@@ -84,6 +90,9 @@ spec:
               - path:
                   type: PathPrefix
                   value: /upload/
+              - path:
+                  type: PathPrefix
+                  value: /download/
             backendRefs:
               - identifier: app
                 port: 3000
