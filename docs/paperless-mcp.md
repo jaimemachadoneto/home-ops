@@ -251,7 +251,7 @@ Decided (2026-10-31):
   link. I accept this risk. A link works once, for 15 minutes, and only for a
   document that the caller can view.
 - A Telegram bot that sends documents is a later idea. Telegram keeps a
-  readable copy of the chats of a bot, and I accept this.
+  readable copy of the chats of a bot. I accept this risk.
 
 ### Index
 
@@ -323,8 +323,8 @@ Do these steps in this sequence:
 
 1. Merge the pull request 2 of the fork. `docker-publish.yml` pushes the
    image.
-2. Do this before the merge of the home-ops branch: the ExternalSecrets need
-   the field. I made it on 2026-10-31.
+2. Make the field before the merge of the home-ops branch, because the
+   ExternalSecrets need it. I made it on 2026-10-31.
    - Add the field `paperless_mcp_db_password` to the item `Paperless` in the
      vault `Home-Ops`.
    - Use the generator of the 1Password app: 32 letters and digits.
@@ -342,10 +342,10 @@ Do these steps in this sequence:
 5. In the LiteLLM dashboard, add `semantic_search` and `request_download` to
    the keys that list their tools: `claude-ai` and Open WebUI.
 
-The acceptance test runs against the real archive. Reach the MCP server with
-`kubectl port-forward -n selfhosted svc/paperless-mcp 3000:3000`, and call
-`/mcp` with a Paperless token. Or call the LiteLLM `/mcp` gateway, as
-claude.ai does. Do these steps:
+The acceptance test runs against the real archive. Start
+`kubectl port-forward -n selfhosted svc/paperless-mcp 3000:3000`. Then call
+`/mcp` with a Paperless token. You can also call the LiteLLM `/mcp` gateway,
+as claude.ai does. Do these steps:
 
 1. Ask the 20 questions of the bake-off with `semantic_search`. For each
    question, examine that the correct document is first.

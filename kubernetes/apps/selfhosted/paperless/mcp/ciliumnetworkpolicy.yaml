@@ -89,8 +89,8 @@ spec:
             - port: "5432"
               protocol: TCP
     # Ollama on the AI host, for the embeddings. The host ai.local.<domain> is
-    # the LXC 10.30.50.13, which OLLAMA_URL in helmrelease.yaml names: change
-    # both together.
+    # the LXC 10.30.50.13. OLLAMA_URL in helmrelease.yaml names the host.
+    # Change both together.
     - toCIDR:
         - 10.30.50.13/32
       toPorts:
