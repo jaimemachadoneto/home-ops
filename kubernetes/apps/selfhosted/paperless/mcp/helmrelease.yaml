@@ -28,10 +28,11 @@ spec:
         containers:
           app:
             image:
-              # The fork with the upload links, the download links and the search
-              # index (repos/paperless-mcp), built on each push to its main.
+              # The fork with the upload links, the download links, the search
+              # index, the metrics and the traces (repos/paperless-mcp), built
+              # on each push to its main.
               repository: ghcr.io/jaimemachado/paperless-mcp
-              tag: sha-8a0a66e@sha256:f32e53f7838c75004337374c70211713918307e110614d356b8f6ba9eb5eb233
+              tag: sha-c303c18@sha256:6c4e0d2f63f8bd712c45cce9c08e49c8de22cf84385a0d97d51e29d0e23dc954
             # The image starts HTTP mode itself: node build/index.js --http --port 3000.
             env:
               TZ: ${TIMEZONE}
@@ -42,10 +43,14 @@ spec:
               # directory is allowed.
               PAPERLESS_MCP_UPLOAD_PATHS: /nonexistent
               PAPERLESS_UPLOAD_PUBLIC_URL: https://paperless-upload.${SECRET_DOMAIN}
-              # The host ai.local.<domain> is the LXC 10.30.50.13. The egress rule of
-              # the network policy names that address: change both together.
-              OLLAMA_URL: http://ai.local.${SECRET_DOMAIN}:11434
-              EMBEDDING_MODEL: qwen3-embedding:0.6b
+              # The embeddings come from the TEI stack of the AI host
+              # (hosts/ai/stacks/embeddings): one container per model, and the
+              # model stays in GPU memory. The host ai.local.<domain> is the LXC
+              # 10.30.50.13: the egress rule of the network policy names that
+              # address and the port. Change both together.
+              EMBEDDING_PROVIDER: openai
+              EMBEDDING_URL: http://ai.local.${SECRET_DOMAIN}:11435
+              EMBEDDING_MODEL: Qwen/Qwen3-Embedding-0.6B
             envFrom:
               - secretRef:
                   name: paperless-mcp-upload-secret
