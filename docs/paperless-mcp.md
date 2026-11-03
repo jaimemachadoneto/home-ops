@@ -301,8 +301,8 @@ Decided (2026-10-31):
 
 ## Deploy of phase 4
 
-The fork is `jaimemachado/paperless-mcp`, pull request 2 and pull request 3
-(`/metrics` and traces). The image is pinned by digest. The tools exist only
+The fork is `jaimemachado/paperless-mcp`, pull requests 2, 3 and 4
+(`/metrics` and traces) and the time of each request type (pull request 4). The image is pinned by digest. The tools exist only
 when the server has these variables:
 
 - `semantic_search`: `DATABASE_URL`, `EMBEDDING_PROVIDER` (`openai` for TEI),
