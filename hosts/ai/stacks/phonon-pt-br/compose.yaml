@@ -1,0 +1,26 @@
+---
+# Text to speech, a test next to the piper stack. The model weights come from
+# Hugging Face and need a token: HF_TOKEN is in the .env of this stack on the
+# host, never in git. The model cache is in /docker/phonon/cache.
+services:
+  phonon-tts:
+    image: ghcr.io/gradium-ai/ptts-openai-server:latest
+    container_name: phonon-tts
+    restart: unless-stopped
+    volumes:
+      - /docker/phonon/cache:/root/.cache/huggingface
+    ports:
+      - 10.30.50.13:8881:8880
+    environment:
+      - TZ=Europe/Madrid
+      - HF_TOKEN=${HF_TOKEN}
+      # phonon-40m-pt or phonon-40m-multilingual
+      - PTTS_MODEL=hf://gradium/phonon-40m-pt
+      - PTTS_LANG=pt
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

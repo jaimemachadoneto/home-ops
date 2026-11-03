@@ -1,0 +1,20 @@
+---
+# Text to speech, a test next to the piper stack.
+services:
+  kokoro-tts:
+    image: ghcr.io/remsky/kokoro-fastapi-gpu:latest
+    container_name: kokoro-tts
+    restart: unless-stopped
+    ports:
+      - 8880:8880
+    environment:
+      - TZ=Europe/Madrid
+      - USE_GPU=true
+      - DEVICE_TYPE=cuda
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

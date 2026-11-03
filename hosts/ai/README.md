@@ -16,8 +16,14 @@ Proxmox host `jmn-medusa`. It runs Docker stacks that use the three GeForce GTX
 
 | Stack | Port | Used by |
 | --- | --- | --- |
-| `ollama` | 11434 | memini embeddings (`qwen3-embedding:4b`), notes MCP embeddings (`bge-m3`), LiteLLM `ollama/local` (`qwen3:8b`) |
-| `fast-whisper-pt-br` | 10300 | speech to text (Wyoming), Home Assistant |
+| `ollama` | 11434 | memini embeddings (`qwen3-embedding:4b`, Q4_K_M), LiteLLM `ollama/local` (`qwen3:8b`) |
+| `embeddings` | 11435, 11436 | `tei-qwen3-06b` for the Paperless MCP; `tei-bge-m3` for the notes MCP (in test) |
+| `fast-wir-2` | 10300 | speech to text (Wyoming), Home Assistant. The older `fast-whisper-pt-br` stack is not running |
+| `text-speach-1` | 10201 | text to speech (Wyoming), a test |
+| `kokoro-pt-br` | 8880 | text to speech, a test |
+| `phonon-pt-br` | 8881 | text to speech, a test. HF_TOKEN is in the `.env` of the stack on the host, never in git |
+| `qweanvoice` | 7860 | text to speech with a web studio, a test |
+| `fast-whisper-pt-br` | - | speech to text, the version before `fast-wir-2` |
 | `piper-pt-br` | 10200 | text to speech (Wyoming), Home Assistant |
 | `ocr-service` (`ocr`) | 8000 | OCR |
 | `tika` | 9998 | document text extraction |
@@ -25,8 +31,45 @@ Proxmox host `jmn-medusa`. It runs Docker stacks that use the three GeForce GTX
 | `node-exporter` | 9100 | Prometheus (`scrapeconfigs/node-exporter.yaml`) |
 | `nvidia-gpu-exporter` | 9835 | Prometheus (`scrapeconfigs/nvidia-gpu-exporter.yaml`) |
 
-The Ollama models are in the Docker volume `ollama_ollama` (about 32 GB). The
+The Ollama models are in the Docker volume `ollama_ollama` (about 32 GB):
+`qwen3:8b` (Q4_K_M), `qwen3-embedding:0.6b` (Q8_0), `qwen3.5:4b` (Q4_K_M),
+`qwen3-embedding:4b` (Q4_K_M), `bge-m3` (F16) and `nomic-embed-text` (F16). The
 Whisper and Piper data are in `/docker/fasterwhisper` and `/docker/piper`.
+
+The `embeddings` stack answers embedding models with Text Embeddings Inference
+(TEI) instead of Ollama. TEI loads the model at start and keeps it in GPU
+memory. Ollama unloads an idle model after 5 minutes, so the first query after
+an idle time waits for the load and fails the timeout of the Paperless MCP
+server. The server then answers with words only, without an error.
+
+`qwen3-embedding:4b` stays on Ollama: in float16 it needs about 8 GB, more than
+the 6 GB of a GTX 1660 SUPER. The quantized GGUF of Ollama fits. The TEI image
+for Turing is `turing-1.9`, the only build for the SM75 of these cards, and it
+needs `--dtype float16` because bfloat16 needs Ampere or newer.
+
+## Auto-deploy (doco-cd)
+
+`doco-cd` runs from `/opt/doco-cd`, polls this repo every 30 minutes, and runs
+`docker compose up` for a stack when a file named in `.doco-cd.<target>.yml`
+changes on `main`. The targets are in `doco-cd/poll-config.yml`. One target
+exists today: `embeddings` (`hosts/ai/stacks/embeddings`).
+
+Install it:
+
+1. Copy `doco-cd/` to `/opt/doco-cd` and `poll-config.yml` to
+   `/opt/doco-cd/data/poll-config.yml`.
+2. `cd /opt/doco-cd && docker compose up -d`.
+
+```sh
+docker logs -f doco-cd                       # watch it poll and deploy
+cd /opt/doco-cd && docker compose restart    # force an immediate poll
+```
+
+The file in git defines a stack that doco-cd deploys, not the copy in
+`/opt/stacks`. Edit the file in git. To deploy another stack automatically, add
+a target to `poll-config.yml` and a `.doco-cd.<target>.yml` at the root of the
+repo. Do not add a target for `ollama`: a redeploy restarts the models that
+memini and LiteLLM use.
 
 ## Monitoring
 
@@ -70,10 +113,13 @@ at boot.
    without the kernel module.
 2. Install Docker and the NVIDIA container toolkit, and copy
    `docker/daemon.json`.
-3. Copy `dockge/` to `/opt/dockge` and `stacks/` to `/opt/stacks`, then
-   `docker compose up -d` in `/opt/dockge`. Start the stacks from Dockge.
-4. Pull the models: `docker exec ollama ollama pull qwen3:8b` and
-   `qwen3-embedding:4b`, and `bge-m3` for the notes MCP server.
+3. Copy `dockge/` to `/opt/dockge`, `stacks/` to `/opt/stacks`, and `doco-cd/`
+   to `/opt/doco-cd` with `poll-config.yml` in `/opt/doco-cd/data/`. Then run
+   `docker compose up -d` in `/opt/dockge` and in `/opt/doco-cd`. Start the
+   stacks from Dockge.
+4. Pull the models: `docker exec ollama ollama pull qwen3:8b`,
+   `qwen3-embedding:4b`, `qwen3-embedding:0.6b` and `bge-m3`. The `embeddings`
+   stack downloads its own models at the first start.
 
 ## Open issues
 
