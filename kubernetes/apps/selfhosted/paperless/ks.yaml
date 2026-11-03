@@ -106,6 +106,10 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *appname
+  # The server exits at start when Postgres is not ready.
+  dependsOn:
+    - name: cloudnative-pg-cluster
+      namespace: database
   interval: 10m
   path: ./kubernetes/apps/selfhosted/paperless/mcp
   postBuild:
