@@ -4,8 +4,9 @@ Status: phases 1 and 2 done (2026-10-31): read-only search and read from
 Claude Code on the workstation and the work MacBook, and from claude.ai (the
 keys of all three allow `paperless`); a write is refused with 403. Phase 3
 is done (2026-10-31): uploads through a single-use link work from `curl` and
-from the phone away from home. The server is the fork
-`jaimemachado/paperless-mcp` (image `sha-f8a8a99`). See "Deploy of phase 3".
+from the phone away from home. Phase 4 adds semantic search and download
+links (image `sha-8a0a66e`). See "Deploy of phase 4" for the steps and the
+acceptance test. The server is the fork `jaimemachado/paperless-mcp`.
 Hostnames follow this repo (`${SECRET_DOMAIN}`).
 
 ## Goal
@@ -16,6 +17,8 @@ Agents work with my Paperless documents through one MCP server:
   date, and read its content and metadata.
 - **Organize:** set tags, correspondents, document types and custom fields,
   and add notes to a document.
+- **Find by meaning:** find a document with words that are not in its text,
+  and download its file through a single-use link.
 - **Upload:** add a new document, from Claude Code and also from claude.ai
   (web and phone), where Claude cannot send the bytes of a file to a tool.
 
@@ -42,17 +45,18 @@ Agents work with my Paperless documents through one MCP server:
   `post_document` for uploads, and an HTTP mode with `POST /mcp`. In HTTP
   mode the client sends a Paperless API token in `Authorization: Bearer`,
   so the permissions of that Paperless user are the permissions of the
-  agent. The only token of the server is the token of `paperless-upload`
-  for the upload links (phase 3).
+  agent. The server keeps two tokens of its own: the token of
+  `paperless-upload` for the upload and download links (phase 3), and the
+  token of `paperless-mcp` for the sync of the search index (phase 4).
   - Not chosen: [barryw/PaperlessMCP](https://github.com/barryw/PaperlessMCP)
     (.NET, MIT, about 50 stars). It has good guards (a delete needs a
     confirmation, bulk edits start as a dry run) and an outbox for
     downloads. But its `/mcp` has no authentication and one server token
     for all clients, so the network policy would be its only gate.
 - **One server, two ways in:** `/mcp` only through the LiteLLM gateway;
-  the upload route `/upload/<token>` on its own public route. The upload route
-  cannot go through LiteLLM: `litellm-external` lets in only Anthropic's
-  addresses, and LiteLLM proxies only MCP.
+  the routes `/upload/<token>` and `/download/<token>` on their own public
+  route. These routes cannot go through LiteLLM: `litellm-external` lets in
+  only Anthropic's addresses, and LiteLLM proxies only MCP.
 - **Paperless users decide the permissions, not the MCP server.** The server
   has no read-only mode and no tool allowlist. A dedicated Paperless user
   `mcp` gets only the permissions that the agents need. Never use the token
@@ -228,72 +232,131 @@ PDF went in as document 5 with the tag `via-mcp`. A second use of the link
 received 404, and a text file received 415. `/mcp` on the upload hostname
 received 404.
 
-## Phase 4: semantic search for the agents (plan)
+## Phase 4: semantic search and download links
 
-Goal: an agent finds a document by its meaning, not only by its words. The
-agent does the retrieval-augmented generation itself: a tool gives it the
-passages that match a question, and the agent writes the answer from them.
+Goal: an agent finds a document by its meaning, in English, Spanish or
+Portuguese, also when the words of the question are not the words of the
+document. The agent does the retrieval-augmented generation itself: a tool
+gives it the passages that match, and the agent writes the answer.
 
-Paperless 3.3.4 has AI features of its own (`PAPERLESS_AI_ENABLED`), with an
-embedding index and a chat at `POST /api/documents/chat/`. Do not use them
-for this phase:
+Do not use the AI features of Paperless 3.3.4 (`PAPERLESS_AI_ENABLED`). The
+chat at `POST /api/documents/chat/` gives an answer from the LLM of
+Paperless, not the passages, and its vector index is not reachable.
 
-- The chat gives an answer from the LLM of Paperless, not the passages.
-- The vector index is a SQLite file on the volume of Paperless, and no API
-  path gives the search results without the answer.
-- A second index in Paperless would only use more GPU time. Enable the AI of
-  Paperless later only if the chat in the web UI is useful.
+Decided (2026-10-31):
 
-### Design
+- The server keeps the token of `paperless-mcp` for the sync of the index.
+  Each search still filters the results with the token of the caller.
+- Text in a page or in a document can tell claude.ai to make a download
+  link. I accept this risk. A link works once, for 15 minutes, and only for a
+  document that the caller can view.
+- A Telegram bot that sends documents is a later idea. Telegram keeps a
+  readable copy of the chats of a bot. I accept this risk.
 
-Add the tool `semantic_search(query, limit?)` to the fork. It gives the best
-chunks: the document ID, the title, the text of the chunk and a score. The
-agent then reads a full document with `get_document_content` if necessary.
+### Index
 
-- **Index.** The MCP server keeps its own index. Every 10 minutes it reads
-  the documents that changed since the last run (`modified__gt`) with the
-  token of `paperless-mcp`. It cuts their text into chunks, and gets an
-  embedding for each chunk. A document that is not there any more leaves the
-  index.
-- **Embeddings.** The index gets embeddings from Ollama on the AI host
-  (`ai.local.${SECRET_DOMAIN}`), model `bge-m3`, because the documents are in Spanish, Portuguese and English. The
-  text of the documents does not leave home. The CiliumNetworkPolicy of the
-  MCP pod gets one egress rule to the Ollama port of that host.
-- **Storage.** The archive has a few hundred documents, so the vectors fit in
-  memory. A search compares the query with each chunk (cosine similarity),
-  which takes a few milliseconds. The server writes the vectors to a small
-  volume, so a restart does not make all the embeddings again. No vector
-  database is necessary.
-- **Permissions.** Before it gives the results, the tool asks Paperless
-  (`/api/documents/?id__in=...`) with the token of the caller, and drops each
-  document that the caller cannot view.
-- **Hybrid search.** The search merges the semantic results with the full-text
-  results of Paperless (reciprocal rank fusion), as the notes server does. A search by
-  meaning alone does not find exact codes, names and numbers.
+- **Storage.** The database `paperless_mcp` on `postgres16` (CloudNativePG)
+  has the extensions `vector` and `unaccent`. Each document has one metadata
+  chunk (title, correspondent, document type, tags, date) and its content
+  chunks of about 1000 characters. The metadata chunk makes "proposal" or
+  "hipoteca" find a document by its type or title. Each chunk has a
+  `vector(1024)` column (HNSW, cosine) and a `tsvector` column (GIN, `simple`
+  with `unaccent`, because the documents mix languages).
+- **Embeddings.** Ollama on the AI host (`10.30.50.13:11434`) makes them with
+  the model `qwen3-embedding:0.6b`. The text of the documents does not leave
+  home. The model came from a bake-off on the 5 Spanish documents of the
+  archive, with 20 questions in English and Portuguese. `qwen3-embedding:0.6b`
+  gave the correct document first 20 times of 20, `bge-m3` 18 times and
+  Harrier 0.6B 19 times. The notes server stays on `bge-m3`.
+- **Sync.** The server syncs at start and every 10 minutes with the token of
+  `paperless-mcp`. It deletes the rows of a document that is not visible any
+  more, and indexes a new document or a document with another `modified`
+  time. Once a day it makes the metadata chunks again, because a rename of a
+  tag does not change `modified`. If Ollama does not answer, the sync stops
+  and tries again at the next run. It does not delete the index.
 
-### Steps
+### Tools
 
-1. On the AI host, pull `bge-m3`. Measure the time of one embedding, and of
-   all the documents.
-2. In the fork, test first: the chunks, the index sync, the search, the merge,
-   and the permission filter.
-3. In home-ops, add a volume for the index, the Ollama URL and the model to the
-   HelmRelease, and the egress rule to the CiliumNetworkPolicy.
-4. In LiteLLM, add `semantic_search` to the keys that limit the tools.
+- `semantic_search(query, limit?)` merges the results by meaning and by words
+  (reciprocal rank fusion) in one SQL query. Then it asks Paperless with the
+  token of the caller which documents the caller can view, and drops the
+  others. For each document it gives the ID, the metadata, the best passage,
+  how it matched, and the link to the web UI. The field `strong_match` tells
+  if the best match is strong. No model separates correct answers from
+  no-match questions completely, so `strong_match` is a hint, not a proof. The
+  description of the tool tells the agent to try `search_documents` and the
+  filters before it says that a document does not exist. If Ollama does not
+  answer, the tool uses the word results only and says so.
+- `request_download(document_id, original?)` makes a link
+  `https://paperless-upload.${SECRET_DOMAIN}/download/<token>`, as
+  `request_upload` does for uploads. The link works once, also when the
+  download fails, and expires after 15 minutes. The server streams the file
+  with the token of the caller, so the tool refuses a document that the
+  caller cannot view. The response has `Content-Disposition: attachment`.
 
-Done when:
+## Deploy of phase 4
 
-- a question with different words from the document (for example "the contract
-  of the flat" for a "contrato de arrendamiento") finds the document;
-- a search for an exact number still finds its document;
-- a new document is in the index in 10 minutes or less;
-- a caller does not get a document that it cannot view.
+The fork is `jaimemachado/paperless-mcp`, pull request 2. The image is
+`ghcr.io/jaimemachado/paperless-mcp:sha-8a0a66e`, pinned by digest. The tools
+exist only when the server has these variables:
 
-Open points:
+- `semantic_search`: `DATABASE_URL`, `OLLAMA_URL`, `EMBEDDING_MODEL` and
+  `PAPERLESS_SYNC_API_KEY`;
+- `request_download`: `PAPERLESS_UPLOAD_API_KEY` and
+  `PAPERLESS_UPLOAD_PUBLIC_URL`, as for the upload links.
 
-- Is a chunk size of about 1000 characters correct for scanned letters?
-- Which documents go in the index: all the documents that `mcp-read` can
-  view (today, every shared document), or only some tags?
+The download links are in memory, as the upload links are. Keep one replica.
+
+The route is the one of phase 3. It now has the path prefixes `/upload/` and
+`/download/`. The CiliumNetworkPolicy lets envoy-external send only `GET` to
+`/download/<token>`. The same limit of 30 requests a minute applies. A
+download link works once, so the limit is still right.
+
+The network policy has three more rules for the search:
+
+- egress to Postgres (`postgres16`, port 5432);
+- egress to Ollama (`10.30.50.13/32`, port 11434);
+- ingress from `postgres16`, for the replies. When the primary runs on the
+  same node, Cilium drops its replies, and the connection times out.
+
+Do these steps in this sequence:
+
+1. Merge the pull request 2 of the fork. `docker-publish.yml` pushes the
+   image.
+2. Make the field before the merge of the home-ops branch, because the
+   ExternalSecrets need it. I made it on 2026-10-31.
+   - Add the field `paperless_mcp_db_password` to the item `Paperless` in the
+     vault `Home-Ops`.
+   - Use the generator of the 1Password app: 32 letters and digits.
+   - Use the app, because `op item edit` refuses this item.
+   - The field `paperless_mcp_api_token` exists from phase 1.
+3. Merge the home-ops branch.
+4. Examine the result:
+   - the ExternalSecrets `paperless-mcp-db`, `paperless-mcp-search-secret`
+     and `paperless-mcp-upload-secret` are synced;
+   - the `Database` `paperless-mcp` is ready;
+   - the pod of `paperless-mcp` runs the new image;
+   - the log of the pod shows the first sync with 5 documents added. If the
+     log shows a connection that times out, examine the egress and ingress
+     rules for Postgres and Ollama.
+5. In the LiteLLM dashboard, add `semantic_search` and `request_download` to
+   the keys that list their tools: `claude-ai` and Open WebUI.
+
+The acceptance test runs against the real archive. Start
+`kubectl port-forward -n selfhosted svc/paperless-mcp 3000:3000`. Then call
+`/mcp` with a Paperless token. You can also call the LiteLLM `/mcp` gateway,
+as claude.ai does. Do these steps:
+
+1. Ask the 20 questions of the bake-off with `semantic_search`. For each
+   question, examine that the correct document is first.
+2. Search for an exact number from the text of document 2. Examine that the
+   result has document 2.
+3. Upload a new document through a link. Wait 10 minutes or less. Search for
+   its content. Examine that the result has the new document.
+4. Move a document to the trash in Paperless. Search for its content before
+   the next sync. Examine that the document is not in a result.
+5. Call `request_download` for a document. Open the link, and examine that it
+   gives the file. Open the link again, and examine that it is refused.
 
 ## Open questions
 
@@ -309,8 +372,8 @@ Open points:
 - Send the notes upload links through the same kind of public route? Today
   they work only on the LAN.
 - Should upstream get the upload tools as a PR, so the fork can end?
-- Paperless itself stays internal. Only the upload page and LiteLLM's
-  `/mcp` are public.
+- Paperless itself stays internal. Only the upload page, the download links
+  and LiteLLM's `/mcp` are public.
 
 ## Notes from the deploy (2026-10-30)
 
