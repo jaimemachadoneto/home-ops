@@ -5,17 +5,22 @@
 # idle model, and a cold query then fails the timeout of the Paperless MCP
 # server (the search answers with words only). See ../README.md.
 #
-# The turing-1.9 image is the only TEI build for the GTX 1660 SUPER (SM75,
-# Turing). Use --dtype float16: bfloat16 needs Ampere or newer. Flash
-# Attention is off in this image.
+# The images are pinned by tag and digest. Bump both together, and check the
+# CUDA requirement of the new image first:
+#   docker inspect <image> | grep NVIDIA_REQUIRE_CUDA
+# turing-1.8.3 is the newest Turing build for the driver 570.144 of the host:
+# turing-1.9 asks for cuda>=12.9 and the driver answers CUDA 12.8 only. This
+# image is experimental, with Flash Attention off, and it needs --dtype
+# float16 because bfloat16 needs Ampere or newer.
 services:
   tei-qwen3-06b:
     container_name: tei-qwen3-06b
-    image: ghcr.io/huggingface/text-embeddings-inference:turing-1.9
+    image: ghcr.io/huggingface/text-embeddings-inference:turing-1.8.3@sha256:bd102b08fbdb23fa2a0c747c8b2d154c521e3fce20441266c005ad7a101143a0
     restart: unless-stopped
     ports:
-      # Host 11435 → the Paperless MCP server (EMBEDDING_URL).
-      - 11435:80
+      # The host address only: the Paperless MCP server calls it at
+      # EMBEDDING_URL. Change this IP with the address of the host.
+      - 10.30.50.13:11435:80
     volumes:
       - tei-qwen3-06b-data:/data
     command:
@@ -24,14 +29,22 @@ services:
       - --dtype
       - float16
       - --max-batch-tokens
-      - "8192"
-    # GPU 0. The model needs about 1.2 GB of the 6 GB of the card.
+      - "2048"
+      # Qwen3-Embedding declares a max input of 32768 tokens. Without this
+      # flag TEI refuses to start when the batch limit is lower. The chunks of
+      # the index are about 300 tokens, so the truncation never applies.
+      # Keep the batch small: the warmup of TEI runs one full batch, and the
+      # attention buffers of 8192 tokens need more than the 6 GB of the card
+      # (CUDA_ERROR_OUT_OF_MEMORY at the start).
+      - --auto-truncate
+    # Both models share GPU 2, the card with no other load: together they need
+    # about 2.4 GB of the 6 GB. The models of Ollama stay on the other cards.
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              device_ids: ["0"]
+              device_ids: ["2"]
               capabilities: [gpu]
 
   # NOT in the TEI supported-model list: BAAI/bge-m3 is an XLM-RoBERTa model
@@ -40,11 +53,11 @@ services:
   # If it refuses the model, keep bge-m3 on Ollama.
   tei-bge-m3:
     container_name: tei-bge-m3
-    image: ghcr.io/huggingface/text-embeddings-inference:turing-1.9
+    image: ghcr.io/huggingface/text-embeddings-inference:turing-1.8.3@sha256:bd102b08fbdb23fa2a0c747c8b2d154c521e3fce20441266c005ad7a101143a0
     restart: unless-stopped
     ports:
-      # Host 11436 → the notes MCP server.
-      - 11436:80
+      # The host address only, as above.
+      - 10.30.50.13:11436:80
     volumes:
       - tei-bge-m3-data:/data
     command:
@@ -54,13 +67,12 @@ services:
       - float16
       - --max-batch-tokens
       - "8192"
-    # GPU 1. The model needs about 1.2 GB of the 6 GB of the card.
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              device_ids: ["1"]
+              device_ids: ["2"]
               capabilities: [gpu]
 
 volumes:

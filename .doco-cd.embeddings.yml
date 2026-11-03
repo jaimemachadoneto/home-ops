@@ -5,6 +5,6 @@ name: embeddings
 working_dir: hosts/ai/stacks/embeddings
 compose_files:
   - compose.yaml
-force_image_pull: true
+force_image_pull: false
 remove_orphans: true
 prune_images: true
