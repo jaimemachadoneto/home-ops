@@ -29,7 +29,7 @@ Proxmox host `jmn-medusa`. It runs Docker stacks that use the three GeForce GTX
 | `tika` | 9998 | document text extraction |
 | `summarizer` (`summirizer`) | 16000 | broken: see below |
 | `node-exporter` | 9100 | Prometheus (`scrapeconfigs/node-exporter.yaml`) |
-| `nvidia-gpu-exporter` | 9835 | Prometheus (`scrapeconfigs/nvidia-gpu-exporter.yaml`) |
+| `nvidia-gpu-exporter` | 9835 | Prometheus (`scrapeconfigs/nvidia-gpu-exporter.yaml`), with one series for each process on a GPU |
 
 The Ollama models are in the Docker volume `ollama_ollama` (about 32 GB):
 `qwen3:8b` (Q4_K_M), `qwen3-embedding:0.6b` (Q8_0), `qwen3.5:4b` (Q4_K_M),
@@ -77,6 +77,26 @@ memini and LiteLLM use.
   kube-prometheus-stack (`NodeFilesystemAlmostOutOfSpace` and others).
 - `AiHostGpuMissing`: fewer than 3 GPUs report (`prometheusrules/ai-host.yaml`).
 - `AiHostOllamaDown`: the Gatus check `ollama` fails.
+- `AiHostTeiDown`: a Gatus check `tei-*` fails. Without the embedding server
+  the Paperless MCP search uses words only, and no error shows.
+  `AiHostTeiNotScraped` fires when Prometheus cannot read `/metrics` of a TEI
+  container (`scrapeconfigs/tei.yaml`).
+- `PaperlessMcpEmbedErrors`, `PaperlessMcpSyncFailing` and
+  `PaperlessMcpSearchWordsOnly`: the same failure seen from the Paperless MCP
+  server.
+
+The dashboard **AI Stack** (folder AI, `kubernetes/apps/ai/litellm/app/dashboard`)
+shows the GPUs, the processes that hold memory on them, the embedding servers
+and the requests through LiteLLM. The dashboard **Nvidia GPU Metrics** has the
+detail of each GPU.
+
+### The process table of the GPU dashboard
+
+The table "GPU Processes" is empty when the exporter has no per-process
+series. The image `nvidia_gpu_exporter:1.17.0-nvml` exports them with
+`--collect.compute-apps`. The exporter needs `pid: host` to see the processes of
+the other containers. The image 1.15.1 and the `exec` backend have no such
+series.
 
 ## Known failures
 

@@ -1,11 +1,23 @@
 # GPU metrics for Prometheus (scrapeconfigs/nvidia-gpu-exporter.yaml in the
 # cluster). The alert "AiHostGpuMissing" fires when fewer GPUs report than
 # the host has, which is how a failed passthrough from Proxmox shows.
+#
+# The -nvml image reads the driver library without nvidia-smi, and it can
+# export one series per process on a GPU (the table "GPU Processes" of the
+# dashboard Nvidia GPU Metrics, and the dashboard "AI Stack"). The exporter
+# of the image 1.15.1 had no such series, so that table was empty.
+# --pid=host lets the exporter see the processes of the other containers:
+# without it the table shows no process name.
 services:
   nvidia-gpu-exporter:
-    image: utkuozdemir/nvidia_gpu_exporter:1.16.0
+    image: utkuozdemir/nvidia_gpu_exporter:1.17.0-nvml@sha256:dd159fae6783a61edf8378c34a93fd20c2a2d8838ec02ea2119f280dca2ec508
     container_name: nvidia-gpu-exporter
     restart: unless-stopped
+    pid: host
+    command:
+      - --collect.backend=nvml
+      - --collect.compute-apps
+      - --collect.compute-apps-identity
     ports:
       - 9835:9835
     deploy:

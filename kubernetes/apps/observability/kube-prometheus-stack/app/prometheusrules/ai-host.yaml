@@ -1,7 +1,9 @@
 ---
 # The ai host (Ollama LXC on Proxmox, hosts/ai/). Its disk alerts come from
-# the default node-exporter rules. These two cover what failed on 2026-10-25:
-# the GPUs did not reach the container, and Ollama stopped serving.
+# the default node-exporter rules. The first two cover what failed on
+# 2026-10-25: the GPUs did not reach the container, and Ollama stopped
+# serving. The others cover the embedding servers and the Paperless MCP
+# server, which fail without an error: the search then uses words only.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/prometheusrule_v1.json
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -35,3 +37,59 @@ spec:
           for: 5m
           labels:
             severity: critical
+        - alert: AiHostTeiDown
+          annotations:
+            summary: >-
+              The embedding server {{ $labels.name }} on the ai host does not
+              answer. The Paperless MCP search then uses words only, with no
+              error. Check the stack embeddings (hosts/ai/README.md).
+          expr: |
+            gatus_results_endpoint_success{name=~"tei-.*"} == 0
+          for: 5m
+          labels:
+            severity: critical
+        - alert: AiHostTeiNotScraped
+          annotations:
+            summary: >-
+              Prometheus cannot read the metrics of the embedding server
+              {{ $labels.instance }}.
+          expr: |
+            up{job="tei"} == 0
+          for: 10m
+          labels:
+            severity: warning
+    - name: paperless-mcp.rules
+      rules:
+        - alert: PaperlessMcpEmbedErrors
+          annotations:
+            summary: >-
+              The Paperless MCP server cannot get embeddings. The sync stops
+              and the search uses words only. Check the embedding server.
+          expr: |
+            increase(paperless_embed_errors_total[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+        - alert: PaperlessMcpSyncFailing
+          annotations:
+            summary: >-
+              The sync of the Paperless MCP search index fails: a new or
+              changed document is not in the index.
+          expr: |
+            increase(paperless_sync_runs_total{outcome="failure"}[30m]) > 0
+            and
+            increase(paperless_sync_runs_total{outcome="success"}[30m]) == 0
+          for: 10m
+          labels:
+            severity: warning
+        - alert: PaperlessMcpSearchWordsOnly
+          annotations:
+            summary: >-
+              More than half of the Paperless MCP searches in the last hour used
+              words only: the search by meaning is not available.
+          expr: |
+            sum(increase(paperless_search_requests_total{semantic="unavailable"}[1h]))
+              / sum(increase(paperless_search_requests_total[1h])) > 0.5
+          for: 15m
+          labels:
+            severity: warning
