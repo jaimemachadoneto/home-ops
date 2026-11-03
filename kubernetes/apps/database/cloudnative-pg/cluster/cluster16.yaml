@@ -64,6 +64,15 @@ spec:
         connectionLimit: 20
         passwordSecret:
           name: obsidian-mcp-db-credentials
+      # The Paperless MCP server (paperless-mcp.yaml). It must not be a
+      # superuser: the app does not run as one.
+      - name: paperless_mcp
+        ensure: present
+        login: true
+        inherit: true
+        connectionLimit: 20
+        passwordSecret:
+          name: paperless-mcp-db-credentials
 
   # PodDisruptionBudget on the primary (CNPG's default, explicit here): a
   # drain waits for a switchover instead of evicting the primary.
