@@ -1,0 +1,10 @@
+# Deploy config for doco-cd (https://doco.cd) running on the AI host.
+# Polled from hosts/ai/doco-cd/poll-config.yml with target: embeddings.
+# See hosts/ai/README.md.
+name: embeddings
+working_dir: hosts/ai/stacks/embeddings
+compose_files:
+  - compose.yaml
+force_image_pull: true
+remove_orphans: true
+prune_images: true

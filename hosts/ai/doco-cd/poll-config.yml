@@ -1,0 +1,9 @@
+# Copied to /opt/doco-cd/data/poll-config.yml by the install steps in
+# ../README.md. No secrets here: home-ops is a public repo, so doco-cd clones
+# over HTTPS and needs no deploy key.
+# One entry per stack: add a target here and a .doco-cd.<target>.yml at the
+# root of the repo to deploy another stack automatically.
+- url: https://github.com/jaimemachadoneto/home-ops.git
+  reference: main
+  interval: 30m
+  target: embeddings

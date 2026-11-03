@@ -1,0 +1,68 @@
+---
+# Embedding models as dedicated inference servers: one container per model.
+# Text Embeddings Inference (TEI) loads the model at start and keeps it in
+# GPU memory, so the first query never waits for a load. Ollama unloads an
+# idle model, and a cold query then fails the timeout of the Paperless MCP
+# server (the search answers with words only). See ../README.md.
+#
+# The turing-1.9 image is the only TEI build for the GTX 1660 SUPER (SM75,
+# Turing). Use --dtype float16: bfloat16 needs Ampere or newer. Flash
+# Attention is off in this image.
+services:
+  tei-qwen3-06b:
+    container_name: tei-qwen3-06b
+    image: ghcr.io/huggingface/text-embeddings-inference:turing-1.9
+    restart: unless-stopped
+    ports:
+      # Host 11435 → the Paperless MCP server (EMBEDDING_URL).
+      - 11435:80
+    volumes:
+      - tei-qwen3-06b-data:/data
+    command:
+      - --model-id
+      - Qwen/Qwen3-Embedding-0.6B
+      - --dtype
+      - float16
+      - --max-batch-tokens
+      - "8192"
+    # GPU 0. The model needs about 1.2 GB of the 6 GB of the card.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
+
+  # NOT in the TEI supported-model list: BAAI/bge-m3 is an XLM-RoBERTa model
+  # with sentence pooling, which TEI supports, but the combination is not
+  # tested upstream. Test this container before the notes server uses it.
+  # If it refuses the model, keep bge-m3 on Ollama.
+  tei-bge-m3:
+    container_name: tei-bge-m3
+    image: ghcr.io/huggingface/text-embeddings-inference:turing-1.9
+    restart: unless-stopped
+    ports:
+      # Host 11436 → the notes MCP server.
+      - 11436:80
+    volumes:
+      - tei-bge-m3-data:/data
+    command:
+      - --model-id
+      - BAAI/bge-m3
+      - --dtype
+      - float16
+      - --max-batch-tokens
+      - "8192"
+    # GPU 1. The model needs about 1.2 GB of the 6 GB of the card.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["1"]
+              capabilities: [gpu]
+
+volumes:
+  tei-qwen3-06b-data: {}
+  tei-bge-m3-data: {}

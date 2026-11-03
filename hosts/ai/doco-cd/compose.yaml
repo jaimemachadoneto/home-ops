@@ -1,0 +1,23 @@
+---
+# Runs doco-cd on the AI host: it polls home-ops and redeploys a stack
+# whenever a file named in .doco-cd.<target>.yml changes on `main`. The
+# targets are in poll-config.yml. See ../README.md.
+services:
+  doco-cd:
+    container_name: doco-cd
+    image: ghcr.io/kimdre/doco-cd:latest
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Madrid
+      POLL_CONFIG_FILE: /data/poll-config.yml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/doco-cd/data:/data
+    # NOT cap_drop: ALL - doco-cd reads host-owned files it does not own.
+    # The mounted docker.sock is already root-equivalent on the host.
+    healthcheck:
+      test: ["CMD", "/doco-cd", "healthcheck"]
+      start_period: 15s
+      interval: 30s
+      timeout: 5s
+      retries: 3
