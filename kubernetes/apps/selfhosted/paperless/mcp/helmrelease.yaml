@@ -7,8 +7,9 @@
 # /upload/<token> is public and sends the file as the user paperless-upload.
 # This user can only add documents, and view tags, correspondents, document
 # types and tasks. The server also keeps the token of paperless-mcp: it uses
-# the token to sync the documents into its search index (hybrid search), and
-# /download/<token> gives a single-use link to a file.
+# the token to sync the documents into its search index (hybrid search).
+# The tool request_download makes a single-use link, and /download/<token>
+# gives the file once.
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -27,8 +28,8 @@ spec:
         containers:
           app:
             image:
-              # The fork with the upload links (repos/paperless-mcp), built on each
-              # push to its main.
+              # The fork with the upload links, the download links and the search
+              # index (repos/paperless-mcp), built on each push to its main.
               repository: ghcr.io/jaimemachado/paperless-mcp
               tag: sha-8a0a66e@sha256:f32e53f7838c75004337374c70211713918307e110614d356b8f6ba9eb5eb233
             # The image starts HTTP mode itself: node build/index.js --http --port 3000.
@@ -41,6 +42,8 @@ spec:
               # directory is allowed.
               PAPERLESS_MCP_UPLOAD_PATHS: /nonexistent
               PAPERLESS_UPLOAD_PUBLIC_URL: https://paperless-upload.${SECRET_DOMAIN}
+              # The host ai.local.<domain> is the LXC 10.30.50.13. The egress rule of
+              # the network policy names that address: change both together.
               OLLAMA_URL: http://ai.local.${SECRET_DOMAIN}:11434
               EMBEDDING_MODEL: qwen3-embedding:0.6b
             envFrom:

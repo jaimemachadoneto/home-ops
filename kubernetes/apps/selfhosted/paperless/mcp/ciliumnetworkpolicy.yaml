@@ -2,8 +2,8 @@
 # The MCP server has no login of its own: the Paperless token in each request
 # is its only check. Only the LiteLLM MCP gateway can call /mcp. Only
 # envoy-external can call /upload/ and /download/, where the single-use link
-# is the check. The server can call only Paperless, the Postgres primary,
-# Ollama (and DNS).
+# is the check. The server can call only Paperless, the Postgres pods
+# (`postgres16`), Ollama (and DNS).
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -88,7 +88,9 @@ spec:
         - ports:
             - port: "5432"
               protocol: TCP
-    # Ollama on the AI host, for the embeddings.
+    # Ollama on the AI host, for the embeddings. The host ai.local.<domain> is
+    # the LXC 10.30.50.13, which OLLAMA_URL in helmrelease.yaml names: change
+    # both together.
     - toCIDR:
         - 10.30.50.13/32
       toPorts:
