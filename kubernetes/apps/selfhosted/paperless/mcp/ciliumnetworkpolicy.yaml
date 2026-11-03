@@ -51,6 +51,20 @@ spec:
         - ports:
             - port: "3000"
               protocol: TCP
+    # Prometheus scrapes the metrics of the server (/metrics). The endpoint has
+    # no token of its own: this rule and the port of the Service are the gate.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: observability
+            app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+          rules:
+            http:
+              - method: GET
+                path: /metrics
     # Replies of Paperless to the calls of the server. When both pods run on
     # the same node, Cilium checked the SYN-ACK of the Service connection
     # against these ingress rules and dropped it ("Policy denied"), so every
@@ -88,14 +102,15 @@ spec:
         - ports:
             - port: "5432"
               protocol: TCP
-    # Ollama on the AI host, for the embeddings. The host ai.local.<domain> is
-    # the LXC 10.30.50.13. OLLAMA_URL in helmrelease.yaml names the host.
-    # Change both together.
+    # Text Embeddings Inference on the AI host, for the embeddings. The host
+    # ai.local.<domain> is the LXC 10.30.50.13. EMBEDDING_URL in
+    # helmrelease.yaml names the host and the port: change both together.
+    # The port 11434 of Ollama comes back with EMBEDDING_PROVIDER=ollama.
     - toCIDR:
         - 10.30.50.13/32
       toPorts:
         - ports:
-            - port: "11434"
+            - port: "11435"
               protocol: TCP
     - toEndpoints:
         - matchLabels:

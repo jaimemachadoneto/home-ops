@@ -5,6 +5,8 @@ kind: Kustomization
 resources:
   - ./backendtrafficpolicy.yaml
   - ./ciliumnetworkpolicy.yaml
+  - ./dashboard
   - ./externalsecret.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
+  - ./servicemonitor.yaml

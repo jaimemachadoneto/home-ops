@@ -262,9 +262,13 @@ Decided (2026-10-31):
   "hipoteca" find a document by its type or title. Each chunk has a
   `vector(1024)` column (HNSW, cosine) and a `tsvector` column (GIN, `simple`
   with `unaccent`, because the documents mix languages).
-- **Embeddings.** Ollama on the AI host (`10.30.50.13:11434`) makes them with
-  the model `qwen3-embedding:0.6b`. The text of the documents does not leave
-  home. The model came from a bake-off on the 5 Spanish documents of the
+- **Embeddings.** Text Embeddings Inference (TEI) on the AI host
+  (`10.30.50.13:11435`) makes them with the model `Qwen/Qwen3-Embedding-0.6B`,
+  in float16 on a GPU. The model stays in GPU memory. Ollama unloads an idle
+  model, so the first query after an idle time failed the timeout of the
+  server, which then answered with words only and no error. The stack is
+  `hosts/ai/stacks/embeddings` of this repo. The text of the documents does not
+  leave home. The model came from a bake-off on the 5 Spanish documents of the
   archive, with 20 questions in English and Portuguese. `qwen3-embedding:0.6b`
   gave the correct document first 20 times of 20, `bge-m3` 18 times and
   Harrier 0.6B 19 times. The notes server stays on `bge-m3`.
@@ -272,7 +276,8 @@ Decided (2026-10-31):
   `paperless-mcp`. It deletes the rows of a document that is not visible any
   more, and indexes a new document or a document with another `modified`
   time. Once a day it makes the metadata chunks again, because a rename of a
-  tag does not change `modified`. If Ollama does not answer, the sync stops
+  tag does not change `modified`. If the embedding server does not answer, the
+  sync stops
   and tries again at the next run. It does not delete the index.
 
 ### Tools
@@ -296,12 +301,12 @@ Decided (2026-10-31):
 
 ## Deploy of phase 4
 
-The fork is `jaimemachado/paperless-mcp`, pull request 2. The image is
-`ghcr.io/jaimemachado/paperless-mcp:sha-8a0a66e`, pinned by digest. The tools
-exist only when the server has these variables:
+The fork is `jaimemachado/paperless-mcp`, pull request 2 and pull request 3
+(`/metrics` and traces). The image is pinned by digest. The tools exist only
+when the server has these variables:
 
-- `semantic_search`: `DATABASE_URL`, `OLLAMA_URL`, `EMBEDDING_MODEL` and
-  `PAPERLESS_SYNC_API_KEY`;
+- `semantic_search`: `DATABASE_URL`, `EMBEDDING_PROVIDER` (`openai` for TEI),
+  `EMBEDDING_URL`, `EMBEDDING_MODEL` and `PAPERLESS_SYNC_API_KEY`;
 - `request_download`: `PAPERLESS_UPLOAD_API_KEY` and
   `PAPERLESS_UPLOAD_PUBLIC_URL`, as for the upload links.
 
@@ -315,7 +320,8 @@ download link works once, so the limit is still right.
 The network policy has three more rules for the search:
 
 - egress to Postgres (`postgres16`, port 5432);
-- egress to Ollama (`10.30.50.13/32`, port 11434);
+- egress to the embedding server (`10.30.50.13/32`, port 11435);
+- ingress from Prometheus, for `GET /metrics`, on the same port;
 - ingress from `postgres16`, for the replies. When the primary runs on the
   same node, Cilium drops its replies, and the connection times out.
 
