@@ -76,8 +76,8 @@ memini and LiteLLM use.
 - Disk, memory and CPU: the default node-exporter alerts of
   kube-prometheus-stack (`NodeFilesystemAlmostOutOfSpace` and others).
 - `AiHostGpuMissing`: fewer than 3 GPUs report (`prometheusrules/ai-host.yaml`).
-- `AiHostOllamaDown`: the Gatus check `ollama` fails.
-- `AiHostTeiDown`: a Gatus check `tei-*` fails. Without the embedding server
+- `AiHostOllamaDown`: the blackbox probe `ai-host` fails on port 11434.
+- `AiHostTeiDown`: the blackbox probe `ai-host` fails on port 11435 or 11436. Without the embedding server
   the Paperless MCP search uses words only, and no error shows.
   `AiHostTeiNotScraped` fires when Prometheus cannot read `/metrics` of a TEI
   container (`scrapeconfigs/tei.yaml`).

@@ -45,22 +45,6 @@ endpoints:
     conditions:
       - "[STATUS] == 200"
 
-  # The embedding servers of the ai host (hosts/ai/stacks/embeddings). The
-  # alerts are AiHostTeiDown in kube-prometheus-stack.
-  - name: tei-qwen3-embedding
-    group: ai
-    url: http://ai.local.${SECRET_DOMAIN}:11435/health
-    interval: 1m
-    conditions:
-      - "[STATUS] == 200"
-
-  - name: tei-bge-m3
-    group: ai
-    url: http://ai.local.${SECRET_DOMAIN}:11436/health
-    interval: 1m
-    conditions:
-      - "[STATUS] == 200"
-
   - name: flux-webhook
     group: external
     url: https://flux-webhook.${SECRET_DOMAIN}

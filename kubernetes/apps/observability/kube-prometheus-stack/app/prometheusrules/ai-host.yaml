@@ -33,18 +33,18 @@ spec:
               Ollama on the ai host does not answer. memini embeddings and the
               LiteLLM model ollama/local fail.
           expr: |
-            gatus_results_endpoint_success{name="ollama"} == 0
+            probe_success{job="probe/observability/ai-host", instance=~".*:11434/.*"} == 0
           for: 5m
           labels:
             severity: critical
         - alert: AiHostTeiDown
           annotations:
             summary: >-
-              The embedding server {{ $labels.name }} on the ai host does not
+              The embedding server {{ $labels.instance }} on the ai host does not
               answer. The Paperless MCP search then uses words only, with no
               error. Check the stack embeddings (hosts/ai/README.md).
           expr: |
-            gatus_results_endpoint_success{name=~"tei-.*"} == 0
+            probe_success{job="probe/observability/ai-host", instance=~".*:1143[56]/.*"} == 0
           for: 5m
           labels:
             severity: critical
