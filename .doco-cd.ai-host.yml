@@ -1,0 +1,47 @@
+# Deploy config for doco-cd (https://doco.cd) running on the AI host.
+# Polled from hosts/ai/doco-cd/poll-config.yml with target: ai-host.
+# One document for each stack. See hosts/ai/README.md, "Auto-deploy".
+#
+# Only the stacks that are safe to deploy from the cache of doco-cd are here.
+# A stack with a relative bind mount (./data), a variable from its own .env, or
+# an external network that does not exist on the host does not belong here yet:
+# see the table in hosts/ai/README.md. Never add `ollama`: a redeploy restarts
+# the model server that memini and LiteLLM use.
+#
+# remove_orphans and prune_images stay at their safe values. force_recreate stays
+# off, so a poll with no change in a compose file restarts nothing.
+name: kokoro-pt-br
+working_dir: hosts/ai/stacks/kokoro-pt-br
+compose_files:
+  - compose.yaml
+force_image_pull: false
+force_recreate: false
+remove_orphans: true
+prune_images: false
+---
+name: piper-pt-br
+working_dir: hosts/ai/stacks/piper-pt-br
+compose_files:
+  - compose.yaml
+force_image_pull: false
+force_recreate: false
+remove_orphans: true
+prune_images: false
+---
+name: node-exporter
+working_dir: hosts/ai/stacks/node-exporter
+compose_files:
+  - compose.yaml
+force_image_pull: false
+force_recreate: false
+remove_orphans: true
+prune_images: false
+---
+name: nvidia-gpu-exporter
+working_dir: hosts/ai/stacks/nvidia-gpu-exporter
+compose_files:
+  - compose.yaml
+force_image_pull: false
+force_recreate: false
+remove_orphans: true
+prune_images: false

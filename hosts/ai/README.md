@@ -51,8 +51,36 @@ needs `--dtype float16` because bfloat16 needs Ampere or newer.
 
 `doco-cd` runs from `/opt/doco-cd`, polls this repo every 30 minutes, and runs
 `docker compose up` for a stack when a file named in `.doco-cd.<target>.yml`
-changes on `main`. The targets are in `doco-cd/poll-config.yml`. One target
-exists today: `embeddings` (`hosts/ai/stacks/embeddings`).
+changes on `main`. The targets are in `doco-cd/poll-config.yml`. Two targets
+exist today:
+
+- `embeddings` (`hosts/ai/stacks/embeddings`);
+- `ai-host` (`.doco-cd.ai-host.yml`, one document for each stack): `kokoro-pt-br`,
+  `piper-pt-br`, `node-exporter` and `nvidia-gpu-exporter`.
+
+A merge to `main` changes the container of these stacks at the next poll (up to
+30 minutes). A poll with no change in a compose file restarts nothing
+(`force_recreate: false`).
+
+### Which stacks can be automatic
+
+doco-cd runs `docker compose` from its own copy of the repository, not from
+`/opt/stacks/<name>`. So a stack is safe to automate only when its compose file
+does not depend on files that live in the stack folder of the host:
+
+| Stack | Automatic? | Reason |
+| --- | --- | --- |
+| `kokoro-pt-br`, `piper-pt-br`, `node-exporter`, `nvidia-gpu-exporter` | yes | no relative path, no variable from a `.env` |
+| `embeddings` | yes | named volumes only |
+| `tika` | not yet | it declares 12 external networks, and 7 of them do not exist on the host |
+| `fast-wir-2`, `text-speach-1`, `ocr` | not yet | a relative bind mount (`./whisper-data`, `./pocket-cache`, `./tmp`): doco-cd would mount an empty folder of its own copy, and the model would be downloaded again |
+| `phonon-pt-br`, `qweanvoice` | not yet | a variable from the `.env` of the stack (`HF_TOKEN`, `QWEN_STUDIO_API_KEY`) that doco-cd does not read |
+| `ollama` | never | a redeploy restarts the models that memini and LiteLLM use, and its volume holds 13 GiB |
+| `fast-whisper-pt-br`, `summirizer` | no | not running |
+
+To make a "not yet" stack automatic: change the relative paths to absolute paths
+(`/opt/stacks/<name>/...`), and give doco-cd the variables (`env_files` with a
+file that is mounted into the doco-cd container).
 
 Install it:
 
