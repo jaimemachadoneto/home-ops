@@ -82,6 +82,20 @@ spec:
           for: 10m
           labels:
             severity: warning
+        - alert: PaperlessMcpDocumentNotIndexed
+          annotations:
+            summary: >-
+              Paperless document {{ $labels.document_id }} is not in the
+              search index: the embedding server rejected it ({{ $labels.reason }}).
+              The sync tries it again every 10 minutes and indexes the other
+              documents. Open it in Paperless at /documents/{{ $labels.document_id }}/details
+              and look at the log of the Paperless MCP pod for "document
+              {{ $labels.document_id }} failed".
+          expr: |
+            paperless_sync_failed_document == 1
+          for: 1h
+          labels:
+            severity: warning
         - alert: PaperlessMcpSearchWordsOnly
           annotations:
             summary: >-
