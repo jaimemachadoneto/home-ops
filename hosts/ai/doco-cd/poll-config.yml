@@ -7,3 +7,9 @@
   reference: main
   interval: 30m
   target: embeddings
+# The other stacks of the host: kokoro, piper and the two exporters. One deploy
+# file (.doco-cd.ai-host.yml) with a document for each stack.
+- url: https://github.com/jaimemachadoneto/home-ops.git
+  reference: main
+  interval: 30m
+  target: ai-host
