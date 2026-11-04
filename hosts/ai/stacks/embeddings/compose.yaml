@@ -37,6 +37,11 @@ services:
       # attention buffers of 8192 tokens need more than the 6 GB of the card
       # (CUDA_ERROR_OUT_OF_MEMORY at the start).
       - --auto-truncate
+      # TEI refuses a request with more than 32 inputs (413) by default. A
+      # document of 35 chunks stopped the sync of the Paperless MCP index. The
+      # notes server sends up to 96 inputs in one request.
+      - --max-client-batch-size
+      - "96"
     # Both models share GPU 2, the card with no other load: together they need
     # about 2.4 GB of the 6 GB. The models of Ollama stay on the other cards.
     deploy:
@@ -75,6 +80,10 @@ services:
       # refuses to start when the batch limit is lower. A chunk has about 512
       # tokens, so the truncation never applies.
       - --auto-truncate
+      # The notes server sends up to 96 inputs in one request (OPENAI_BATCH_LIMIT
+      # in its provider). TEI refuses more than 32 by default (413).
+      - --max-client-batch-size
+      - "96"
     deploy:
       resources:
         reservations:
