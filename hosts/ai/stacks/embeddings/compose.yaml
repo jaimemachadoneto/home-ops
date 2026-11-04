@@ -42,7 +42,7 @@ services:
       # notes server sends up to 96 inputs in one request.
       - --max-client-batch-size
       - "96"
-    # Both models share GPU 2, the card with no other load: together they need
+    # Both models share GPU 2, the card that Ollama does not use: together they need
     # about 2.4 GB of the 6 GB. The models of Ollama stay on the other cards.
     deploy:
       resources:
