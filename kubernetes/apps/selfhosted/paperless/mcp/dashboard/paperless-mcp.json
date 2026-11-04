@@ -979,6 +979,104 @@
       "title": "Errors by tool and API status",
       "type": "timeseries",
       "description": "Tool calls that failed, and the answers of Paperless that were not 2xx or 3xx."
+    },
+    {
+      "id": 27,
+      "type": "table",
+      "title": "Documents that failed to sync",
+      "description": "One row for each document that the embedding server rejected in the last completed run. The sync tries it again every 10 minutes. Open the document in Paperless at /documents/<id>/details. An empty table is good.",
+      "gridPos": {
+        "x": 0,
+        "y": 37,
+        "w": 24,
+        "h": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "document_id"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Document id"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "reason"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Reason"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "expr": "paperless_sync_failed_document == 1",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true,
+              "__name__": true,
+              "app_kubernetes_io_instance": true,
+              "app_kubernetes_io_name": true,
+              "endpoint": true,
+              "instance": true,
+              "job": true,
+              "namespace": true,
+              "pod": true,
+              "service": true
+            },
+            "indexByName": {
+              "document_id": 0,
+              "reason": 1
+            }
+          }
+        }
+      ]
     }
   ],
   "refresh": "1m",
