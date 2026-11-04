@@ -59,8 +59,18 @@ exist today:
   `piper-pt-br`, `node-exporter` and `nvidia-gpu-exporter`.
 
 A merge to `main` changes the container of these stacks at the next poll (up to
-30 minutes). A poll with no change in a compose file restarts nothing
-(`force_recreate: false`).
+30 minutes). With `force_recreate: false`, a poll with no change in a compose
+file should restart nothing. The first poll of a new stack can still recreate its
+container once: on 2026-11-04 it recreated `kokoro-tts` (the GPU pin changed) and
+also `piper`, whose file had not changed. The exporters kept running. Check the
+start time of the containers after the first poll of a new stack.
+
+After each deploy, doco-cd removes the images that no container uses any more
+(`prune_images: true`). Without it, each update of the kokoro image (8 GB) left
+the old one on the root disk, which was 92% full on 2026-11-04. It never removes
+an image that a container still uses. Look at the disk with
+`docker system df`, and at the free space of `/` in the alert
+`CephNodeDiskspaceWarning`.
 
 ### Which stacks can be automatic
 
