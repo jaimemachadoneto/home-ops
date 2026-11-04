@@ -51,12 +51,20 @@ needs `--dtype float16` because bfloat16 needs Ampere or newer.
 
 `doco-cd` runs from `/opt/doco-cd`, polls this repo every 30 minutes, and runs
 `docker compose up` for a stack when a file named in `.doco-cd.<target>.yml`
-changes on `main`. The targets are in `doco-cd/poll-config.yml`. Two targets
+changes on `main`. The targets are in `doco-cd/poll-config.yml`. Three targets
 exist today:
 
 - `embeddings` (`hosts/ai/stacks/embeddings`);
 - `ai-host` (`.doco-cd.ai-host.yml`, one document for each stack): `kokoro-pt-br`,
-  `piper-pt-br`, `node-exporter` and `nvidia-gpu-exporter`.
+  `piper-pt-br`, `node-exporter` and `nvidia-gpu-exporter`;
+- `ai-host-extra` (`.doco-cd.ai-host-extra.yml`): `tika`, `ocr`, `fast-wir-2`,
+  `text-speach-1`, `phonon-pt-br` and `qweanvoice`. These need the absolute
+  paths and the `.env` files described below.
+
+The list of targets that doco-cd polls is `/opt/doco-cd/data/poll-config.yml` on
+the host. It is a copy. A change to `hosts/ai/doco-cd/poll-config.yml` or to
+`hosts/ai/doco-cd/compose.yaml` in git does nothing until you copy the file to
+`/opt/doco-cd` and run `docker compose up -d` there.
 
 A merge to `main` changes the container of these stacks at the next poll (up to
 30 minutes). With `force_recreate: false`, a poll with no change in a compose
@@ -80,17 +88,23 @@ does not depend on files that live in the stack folder of the host:
 
 | Stack | Automatic? | Reason |
 | --- | --- | --- |
-| `kokoro-pt-br`, `piper-pt-br`, `node-exporter`, `nvidia-gpu-exporter` | yes | no relative path, no variable from a `.env` |
-| `embeddings` | yes | named volumes only |
-| `tika` | not yet | it declares 12 external networks, and 7 of them do not exist on the host |
-| `fast-wir-2`, `text-speach-1`, `ocr` | not yet | a relative bind mount (`./whisper-data`, `./pocket-cache`, `./tmp`): doco-cd would mount an empty folder of its own copy, and the model would be downloaded again |
-| `phonon-pt-br`, `qweanvoice` | not yet | a variable from the `.env` of the stack (`HF_TOKEN`, `QWEN_STUDIO_API_KEY`) that doco-cd does not read |
+| `kokoro-pt-br`, `piper-pt-br`, `node-exporter`, `nvidia-gpu-exporter` | yes (`ai-host`) | no relative path, no variable from a `.env` |
+| `embeddings` | yes (`embeddings`) | named volumes only |
+| `tika` | yes (`ai-host-extra`) | the 12 external networks that it declared were not used by the service, and 7 do not exist on the host: they were removed |
+| `fast-wir-2`, `text-speach-1`, `ocr` | yes (`ai-host-extra`) | the relative bind mounts are now absolute (`/opt/stacks/<name>/...`), so the data stays where it is |
+| `phonon-pt-br`, `qweanvoice` | yes (`ai-host-extra`) | the variable comes from `env_files: /opt/stacks/<name>/.env`; the doco-cd container mounts `/opt/stacks` read-only |
 | `ollama` | never | a redeploy restarts the models that memini and LiteLLM use, and its volume holds 13 GiB |
-| `fast-whisper-pt-br`, `summirizer` | no | not running |
+| `fast-whisper-pt-br`, `summirizer` | no | not running: a deploy would start them (`fast-whisper-pt-br` takes the port 10300 of `fast-wir-2`) |
 
-To make a "not yet" stack automatic: change the relative paths to absolute paths
-(`/opt/stacks/<name>/...`), and give doco-cd the variables (`env_files` with a
-file that is mounted into the doco-cd container).
+A new stack follows the same rules: no `./` path (use `/opt/stacks/<name>/...`),
+no external network that does not exist on the host, and its variables in the
+`.env` file of the stack on the host (`hosts/ai/env-from-1password.sh` writes it).
+The name of the document must be the name of the Compose project that exists on
+the host, or doco-cd makes a second project next to the first.
+
+The doco-cd container can read every file in `/opt/stacks`, including the `.env`
+files. It holds the docker socket already, which is root on the host, so this
+adds little, but keep secrets out of any other file of that folder.
 
 Install it:
 

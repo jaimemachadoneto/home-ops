@@ -1,3 +1,7 @@
+# Text extraction for Paperless. The service names no network, so Compose puts
+# it in the default network of the project. This file declared 12 external
+# networks before, and no service used them; 7 of them do not exist on the host.
+# They were removed so that a deploy from doco-cd does not depend on them.
 version: "3.3"
 services:
   tika:
@@ -5,28 +9,3 @@ services:
       - 9998:9998
     image: apache/tika:latest-full
     restart: always
-networks:
-  dockge_default:
-    external: true
-  openwebui_default:
-    external: true
-  ollama_default:
-    external: true
-  searxng_searxng:
-    external: true
-  open-webui_default:
-    external: true
-  fast-whisper-pt-br_default:
-    external: true
-  comfyui_default:
-    external: true
-  comfyui_full_default:
-    external: true
-  paperless-ai_default:
-    external: true
-  piper-pt-br_default:
-    external: true
-  summirizer_default:
-    external: true
-  time_default:
-    external: true

@@ -8,7 +8,8 @@ services:
     ports:
       - 10201:10201
     volumes:
-      - ./pocket-cache:/root/.cache
+      # Absolute: see fast-wir-2.
+      - /opt/stacks/text-speach-1/pocket-cache:/root/.cache
     environment:
       - WYOMING_PORT=10201
       - WYOMING_HOST=0.0.0.0
