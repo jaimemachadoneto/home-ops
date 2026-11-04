@@ -8,7 +8,10 @@
 # see the table in hosts/ai/README.md. Never add `ollama`: a redeploy restarts
 # the model server that memini and LiteLLM use.
 #
-# remove_orphans and prune_images stay at their safe values. force_recreate stays
+# remove_orphans and prune_images are on: when an update replaces an image, doco-cd
+# removes the old one after the deploy, and it never removes an image that any
+# container still uses. Without it, each kokoro update left an 8 GB image on a
+# root disk of 131 GB (the disk was 92% full on 2026-11-04). force_recreate stays
 # off, so a poll with no change in a compose file restarts nothing.
 name: kokoro-pt-br
 working_dir: hosts/ai/stacks/kokoro-pt-br
@@ -17,7 +20,7 @@ compose_files:
 force_image_pull: false
 force_recreate: false
 remove_orphans: true
-prune_images: false
+prune_images: true
 ---
 name: piper-pt-br
 working_dir: hosts/ai/stacks/piper-pt-br
@@ -26,7 +29,7 @@ compose_files:
 force_image_pull: false
 force_recreate: false
 remove_orphans: true
-prune_images: false
+prune_images: true
 ---
 name: node-exporter
 working_dir: hosts/ai/stacks/node-exporter
@@ -35,7 +38,7 @@ compose_files:
 force_image_pull: false
 force_recreate: false
 remove_orphans: true
-prune_images: false
+prune_images: true
 ---
 name: nvidia-gpu-exporter
 working_dir: hosts/ai/stacks/nvidia-gpu-exporter
@@ -44,4 +47,4 @@ compose_files:
 force_image_pull: false
 force_recreate: false
 remove_orphans: true
-prune_images: false
+prune_images: true
