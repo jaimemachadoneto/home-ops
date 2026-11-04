@@ -47,6 +47,30 @@ the 6 GB of a GTX 1660 SUPER. The quantized GGUF of Ollama fits. The TEI image
 for Turing is `turing-1.9`, the only build for the SM75 of these cards, and it
 needs `--dtype float16` because bfloat16 needs Ampere or newer.
 
+### The GPUs
+
+The host has three GTX 1660 SUPER, with 6 GiB each. Every service that uses a
+GPU is pinned to one card, so that a model cannot take the memory of another:
+
+| GPU | What is on it | Used memory |
+| --- | --- | --- |
+| 0 | `qwen-tts` (2.6), `kokoro-tts` (0.7), the `bge-m3` of Ollama (0.5) | 3.7 GiB |
+| 1 | nothing. Ollama loads `qwen3:8b` here, about 5.6 GiB | 0 to 5.6 GiB |
+| 2 | the two TEI containers (2.5), the Whisper model of `fast-wir-2` (1.6), `phonon-pt-br` (up to 1.6 at its first request) | 4.1 GiB, up to 5.7 |
+
+Ollama is pinned with `device_ids: ["0", "1"]`. With `count: all` it loaded
+`qwen3:8b` over GPU 1 and GPU 2 for about 5 minutes each hour, and took 2.1
+GiB of the 6 GiB that the two TEI containers share.
+
+Two things to know when a GPU changes:
+
+- **A change of `device_ids` does not recreate the container.** Docker Compose
+  does not count it as a change of the configuration, so `docker compose up -d`
+  does nothing and doco-cd reports a successful deploy. After a change of the
+  GPU of a stack, run `docker compose up -d --force-recreate` in its folder.
+- **The GPU memory of a container takes a few seconds to disappear** after the
+  recreate. A check right after it still shows the old process on the old card.
+
 ## Auto-deploy (doco-cd)
 
 `doco-cd` runs from `/opt/doco-cd`, polls this repo every 30 minutes, and runs
