@@ -217,6 +217,82 @@ Done when, from a Claude session on any machine with `litellmMcp`:
   refused and leaves my edit intact, and an edit with no hash is refused;
 - a note in an excluded folder is invisible to every tool.
 
+## Change the embedding provider or model
+
+The server stores a fingerprint of its embedding configuration: the provider,
+the model, the dimensions and the chunk settings. At start it compares the
+fingerprint with its settings and exits when they differ, because vectors from
+two models in one column make the search wrong without any error. The same
+check stops the indexer of a running pod. So a change of provider or model has
+a fixed order, and the reset must run before the new settings reach the pod.
+
+Today the server uses `bge-m3` on Ollama (port 11434). The target is the TEI
+container `tei-bge-m3` of the ai host (`hosts/ai/stacks/embeddings`, port 11436)
+through the OpenAI provider. The vectors of both give a cosine of 1.0000, so the
+reset is a precaution of the guard and not a need of the data. It costs a new
+embedding of all notes (about 80 notes, a few minutes).
+
+What the reset does, in one transaction: it deletes every row of
+`note_embeddings`, recreates the column at the configured dimensions, clears
+`embedded_content_hash` of every note, and stores the fingerprint of the new
+settings. Notes, links and the word search are not touched. While the notes are
+embedded again, the search by meaning does not find the notes that are not yet
+done. The word search keeps working.
+
+TEI answers at most 96 inputs in one request, and the server sends at most 96
+(`OPENAI_BATCH_LIMIT`). Keep `--max-client-batch-size` of `tei-bge-m3` at 96 or
+more.
+
+Steps, in this order:
+
+1. Check that `tei-bge-m3` answers: `curl http://ai.local.<domain>:11436/health`
+   returns 200 and `/v1/embeddings` gives 1024 numbers for one input.
+2. Run the reset with the new settings. Stop the indexer first so that no pass
+   writes between the reset and the new pod: scale the Deployment to 0
+   (`kubectl -n selfhosted scale deploy syncthing --replicas=0`). Syncthing is
+   in the same pod, so the sync of the phone stops for the length of the reset
+   (a few seconds to a minute). Then run a one-off pod with the same image,
+   environment and Secret as the `obsidian-mcp` container, with the new
+   settings, and the command `python -m scripts.reset_embeddings`:
+
+   ```sh
+   kubectl -n selfhosted run notes-reset --rm -i --restart=Never \
+     --image=<the image of the container obsidian-mcp> \
+     --overrides='<see below>' -- python -m scripts.reset_embeddings
+   ```
+
+   The pod needs: `envFrom` the Secret `obsidian-mcp-secret` (it has
+   `DATABASE_URL` and `SECRET_KEY`); and these variables, which are the new
+   settings: `EMBEDDING_PROVIDER=openai`,
+   `OPENAI_BASE_URL=http://ai.local.<domain>:11436/v1`,
+   `OPENAI_EMBEDDING_MODEL=BAAI/bge-m3`, `OPENAI_API_KEY=not-used`,
+   `EMBEDDING_DIMENSIONS=1024`, `EMBEDDING_ALLOW_PLAINTEXT=true`. The script
+   needs no volume: it only talks to Postgres. It prints the fingerprint it
+   stored; keep that line.
+3. Merge the pull request that changes the settings in the HelmRelease of
+   `syncthing` (`EMBEDDING_PROVIDER`, `OPENAI_BASE_URL`,
+   `OPENAI_EMBEDDING_MODEL`, `OPENAI_API_KEY`). Scale the Deployment back to 1
+   if Flux did not, and wait for the pod.
+4. Check the log of the container: no line "fingerprint does not match", then
+   "Embedding complete" for the notes. Run a search by meaning from an agent.
+5. Compare the number of notes that have an embedding with the number of notes
+   that the indexer found (78 on 2026-11-04).
+
+Go back: set the old settings in the HelmRelease (`EMBEDDING_PROVIDER: ollama`,
+`OLLAMA_URL`, `EMBEDDING_MODEL: bge-m3`) and run the reset again with them.
+
+Risks, and what protects against them:
+
+- If the new pod starts before the reset, it exits with a critical line that
+  names the fields that differ. Nothing is written. Run the reset and let the
+  pod start again.
+- If the reset fails, the transaction rolls back and the old fingerprint and
+  vectors stay. The old settings still work.
+- If TEI is down while the notes are embedded again, the indexer retries at
+  each pass (every 60 seconds). The notes stay without a vector until it answers.
+- A backup of the database `obsidian_mcp` is made by CloudNativePG. Check that
+  a recent one exists before the reset.
+
 ## Phase 4 (optional): raw files without Syncthing
 
 A WebDAV server (for example `rclone serve webdav`) on the same volume, only
