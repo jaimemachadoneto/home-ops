@@ -42,8 +42,10 @@ services:
       # notes server sends up to 96 inputs in one request.
       - --max-client-batch-size
       - "96"
-    # Both models share GPU 2, the card that Ollama does not use: together they need
-    # about 2.4 GB of the 6 GB. The models of Ollama stay on the other cards.
+    # Both models share GPU 2 with two tests: fast-wir-2 (Whisper, 1.6 GiB at idle)
+    # and phonon-pt-br (its model loads at the first request). Together the TEI
+    # containers need about 2.4 GB of the 6 GB. If the card fills, the search
+    # falls back to words only. The models of Ollama stay on the other cards.
     deploy:
       resources:
         reservations:

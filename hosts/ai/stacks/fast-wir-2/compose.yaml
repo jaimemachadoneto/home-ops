@@ -28,5 +28,8 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
+              # GPU 2, shared with the two TEI containers and with phonon-pt-br.
+              # It holds 1.6 GiB at idle (the Whisper model); the peak during a
+              # transcription is not measured. GPU 2 had 3.5 GiB free before it.
+              device_ids: ["2"]
               capabilities: [gpu]

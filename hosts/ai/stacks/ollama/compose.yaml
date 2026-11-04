@@ -1,6 +1,6 @@
 # Ollama uses the GPUs 0 and 1 only. GPU 2 belongs to the two embedding servers
-# (hosts/ai/stacks/embeddings): they must always fit there. phonon-pt-br, a text
-# to speech test (1.6 GiB), shares GPU 2 with them.
+# (hosts/ai/stacks/embeddings): they must always fit there. Two more tests
+# share GPU 2: fast-wir-2 (the Whisper model, 1.6 GiB at idle) and phonon-pt-br.
 # With count: all, Ollama loaded qwen3:8b over GPU 1 and GPU 2 for about 5 minutes
 # each hour, and took 2.1 GiB of the 6 GiB that the two TEI containers share.
 # The models are spread over the two cards. qwen3:8b needs about 5.6 GiB.

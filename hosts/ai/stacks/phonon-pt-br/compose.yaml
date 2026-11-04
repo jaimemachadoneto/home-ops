@@ -22,8 +22,10 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              # GPU 2, next to the two TEI containers: it holds 1.6 GiB, the same
-              # idle and while it speaks (measured 2026-11-04). On GPU 0 it left
-              # no room for qwen3:8b next to qwen-tts and kokoro.
+              # GPU 2, next to the two TEI containers. Its own GPU use is not
+              # measured: the 1.6 GiB seen on GPU 0 belonged to Whisper
+              # (fast-wir-2), not to this stack. It loads the model on the first
+              # request. On GPU 0 there is no room: qwen-tts, kokoro and Ollama
+              # take about 3.7 GiB there.
               device_ids: ["2"]
               capabilities: [gpu]
