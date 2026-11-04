@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home-Ops Architecture</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16202c;--mute:#5d6b7a;--line:#d5dbe3;--accent:#0b7285;
+--storage:#7048e8;--data:#1971c2;--ai:#e8590c;--platform:#2f9e44;--off:#9aa5b1}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f141a;--card:#18202a;--ink:#e6ebf1;--mute:#93a1b1;--line:#2c3744;--accent:#3bc9db;
+--storage:#9775fa;--data:#4dabf7;--ai:#ff922b;--platform:#69db7c;--off:#5d6b7a}}
+:root[data-theme=dark]{--bg:#0f141a;--card:#18202a;--ink:#e6ebf1;--mute:#93a1b1;--line:#2c3744;--accent:#3bc9db;
+--storage:#9775fa;--data:#4dabf7;--ai:#ff922b;--platform:#69db7c;--off:#5d6b7a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:20px 16px 8px;max-width:1200px;margin:0 auto}
+h1{margin:0 0 4px;font-size:22px}
+header p{margin:0;color:var(--mute)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+button,label.chk{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+label.chk{display:inline-flex;gap:6px;align-items:center}
+main{max-width:1200px;margin:0 auto;padding:8px 16px 80px}
+.wrap{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:0 160px;align-items:start}
+svg#edges{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#ns{display:flex;flex-direction:column;gap:10px}
+#infra{position:sticky;top:12px;display:flex;flex-direction:column;gap:8px}
+#infra h3{margin:6px 0 0;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px}
+.ns>.head{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;user-select:none}
+.ns>.head:focus-visible,.row:focus-visible,.inf:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.caret{width:14px;color:var(--mute);transition:transform .15s}
+.ns.open .caret{transform:rotate(90deg)}
+.ns .name{font-weight:600}
+.ns .count{color:var(--mute);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto;justify-content:flex-end}
+.ns.open>.head .chips{display:none}
+.chip{font-size:11px;padding:1px 6px;border-radius:10px;border:1px solid currentColor;white-space:nowrap}
+.g-storage{color:var(--storage)}.g-data{color:var(--data)}.g-ai{color:var(--ai)}.g-platform{color:var(--platform)}
+.rows{display:none;border-top:1px solid var(--line);padding:4px 0}
+.ns.open .rows{display:block}
+.row{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 34px;cursor:pointer}
+.row:hover,.row.sel{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.row .rn{font-weight:500;min-width:0}
+.row .rd{color:var(--mute);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.row.off .rn{text-decoration:line-through;color:var(--off)}
+.row .chips{flex:none}
+.row .chip{font-size:10px}
+.inf{padding:8px 10px;border-left:4px solid;cursor:pointer}
+.inf.g-storage{border-left-color:var(--storage)}.inf.g-data{border-left-color:var(--data)}.inf.g-ai{border-left-color:var(--ai)}.inf.g-platform{border-left-color:var(--platform)}
+.inf b{color:var(--ink)}.inf small{display:block;color:var(--mute)}
+.inf.on{box-shadow:0 0 0 2px var(--accent)}
+.dim{opacity:.28}
+#tip{position:fixed;z-index:10;max-width:320px;background:var(--ink);color:var(--bg);padding:6px 9px;border-radius:6px;font-size:12px;pointer-events:none;display:none}
+#detail{position:fixed;right:16px;bottom:16px;width:340px;max-width:calc(100vw - 32px);z-index:9;padding:12px 14px;display:none;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+#detail h4{margin:0 0 2px}#detail p{margin:2px 0 8px;color:var(--mute)}
+#detail ul{margin:0;padding-left:18px}#detail a{color:var(--accent);overflow-wrap:anywhere}
+header a{color:var(--accent)}
+#detail .x{position:absolute;right:6px;top:4px;border:0;background:none;font-size:18px;padding:2px 6px}
+footer{max-width:1200px;margin:0 auto;padding:0 16px 24px;color:var(--mute);font-size:12px}
+footer a{color:var(--accent)}
+@media (max-width:820px){.wrap{grid-template-columns:1fr}#edges{display:none}#infra{position:static;margin-top:16px}.row .rd{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Home-Ops Architecture</h1>
+  <p><a href="./">Home</a> · <a href="overview.html">Interaction overview</a> · Click a namespace to expand it and see which cluster infrastructure each service uses. Hover a service for its description, click it for the source evidence.</p>
+  <div class="bar">
+    <button id="expandAll">Expand all</button>
+    <button id="collapseAll">Collapse all</button>
+    <label class="chk"><input type="checkbox" id="platformEdges"> Draw External Secrets, gateway and AI-host edges</label>
+    <button id="theme" aria-label="Toggle theme">Theme</button>
+  </div>
+</header>
+<main>
+  <div class="wrap" id="wrap">
+    <svg id="edges" aria-hidden="true"></svg>
+    <section id="ns" aria-label="Namespaces"></section>
+    <aside id="infra" aria-label="Cluster infrastructure"></aside>
+  </div>
+</main>
+<div id="tip" role="tooltip"></div>
+<div id="detail" class="card" role="dialog" aria-label="Service details"></div>
+<footer id="foot"></footer>
+<script src="data.js"></script>
+<script>
+(function(){
+'use strict';
+var D=window.DATA,$=function(s){return document.querySelector(s)};
+var GROUPS=[['storage','Storage'],['data','Data'],['ai','AI'],['platform','Platform']];
+var QUIET={eso:1,route:1,aihost:1};           // used by many services: chips by default, edges on request
+var open={},focusInfra=null,selected=null;
+try{open=JSON.parse(localStorage.getItem('ha-open')||'{}')}catch(e){}
+var byNs={};D.services.forEach(function(s){(byNs[s.ns]=byNs[s.ns]||[]).push(s)});
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function gh(p,l){return D.repo+'/blob/'+D.rev+'/'+p+'#L'+l}
+function chipsFor(list){
+  var n={};list.forEach(function(s){if(!s.off)Object.keys(s.uses).forEach(function(k){n[k]=(n[k]||0)+1})});
+  var box=el('span','chips');
+  Object.keys(n).sort().forEach(function(k){var c=el('span','chip g-'+D.infra[k].group,D.infra[k].short+' '+n[k]);c.title=D.infra[k].label;box.appendChild(c)});
+  return box}
+function render(){
+  var nsBox=$('#ns');nsBox.textContent='';
+  D.namespaces.forEach(function(ns){
+    var list=byNs[ns]||[],card=el('div','card ns'+(open[ns]?' open':''));card.dataset.ns=ns;
+    var h=el('div','head');h.tabIndex=0;h.setAttribute('role','button');h.setAttribute('aria-expanded',!!open[ns]);
+    h.appendChild(el('span','caret','▸'));h.appendChild(el('span','name',ns));
+    h.appendChild(el('span','count',list.length+' service'+(list.length==1?'':'s')));
+    h.appendChild(chipsFor(list));
+    var toggle=function(){open[ns]=!open[ns];save();render()};
+    h.onclick=toggle;h.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle()}};
+    card.appendChild(h);
+    var rows=el('div','rows');
+    list.forEach(function(s){
+      var r=el('div','row'+(s.off?' off':''));r.tabIndex=0;r.dataset.id=ns+'/'+s.name;
+      r.appendChild(el('span','rn',s.name));r.appendChild(el('span','rd',s.off?'disabled':s.desc));
+      r.appendChild(chipsFor([s]));
+      r.onmouseenter=r.onmousemove=function(e){tip(e,s.desc||s.name)};r.onmouseleave=untip;
+      r.onfocus=function(){var b=r.getBoundingClientRect();tip({clientX:b.left+40,clientY:b.bottom},s.desc||s.name)};r.onblur=untip;
+      r.onclick=function(){select(s)};r.onkeydown=function(e){if(e.key==='Enter')select(s)};
+      rows.appendChild(r)});
+    card.appendChild(rows);nsBox.appendChild(card)});
+  var inf=$('#infra');inf.textContent='';
+  GROUPS.forEach(function(g){
+    inf.appendChild(el('h3',null,g[1]));
+    Object.keys(D.infra).filter(function(k){return D.infra[k].group===g[0]}).forEach(function(k){
+      var i=D.infra[k],c=el('div','card inf g-'+g[0]+(focusInfra===k?' on':''));c.tabIndex=0;c.dataset.k=k;
+      var b=el('b',null,i.label);c.appendChild(b);c.appendChild(el('small',null,i.note));
+      var f=function(){focusInfra=focusInfra===k?null:k;render()};
+      c.onclick=f;c.onkeydown=function(e){if(e.key==='Enter')f()};
+      c.onmouseenter=c.onmousemove=function(e){tip(e,i.note+' ('+i.src[0]+':'+i.src[1]+')')};c.onmouseleave=untip;
+      inf.appendChild(c)})});
+  applyFocus();edges()}
+function applyFocus(){
+  document.querySelectorAll('.row').forEach(function(r){
+    var s=find(r.dataset.id);r.classList.toggle('dim',!!focusInfra&&!(s.uses[focusInfra]));
+    r.classList.toggle('sel',selected&&selected===r.dataset.id)});
+  document.querySelectorAll('.ns').forEach(function(c){
+    var l=byNs[c.dataset.ns]||[];c.classList.toggle('dim',!!focusInfra&&!l.some(function(s){return s.uses[focusInfra]}))})}
+function find(id){return D.services.filter(function(s){return s.ns+'/'+s.name===id})[0]}
+function save(){try{localStorage.setItem('ha-open',JSON.stringify(open))}catch(e){}}
+function tip(e,t){var d=$('#tip');d.textContent=t;d.style.display='block';
+  d.style.left=Math.min(e.clientX+14,innerWidth-340)+'px';d.style.top=(e.clientY+16)+'px'}
+function untip(){$('#tip').style.display='none'}
+function select(s){
+  selected=s.ns+'/'+s.name;applyFocus();
+  var d=$('#detail');d.textContent='';
+  var x=el('button','x','×');x.setAttribute('aria-label','Close');x.onclick=function(){d.style.display='none';selected=null;applyFocus()};
+  d.appendChild(x);d.appendChild(el('h4',null,s.name+(s.off?' (disabled)':'')));
+  d.appendChild(el('p',null,s.ns+' · '+(s.desc||'no description')));
+  var ul=el('ul'),li=el('li');var a=el('a',null,'Declared in '+s.src[0]+':'+s.src[1]);a.href=gh(s.src[0],s.src[1]);a.target='_blank';a.rel='noopener';li.appendChild(a);ul.appendChild(li);
+  Object.keys(s.uses).forEach(function(k){var li=el('li'),u=s.uses[k];
+    var a=el('a',null,D.infra[k].label+' — '+u[0].split('/').slice(-3).join('/')+':'+u[1]);a.href=gh(u[0],u[1]);a.target='_blank';a.rel='noopener';li.appendChild(a);ul.appendChild(li)});
+  if(!Object.keys(s.uses).length)ul.appendChild(el('li',null,'No infrastructure use detected in its manifests.'));
+  d.appendChild(ul);d.style.display='block'}
+function edges(){
+  var svg=$('#edges'),w=$('#wrap').getBoundingClientRect();svg.textContent='';
+  svg.setAttribute('viewBox','0 0 '+w.width+' '+w.height);
+  var all=$('#platformEdges').checked,NS='http://www.w3.org/2000/svg';
+  var pos={};document.querySelectorAll('.inf').forEach(function(c){var b=c.getBoundingClientRect();pos[c.dataset.k]={x:b.left-w.left,y:b.top-w.top+b.height/2}});
+  function draw(fromEl,k,cls){
+    if(!pos[k]||(QUIET[k]&&!all)||(focusInfra&&focusInfra!==k))return;
+    var b=fromEl.getBoundingClientRect();if(!b.height)return;
+    var x1=b.right-w.left,y1=b.top-w.top+b.height/2,x2=pos[k].x,y2=pos[k].y,m=(x1+x2)/2;
+    var p=document.createElementNS(NS,'path');p.setAttribute('d','M'+x1+','+y1+' C'+m+','+y1+' '+m+','+y2+' '+x2+','+y2);
+    p.setAttribute('fill','none');p.setAttribute('stroke','var(--'+D.infra[k].group+')');
+    p.setAttribute('stroke-width',cls?1.6:1.1);p.setAttribute('opacity',cls?.95:(selected?.1:.5));svg.appendChild(p)}
+  document.querySelectorAll('.ns').forEach(function(c){
+    var ns=c.dataset.ns,list=byNs[ns]||[];
+    if(open[ns]){c.querySelectorAll('.row').forEach(function(r){var s=find(r.dataset.id);if(s.off)return;Object.keys(s.uses).forEach(function(k){draw(r,k,selected===r.dataset.id)})})}
+    else{var seen={};list.forEach(function(s){if(!s.off)Object.keys(s.uses).forEach(function(k){seen[k]=1})});Object.keys(seen).forEach(function(k){draw(c.querySelector('.head'),k,false)})}})}
+$('#expandAll').onclick=function(){D.namespaces.forEach(function(n){open[n]=true});save();render()};
+$('#collapseAll').onclick=function(){open={};save();render()};
+$('#platformEdges').onchange=edges;
+$('#theme').onclick=function(){var r=document.documentElement,dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark'};
+var q=0;function later(){cancelAnimationFrame(q);q=requestAnimationFrame(edges)}
+addEventListener('scroll',later,{passive:true});addEventListener('resize',later);
+if(window.ResizeObserver)new ResizeObserver(later).observe($('#wrap'));
+var f=$('#foot');f.appendChild(document.createTextNode('Generated from '));
+var a=el('a',null,'home-ops @ '+D.rev.slice(0,7));a.href=D.repo+'/tree/'+D.rev;f.appendChild(a);
+f.appendChild(document.createTextNode(' by build_data.py. Usage is found by searching manifests for NFS mounts, the VolSync component, Postgres and Dragonfly hostnames and similar markers; it is not a trace of the running cluster.'));
+render()})();
+</script>
+</body>
+</html>
