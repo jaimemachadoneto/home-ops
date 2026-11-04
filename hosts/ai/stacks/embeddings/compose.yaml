@@ -65,8 +65,16 @@ services:
       - BAAI/bge-m3
       - --dtype
       - float16
+      # Small batch, as for the other container: the warmup of TEI runs one
+      # full batch, and 8192 tokens ran out of GPU memory (CUDA_ERROR_OUT_OF_MEMORY)
+      # when this container started again with the other model on the same GPU.
+      # The chunks of the index are about 300 tokens.
       - --max-batch-tokens
-      - "8192"
+      - "2048"
+      # bge-m3 declares a max input of 8192 tokens. Without this flag TEI
+      # refuses to start when the batch limit is lower. A chunk has about 512
+      # tokens, so the truncation never applies.
+      - --auto-truncate
     deploy:
       resources:
         reservations:
