@@ -1,0 +1,78 @@
+# Deploy config for doco-cd (https://doco.cd) running on the AI host.
+# Polled from hosts/ai/doco-cd/poll-config.yml with target: ai-host-extra.
+# One document for each stack. See hosts/ai/README.md, "Auto-deploy".
+#
+# These stacks need two things that the target ai-host does not:
+#  - the bind mounts are absolute paths (/opt/stacks/<name>/...), because doco-cd
+#    runs compose from its own copy of the repository;
+#  - phonon-pt-br and qweanvoice read their variables from the .env file of the
+#    stack on the host. The doco-cd container must mount /opt/stacks read-only
+#    (hosts/ai/doco-cd/compose.yaml) before this target is polled.
+#
+# Not here: ollama (a redeploy restarts the model server that memini and LiteLLM
+# use), fast-whisper-pt-br and summirizer (stopped: a deploy would start them).
+#
+# The name of each document is the name of the Compose project that exists on the
+# host. A different name would make a second project and not update the first.
+# force_image_pull stays off, so an image with the tag latest is not pulled on
+# its own.
+name: tika
+working_dir: hosts/ai/stacks/tika
+compose_files:
+  - compose.yaml
+force_image_pull: false
+force_recreate: false
+remove_orphans: true
+prune_images: true
+---
+name: ocr
+working_dir: hosts/ai/stacks/ocr
+compose_files:
+  - compose.yaml
+force_image_pull: false
+force_recreate: false
+remove_orphans: true
+prune_images: true
+---
+name: fast-wir-2
+working_dir: hosts/ai/stacks/fast-wir-2
+compose_files:
+  - compose.yaml
+force_image_pull: false
+force_recreate: false
+remove_orphans: true
+prune_images: true
+---
+name: text-speach-1
+working_dir: hosts/ai/stacks/text-speach-1
+compose_files:
+  - compose.yaml
+force_image_pull: false
+force_recreate: false
+remove_orphans: true
+prune_images: true
+---
+name: phonon-pt-br
+working_dir: hosts/ai/stacks/phonon-pt-br
+compose_files:
+  - compose.yaml
+# HF_TOKEN. The file is written by hosts/ai/env-from-1password.sh. A missing file
+# must fail the deploy and not give an empty token.
+env_files:
+  - /opt/stacks/phonon-pt-br/.env
+force_image_pull: false
+force_recreate: false
+remove_orphans: true
+prune_images: true
+---
+name: qweanvoice
+working_dir: hosts/ai/stacks/qweanvoice
+compose_files:
+  - compose.yaml
+# QWEN_STUDIO_API_KEY. The compose file has a default when the file is empty.
+env_files:
+  - /opt/stacks/qweanvoice/.env
+force_image_pull: false
+force_recreate: false
+remove_orphans: true
+prune_images: true

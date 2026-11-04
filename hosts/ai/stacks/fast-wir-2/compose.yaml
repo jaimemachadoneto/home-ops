@@ -1,6 +1,6 @@
 ---
 # Speech to text for Home Assistant (Wyoming). The model downloads at the
-# first start into ./whisper-data.
+# first start into /opt/stacks/fast-wir-2/whisper-data.
 services:
   wyoming-whisper:
     image: rhasspy/wyoming-whisper:latest
@@ -9,7 +9,9 @@ services:
     ports:
       - 10300:10300
     volumes:
-      - ./whisper-data:/data
+      # Absolute: doco-cd runs compose from its own copy of the repository,
+      # and a ./ path would be an empty folder there.
+      - /opt/stacks/fast-wir-2/whisper-data:/data
     environment:
       - TZ=Europe/Madrid
     command:

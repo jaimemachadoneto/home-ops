@@ -15,6 +15,12 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/doco-cd/data:/data
+      # Read-only: the target ai-host-extra reads the .env file of phonon-pt-br
+      # and qweanvoice (env_files: /opt/stacks/<name>/.env). Those files hold
+      # HF_TOKEN. doco-cd already holds the docker socket, which is root on the
+      # host, so this adds little exposure, but a compromise of doco-cd now also
+      # reads every file in /opt/stacks.
+      - /opt/stacks:/opt/stacks:ro
     # NOT cap_drop: ALL - doco-cd reads host-owned files it does not own.
     # The mounted docker.sock is already root-equivalent on the host.
     healthcheck:

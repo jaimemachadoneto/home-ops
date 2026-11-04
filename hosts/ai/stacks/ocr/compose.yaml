@@ -8,7 +8,8 @@ services:
     environment:
       - LOG_LEVEL=INFO
     volumes:
-      - ./tmp:/app/tmp
+      # Absolute: doco-cd runs compose from its own copy of the repository.
+      - /opt/stacks/ocr/tmp:/app/tmp
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

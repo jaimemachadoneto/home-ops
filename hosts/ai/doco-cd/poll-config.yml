@@ -13,3 +13,10 @@
   reference: main
   interval: 30m
   target: ai-host
+# The stacks that need absolute bind mounts and the .env files of the host:
+# tika, ocr, fast-wir-2, text-speach-1, phonon-pt-br and qweanvoice. This target
+# needs /opt/stacks mounted read-only into doco-cd (hosts/ai/doco-cd/compose.yaml).
+- url: https://github.com/jaimemachadoneto/home-ops.git
+  reference: main
+  interval: 30m
+  target: ai-host-extra
