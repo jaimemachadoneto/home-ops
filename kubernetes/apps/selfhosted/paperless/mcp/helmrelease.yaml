@@ -33,7 +33,7 @@ spec:
               # Paperless call) and the traces (repos/paperless-mcp), built on
               # each push to its main.
               repository: ghcr.io/jaimemachado/paperless-mcp
-              tag: sha-c5178bf@sha256:47fc890424a8b0b9095aea322d8c3ae4bd9a0b88a1e06fcb55de74024fb8ec53
+              tag: sha-c020590@sha256:9ed33ba0f03d6015d4bf2da5ab42bb3714ce6b3fa9d30e53ace65a0b3d9626a3
             # The image starts HTTP mode itself: node build/index.js --http --port 3000.
             env:
               TZ: ${TIMEZONE}
