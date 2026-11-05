@@ -1,0 +1,27 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: memini-llm
+spec:
+  # The model name that memini uses for consolidation. memini never changes:
+  # to use another model, change `params` here. The fallbacks are in the
+  # LiteLLM UI (Router Settings), and the virtual key "memini" must allow
+  # this name and each fallback model.
+  # Reasoning is off, as in deepseek-v4.1-flash-noreason: consolidation needs
+  # a short JSON answer, not a long chain of thought.
+  modelName: memini-llm
+  params:
+    model: openrouter/deepseek/deepseek-v4.1-flash
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+    additional:
+      reasoning_effort: none
+  info:
+    maxTokens: 131072
+    supportsFunctionCalling: true
+    extra:
+      input_cost_per_token: 0.000000045
+      output_cost_per_token: 0.0000005

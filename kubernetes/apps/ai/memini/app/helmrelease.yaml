@@ -48,10 +48,11 @@ spec:
               MEMINI_WRITE_EMBED_TIMEOUT: 15s
               MEMINI_RECALL_EMBED_TIMEOUT: 10s
               # Consolidation (contradictions, distillation) through LiteLLM,
-              # where all models are managed. ollama/local (qwen3:8b) has
-              # thinking off; the budget and the timeout are a safety margin.
+              # where all models are managed. memini-llm is a name only: the
+              # model behind it is in litellm/app/models/memini-llm.yaml. The
+              # budget and the timeout are a safety margin.
               MEMINI_LLM_BASE_URL: http://litellm.ai.svc.cluster.local:4000/v1
-              MEMINI_LLM_MODEL: ollama/local
+              MEMINI_LLM_MODEL: memini-llm
               MEMINI_LLM_MAX_TOKENS: "8192"
               MEMINI_DISTILL_TIMEOUT: 180s
               MEMINI_LLM_API_KEY:
