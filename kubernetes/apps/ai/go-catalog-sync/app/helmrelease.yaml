@@ -60,6 +60,11 @@ spec:
                   secretKeyRef:
                     name: litellm
                     key: LITELLM_MASTER_KEY
+            # MQTT_USER and MQTT_PASS, from the ExternalSecret. Without them
+            # the broker refuses the connection and no event reaches Home Assistant.
+            envFrom:
+              - secretRef:
+                  name: go-catalog-sync-secret
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
