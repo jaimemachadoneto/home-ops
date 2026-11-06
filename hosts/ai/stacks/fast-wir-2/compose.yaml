@@ -7,6 +7,13 @@
 # not found". Its model loaded on the GPU, which hid the fault until the first
 # request (found on 2026-11-06). Use the `gpu` tag: the `gpu-legacy` tag is for
 # cards older than Turing, and the GTX 1660 SUPER is Turing.
+#
+# The image does not set a compute type, so the model runs in float16. The
+# GTX 1660 SUPER has no tensor cores and float16 gives only "!!!!" there. The
+# start script below is the script of the image (v3.0.2-ls18) with one more
+# option: `--compute-type int8_float32`. Compare it with
+# /etc/s6-overlay/s6-rc.d/svc-whisper/run in the image after each update.
+# Each "$" is written "$$" because Compose reads "$" in the text of a config.
 services:
   wyoming-whisper:
     image: lscr.io/linuxserver/faster-whisper:gpu
@@ -14,6 +21,10 @@ services:
     restart: unless-stopped
     ports:
       - 10300:10300
+    configs:
+      - source: whisper-run
+        target: /etc/s6-overlay/s6-rc.d/svc-whisper/run
+        mode: 0755
     volumes:
       # Absolute: doco-cd runs compose from its own copy of the repository,
       # and a ./ path would be an empty folder there.
@@ -36,3 +47,23 @@ services:
               # not measured. GPU 2 had 3.5 GiB free before Whisper.
               device_ids: ["2"]
               capabilities: [gpu]
+configs:
+  whisper-run:
+    content: |
+      #!/command/with-contenv bash
+      # shellcheck shell=bash
+
+      export LD_LIBRARY_PATH=$$(python3 -c 'import os; import nvidia.cublas.lib; import nvidia.cudnn.lib; print(os.path.dirname(nvidia.cublas.lib.__path__[0]) + "/lib:" + os.path.dirname(nvidia.cudnn.lib.__path__[0]) + "/lib")')
+
+      exec \
+          s6-notifyoncheck -d -n 300 -w 1000 -c "nc -z localhost 10300" \
+              s6-setuidgid abc python3 -m wyoming_faster_whisper \
+              --uri 'tcp://0.0.0.0:10300' \
+              --device cuda \
+              --compute-type int8_float32 \
+              --model "$${WHISPER_MODEL}" \
+              --beam-size "$${WHISPER_BEAM:-1}" \
+              --language "$${WHISPER_LANG:-en}" \
+              --data-dir /config \
+              --download-dir /config \
+              $${LOCAL_ONLY:+--local-files-only}
