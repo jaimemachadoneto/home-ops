@@ -33,8 +33,11 @@ services:
       - PGID=1000
       - PUID=1000
       - TZ=Europe/Madrid
-      # The same language as before the change of image (`--language pt`).
-      - WHISPER_LANG=pt
+      # The language when the client names none. `pt` here translated English
+      # speech into Portuguese (measured on 2026-11-06: 30% word error rate on
+      # English clips, against 8.5% when the client sends `en`). A language that
+      # the client names is used as it is.
+      - WHISPER_LANG=auto
       - WHISPER_MODEL=large-v3-turbo
     deploy:
       resources:
