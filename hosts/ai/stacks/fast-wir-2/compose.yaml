@@ -1,9 +1,15 @@
 ---
 # Speech to text for Home Assistant (Wyoming). The model downloads at the
 # first start into /opt/stacks/fast-wir-2/whisper-data.
+#
+# The image is the GPU build of linuxserver. The rhasspy/wyoming-whisper image
+# has no CUDA libraries, so each transcription failed with "libcublas.so.12 is
+# not found". Its model loaded on the GPU, which hid the fault until the first
+# request (found on 2026-11-06). Use the `gpu` tag: the `gpu-legacy` tag is for
+# cards older than Turing, and the GTX 1660 SUPER is Turing.
 services:
   wyoming-whisper:
-    image: rhasspy/wyoming-whisper:latest
+    image: lscr.io/linuxserver/faster-whisper:gpu
     container_name: wyoming-whisper-ptbr
     restart: unless-stopped
     ports:
@@ -11,25 +17,22 @@ services:
     volumes:
       # Absolute: doco-cd runs compose from its own copy of the repository,
       # and a ./ path would be an empty folder there.
-      - /opt/stacks/fast-wir-2/whisper-data:/data
+      - /opt/stacks/fast-wir-2/whisper-data:/config
     environment:
+      - PGID=1000
+      - PUID=1000
       - TZ=Europe/Madrid
-    command:
-      - --model
-      - large-v3-turbo
-      - --language
-      - pt
-      - --device
-      - cuda
-      - --compute-type
-      - float16
+      # The same language as before the change of image (`--language pt`).
+      - WHISPER_LANG=pt
+      - WHISPER_MODEL=large-v3-turbo
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               # GPU 2, shared with the two TEI containers and with phonon-pt-br.
-              # It holds 1.6 GiB at idle (the Whisper model); the peak during a
-              # transcription is not measured. GPU 2 had 3.5 GiB free before it.
+              # The rhasspy image held 1.6 GiB at idle (the Whisper model). The
+              # memory of this image, and the peak during a transcription, are
+              # not measured. GPU 2 had 3.5 GiB free before Whisper.
               device_ids: ["2"]
               capabilities: [gpu]
