@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: deepseek-flash
+spec:
+  # DeepSeek V4.1 Flash on OpenCode Go, for the claude-deepseek alias of
+  # nix-config. When it fails, the fallback in the LiteLLM UI goes to
+  # opr/deepseek-v4.1-flash (OpenRouter, paid).
+  modelName: deepseek-flash
+  params:
+    model: opencode_go/deepseek-v4.1-flash
+    apiKeyRef:
+      name: opencode-go
+      key: OPENCODE_GO_API_KEY
+    # OpenCode Go refuses a request without this header (MissingSessionID),
+    # and the proxy does not forward the client's headers.
+    additional:
+      extra_headers:
+        x-opencode-session: litellm-deepseek-flash

@@ -144,6 +144,7 @@ OpenCode Go model of the same tier.
 | Model groups `opus`, `sonnet`, `haiku` (`anthropic/claude-*-5-5`, no key) | `litellm/app/models/claude-*.yaml` |
 | Fallback chains, routing strategy, retries, cooldown, timeout | the LiteLLM UI (Router Settings). The database keeps them. Do not set these keys in `routerSettings`: then the file owns them and LiteLLM refuses a change in the UI. |
 | Redis of the router | `litellm/app/litellmproxy.yaml`, `routerSettings` |
+| Model group `deepseek-flash` (`opencode_go/deepseek-v4.1-flash` with a fixed `x-opencode-session` header; UI fallback to `opr/deepseek-v4.1-flash`), used by the `claude-deepseek` alias of nix-config | `litellm/app/models/deepseek-flash.yaml` |
 | `go-*` models (`opencode_go/…`) and `opr/*` models (`openrouter/…`) | managed by go-catalog-sync via LiteLLM admin API — no CRDs |
 | Daily sync of Go and OpenRouter models and prices | `go-catalog-sync/` |
 
