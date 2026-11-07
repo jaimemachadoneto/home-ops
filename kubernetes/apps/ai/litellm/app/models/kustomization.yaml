@@ -11,4 +11,5 @@ resources:
   - ./deepseek-flash-api.yaml
   - ./memini-llm.yaml
   - ./ollama-chat.yaml
+  - ./opencode-go-deepseek-flash.yaml
   - ./openrouter-deepseek-deepseek-v4-1-flash-noreason.yaml
