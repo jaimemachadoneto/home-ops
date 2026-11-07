@@ -1,0 +1,95 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: voice-router-dashboard
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: voice-router-dashboard
+  interval: 30m
+  values:
+    controllers:
+      voice-router-dashboard:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        replicas: 1
+        pod:
+          securityContext:
+            runAsGroup: 101
+            runAsNonRoot: true
+            runAsUser: 101
+        containers:
+          app:
+            image:
+              repository: ghcr.io/jaimemachadoneto/voice-router-dashboard
+              # Pin an immutable tag. CI publishes sha-<commit> for exactly
+              # this, and the release PR updates it.
+              tag: sha-8c5e400a358aa8e3070f96e74d1614f26c87d2b0
+            env:
+              # The container writes the proxy configuration from this, so the
+              # token stays in the pod and never reaches the browser.
+              VOICE_ROUTER_URL: http://voice-router.selfhosted.svc.cluster.local:8000
+              VOICE_ROUTER_TOKEN:
+                valueFrom:
+                  secretKeyRef:
+                    name: voice-router-secret
+                    key: VOICE_ROUTER_TOKEN
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: &httpPort 8080
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /
+                    port: *httpPort
+                  initialDelaySeconds: 2
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+                  failureThreshold: 3
+            resources:
+              requests:
+                cpu: 10m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+
+    service:
+      app:
+        ports:
+          http:
+            port: *httpPort
+
+    # The page is a view of the router log, so it sits on the house network
+    # with the router and nothing else.
+    route:
+      app:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: Can the local route replace the hosted one
+          gethomepage.dev/group: Home Automation
+          gethomepage.dev/icon: mdi-voice
+          gethomepage.dev/name: Voice Router
+          gethomepage.dev/app: voice-router-dashboard
+        hostnames:
+          - voice-router-dashboard.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
