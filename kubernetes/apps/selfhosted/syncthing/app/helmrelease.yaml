@@ -89,7 +89,7 @@ spec:
               # slow: one batch of chunks took longer than the request timeout.
               # A change of model needs a reset of the embeddings.
               EMBEDDING_PROVIDER: ollama
-              OLLAMA_URL: http://ai.local.${SECRET_DOMAIN}:11436
+              OLLAMA_URL: http://10.30.50.13:11436
               EMBEDDING_MODEL: bge-m3
               EMBEDDING_DIMENSIONS: "1024"
               EMBEDDING_ALLOW_PLAINTEXT: "true"
