@@ -1,0 +1,17 @@
+---
+# Jev, the decision model of voice-router. LiteLLM 1.109 serves decision
+# models on /v1/systemone from model_list, with spend from usage.cost. A
+# client sends model "jev" and the System One body. The alias always points
+# to the newest Jev.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: openrouter-typesafe-jev
+spec:
+  modelName: jev
+  params:
+    model: openrouter/~typesafe/jev-latest
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY

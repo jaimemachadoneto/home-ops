@@ -258,6 +258,33 @@ Add a second automation for the OpenRouter topic
 3. In the LiteLLM logs, a request to Go must not have an `sk-ant-oat`
    `Authorization` header.
 
+## Jev decision model through LiteLLM
+
+The voice-router uses the Jev decision model on OpenRouter. LiteLLM 1.109
+serves decision models on `/v1/systemone` from `model_list`, so Jev is a
+normal `LiteLLMModel`, not a pass-through
+(`models/openrouter-typesafe-jev.yaml`):
+
+```yaml
+modelName: jev
+params:
+  model: openrouter/~typesafe/jev-latest
+  apiKeyRef:
+    name: litellm
+    key: OPENROUTER_API_KEY
+```
+
+- URL: `https://litellm.${SECRET_DOMAIN}/v1/systemone`
+- Body: the System One body of the router, with `model: "jev"`.
+- LiteLLM adds the `OPENROUTER_API_KEY` from the `litellm` Secret.
+- LiteLLM writes the spend from `usage.cost` to the spend logs, so the
+  cost dashboard shows Jev traffic.
+- A key with a models list must include `jev`.
+
+Use `/v1/decisions` for the same model with the OpenAI decision body. Do
+not use the `/openrouter/alpha/decisions` pass-through: it sends the raw
+body to OpenRouter only, with no model_list, fallbacks or per-key spend.
+
 ## LiteLLM database: per-client keys
 
 LiteLLM keeps keys, users, teams and spend logs in database `litellm` on
