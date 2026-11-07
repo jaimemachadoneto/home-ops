@@ -6,7 +6,7 @@ LiteLLM operator.
 | Piece | What it is |
 | --- | --- |
 | `litellm` | One OpenAI-compatible API for every model, and one **MCP gateway** for every MCP server: `https://litellm.${SECRET_DOMAIN}` (envoy-internal, LAN only; only `/mcp` is also on the internet, for claude.ai) |
-| Models | `deepseek/deepseek-chat` and `deepseek/deepseek-flash` (DeepSeek API), `deepseek-flash` (the same model on OpenCode Go; each provider bills its group), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.${SECRET_DOMAIN}`), `memini-llm` (the model of memini consolidation; change its `params` to use another model), `opus` / `sonnet` / `haiku` (Claude subscription with OpenCode Go fallback, see "Claude Code through LiteLLM") |
+| Models | `deepseek/deepseek-chat` and `deepseek/deepseek-flash` (DeepSeek API), `opencode-go/deepseek-flash` (the same model on OpenCode Go; each provider bills its group; `deepseek-flash` is its old name), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.${SECRET_DOMAIN}`), `memini-llm` (the model of memini consolidation; change its `params` to use another model), `opus` / `sonnet` / `haiku` (Claude subscription with OpenCode Go fallback, see "Claude Code through LiteLLM") |
 | MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_<session>` (one per browser-sessions session, e.g. `browser_colegio`), `memini` (agent memory, namespace `personal/jaime`), `notes` (the notes vault, see `notes-mcp.md`) |
 | `memini` | Long-term memory API (`memini.${SECRET_DOMAIN}`); embeddings from Ollama (`qwen3-embedding:4b`), reranker in-cluster (llmkube, `qwen3-reranker-0.6b`) |
 
@@ -144,12 +144,13 @@ OpenCode Go model of the same tier.
 | Model groups `opus`, `sonnet`, `haiku` (`anthropic/claude-*-5-5`, no key) | `litellm/app/models/claude-*.yaml` |
 | Fallback chains, routing strategy, retries, cooldown, timeout | the LiteLLM UI (Router Settings). The database keeps them. Do not set these keys in `routerSettings`: then the file owns them and LiteLLM refuses a change in the UI. |
 | Redis of the router | `litellm/app/litellmproxy.yaml`, `routerSettings` |
-| Model group `deepseek-flash` (`opencode_go/deepseek-v4.1-flash` with a fixed `x-opencode-session` header; UI fallback to `opr/deepseek-v4.1-flash`), used by the `claude-deepseek` alias of nix-config; OpenCode Go bills it | `litellm/app/models/deepseek-flash.yaml` |
+| Model group `opencode-go/deepseek-flash` (`opencode_go/deepseek-v4.1-flash` with a fixed `x-opencode-session` header; UI fallback to `opr/deepseek-v4.1-flash`), used by the `claude-deepseek` alias of nix-config; OpenCode Go bills it | `litellm/app/models/opencode-go-deepseek-flash.yaml` |
+| Model group `deepseek-flash`, the old name of `opencode-go/deepseek-flash`. Remove it when every client uses the new name | `litellm/app/models/deepseek-flash.yaml` |
 | Model group `deepseek/deepseek-flash` (`deepseek/deepseek-flash` on `api.deepseek.com`), which DeepSeek bills | `litellm/app/models/deepseek-flash-api.yaml` |
 | `go-*` models (`opencode_go/…`) and `opr/*` models (`openrouter/…`) | managed by go-catalog-sync via LiteLLM admin API — no CRDs |
 | Daily sync of Go and OpenRouter models and prices | `go-catalog-sync/` |
 
-- `deepseek-flash` and `deepseek/deepseek-flash` are the same model, but each
+- `opencode-go/deepseek-flash` and `deepseek/deepseek-flash` are the same model, but each
   provider bills its own group. Keep each provider in its own model group:
   never add a UI/DB-created deployment to a CRD-owned group, or LiteLLM merges
   their spend under one requested model. Grafana groups cost by provider and
