@@ -1,0 +1,122 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: voice-router
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: voice-router
+  interval: 30m
+  values:
+    controllers:
+      voice-router:
+        annotations:
+          reloader.stakater.com/auto: "true"
+
+        # One replica, and Recreate rather than RollingUpdate. The log and the
+        # generated word file are one SQLite database and one JSON file on a
+        # ReadWriteOnce volume, and two writers would corrupt both.
+        replicas: 1
+        strategy: Recreate
+
+        pod:
+          securityContext:
+            fsGroup: 2000
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 2000
+            runAsNonRoot: true
+            runAsUser: 2000
+
+        containers:
+          app:
+            image:
+              repository: ghcr.io/jaimemachadoneto/voice-router
+              # Pin an immutable tag. `main` moves under you; CI publishes
+              # sha-<commit> for exactly this, and the release PR updates it.
+              tag: sha-731d8f29055a249f108d13353ce4e1893e3ecd42
+            env:
+              TZ: Europe/Madrid
+              # The log and the generated word file live on the volume, so a
+              # restart keeps the evidence the dashboard reads.
+              VOICE_ROUTER_DB: /data/router.db
+              VOICE_ROUTER_HOUSE_WORDS: /data/house_words.json
+              # In-cluster and plain http on purpose: the gateway holds the
+              # upstream key, and this path never leaves the cluster. The
+              # model alias moves in LiteLLM, not here.
+              VOICE_ROUTER_JEV_URL: http://litellm.ai.svc.cluster.local:4000/v1/systemone
+              VOICE_ROUTER_JEV_MODEL: jev
+              # Set when the local route runs on the `ai` host. Empty means the
+              # shadow step is off and Jev answers alone.
+              # VOICE_ROUTER_KEV_URL: http://10.30.50.x:8080
+              HTTP_PORT: &httpPort 8000
+            envFrom:
+              - secretRef:
+                  name: voice-router-secret
+            probes:
+              # /health reads no database and calls no model, so a slow Jev
+              # answer cannot restart the pod.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *httpPort
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /health
+                    port: *httpPort
+                  initialDelaySeconds: 2
+                  periodSeconds: 10
+                  timeoutSeconds: 2
+                  failureThreshold: 3
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+
+    service:
+      app:
+        ports:
+          http:
+            port: *httpPort
+
+    persistence:
+      data:
+        existingClaim: voice-router-data
+        globalMounts:
+          - path: /data
+      # readOnlyRootFilesystem leaves nowhere to write otherwise, and uvicorn
+      # wants a usable /tmp.
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+
+    # The router is on the house network only. Home Assistant runs outside the
+    # cluster, at 10.30.50.5, so it needs this route. The bearer token is the
+    # only guard, so this route must never reach the internet gateway.
+    route:
+      app:
+        hostnames:
+          - voice-router.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
