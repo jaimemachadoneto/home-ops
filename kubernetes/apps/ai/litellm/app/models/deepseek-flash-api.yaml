@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: deepseek-flash-api
+spec:
+  # DeepSeek bills this group through its own API. The group `deepseek-flash`
+  # runs the same model on the OpenCode Go subscription, which OpenCode Go
+  # bills. Keep both groups, because each provider bills its own group.
+  modelName: deepseek/deepseek-flash
+  params:
+    model: deepseek/deepseek-flash
+    apiBase: https://api.deepseek.com/v1
+    apiKeyRef:
+      name: litellm
+      key: DEEPSEEK_API_KEY
+  info:
+    maxInputTokens: 1000000
+    maxOutputTokens: 393216
+    supportsFunctionCalling: true

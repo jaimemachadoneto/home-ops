@@ -6,7 +6,7 @@ LiteLLM operator.
 | Piece | What it is |
 | --- | --- |
 | `litellm` | One OpenAI-compatible API for every model, and one **MCP gateway** for every MCP server: `https://litellm.${SECRET_DOMAIN}` (envoy-internal, LAN only; only `/mcp` is also on the internet, for claude.ai) |
-| Models | `deepseek/deepseek-chat` (DeepSeek API), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.${SECRET_DOMAIN}`), `memini-llm` (the model of memini consolidation; change its `params` to use another model), `opus` / `sonnet` / `haiku` (Claude subscription with OpenCode Go fallback, see "Claude Code through LiteLLM") |
+| Models | `deepseek/deepseek-chat` and `deepseek/deepseek-flash` (DeepSeek API), `deepseek-flash` (the same model on OpenCode Go; each provider bills its group), `ollama/local` (`qwen3:8b` on the Ollama host `ai.local.${SECRET_DOMAIN}`), `memini-llm` (the model of memini consolidation; change its `params` to use another model), `opus` / `sonnet` / `haiku` (Claude subscription with OpenCode Go fallback, see "Claude Code through LiteLLM") |
 | MCP servers | `ha_mcp` (Home Assistant), `context7` (library docs), `web_search` (SearXNG), `outlook` (Outlook.com mailbox), `browser_<session>` (one per browser-sessions session, e.g. `browser_colegio`), `memini` (agent memory, namespace `personal/jaime`), `notes` (the notes vault, see `notes-mcp.md`) |
 | `memini` | Long-term memory API (`memini.${SECRET_DOMAIN}`); embeddings from Ollama (`qwen3-embedding:4b`), reranker in-cluster (llmkube, `qwen3-reranker-0.6b`) |
 
@@ -144,10 +144,16 @@ OpenCode Go model of the same tier.
 | Model groups `opus`, `sonnet`, `haiku` (`anthropic/claude-*-5-5`, no key) | `litellm/app/models/claude-*.yaml` |
 | Fallback chains, routing strategy, retries, cooldown, timeout | the LiteLLM UI (Router Settings). The database keeps them. Do not set these keys in `routerSettings`: then the file owns them and LiteLLM refuses a change in the UI. |
 | Redis of the router | `litellm/app/litellmproxy.yaml`, `routerSettings` |
-| Model group `deepseek-flash` (`opencode_go/deepseek-v4.1-flash` with a fixed `x-opencode-session` header; UI fallback to `opr/deepseek-v4.1-flash`), used by the `claude-deepseek` alias of nix-config | `litellm/app/models/deepseek-flash.yaml` |
+| Model group `deepseek-flash` (`opencode_go/deepseek-v4.1-flash` with a fixed `x-opencode-session` header; UI fallback to `opr/deepseek-v4.1-flash`), used by the `claude-deepseek` alias of nix-config; OpenCode Go bills it | `litellm/app/models/deepseek-flash.yaml` |
+| Model group `deepseek/deepseek-flash` (`deepseek/deepseek-flash` on `api.deepseek.com`), which DeepSeek bills | `litellm/app/models/deepseek-flash-api.yaml` |
 | `go-*` models (`opencode_go/…`) and `opr/*` models (`openrouter/…`) | managed by go-catalog-sync via LiteLLM admin API — no CRDs |
 | Daily sync of Go and OpenRouter models and prices | `go-catalog-sync/` |
 
+- `deepseek-flash` and `deepseek/deepseek-flash` are the same model, but each
+  provider bills its own group. DeepSeek bills at peak prices from 01:00 to
+  04:00 and 06:00 to 10:00 UTC, Monday to Friday, but not on Chinese public
+  holidays. LiteLLM cannot follow those holidays, so it records a peak price
+  also on a holiday.
 - The `anthropic/` models have no key. LiteLLM forwards the OAuth token
   (`sk-ant-oat…`) that Claude Code sends. LiteLLM v1.106.5 forwards this
   token to each `anthropic/` model, also with a different `api_base`. Thus
