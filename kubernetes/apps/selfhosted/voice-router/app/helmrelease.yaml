@@ -23,9 +23,10 @@ spec:
 
         pod:
           # The package is private, so the kubelet needs this secret to pull
-          # the image. It holds a token that can only read packages.
+          # the image. It holds a token that can only read packages, and the
+          # namespace shares it with any other app that pulls a private image.
           imagePullSecrets:
-            - name: voice-router-registry
+            - name: ghcr-read
           securityContext:
             fsGroup: 2000
             fsGroupChangePolicy: OnRootMismatch
