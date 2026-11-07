@@ -60,7 +60,7 @@
         "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "vertical",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "value", "values": true },
         "textMode": "value_and_name"
       },
       "targets": [
@@ -220,11 +220,11 @@
     },
     {
       "datasource": { "type": "postgres", "uid": "litellm-postgres" },
-      "description": "Per provider, requested model and upstream model in the selected time range. Cost per request = cost / requests.",
+      "description": "Per provider, requested model and upstream model in the selected time range. Cost per request = cost / requests. The Cost gauge uses 0 as the minimum and the largest cost in the table as the maximum.",
       "fieldConfig": {
         "defaults": { "custom": { "align": "auto", "cellOptions": { "type": "auto" } }, "decimals": 0, "unit": "short" },
         "overrides": [
-          { "matcher": { "id": "byName", "options": "Cost" }, "properties": [ { "id": "unit", "value": "currencyUSD" }, { "id": "decimals", "value": 4 }, { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "basic" } }, { "id": "color", "value": { "mode": "continuous-BlYlRd" } } ] },
+          { "matcher": { "id": "byName", "options": "Cost" }, "properties": [ { "id": "unit", "value": "currencyUSD" }, { "id": "decimals", "value": 4 }, { "id": "min", "value": 0 }, { "id": "fieldMinMax", "value": true }, { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "basic" } }, { "id": "color", "value": { "mode": "continuous-BlYlRd" } } ] },
           { "matcher": { "id": "byName", "options": "Cost / request" }, "properties": [ { "id": "unit", "value": "currencyUSD" }, { "id": "decimals", "value": 4 } ] }
         ]
       },
@@ -254,7 +254,7 @@
       "options": {
         "displayMode": "gradient",
         "orientation": "horizontal",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "value", "values": true },
         "showUnfilled": true,
         "valueMode": "color"
       },
@@ -282,7 +282,7 @@
       "options": {
         "displayMode": "gradient",
         "orientation": "horizontal",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "value", "values": true },
         "showUnfilled": true,
         "valueMode": "color"
       },
