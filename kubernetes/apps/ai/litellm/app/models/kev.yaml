@@ -1,0 +1,27 @@
+---
+# Kev, the local decision model of voice-router. It answers the same device
+# question that Jev answers, on the house GPU, so the command text never leaves
+# the network for this answer.
+#
+# LiteLLM 1.109 serves decision models on /v1/systemone from model_list, so Kev
+# is a model entry, not a second service. The router calls the same endpoint as
+# Jev with model "kev".
+#
+# qwen3:8b is what Ollama holds on the `ai` host today. It is not a fine-tuned
+# decision model, so the shadow period measures it before it can act: the
+# router compares it with Jev for 100 commands and needs 97% agreement, no wrong
+# action and p95 under 0.25 s before the local route replaces anything.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: kev
+spec:
+  modelName: kev
+  params:
+    model: ollama/qwen3:8b
+    apiBase: http://ai.local.${SECRET_DOMAIN}:11434
+    # A decision answer is one short choice. Thinking fills the context and
+    # returns nothing useful, as it did for ollama/local.
+    additional:
+      reasoning_effort: none
