@@ -150,10 +150,13 @@ OpenCode Go model of the same tier.
 | Daily sync of Go and OpenRouter models and prices | `go-catalog-sync/` |
 
 - `deepseek-flash` and `deepseek/deepseek-flash` are the same model, but each
-  provider bills its own group. DeepSeek bills at peak prices from 01:00 to
-  04:00 and 06:00 to 10:00 UTC, Monday to Friday, but not on Chinese public
-  holidays. LiteLLM cannot follow those holidays, so it records a peak price
-  also on a holiday.
+  provider bills its own group. Keep each provider in its own model group:
+  never add a UI/DB-created deployment to a CRD-owned group, or LiteLLM merges
+  their spend under one requested model. Grafana groups cost by provider and
+  requested model, so traffic from different providers stays separate. DeepSeek
+  bills at peak prices from 01:00 to 04:00 and 06:00 to 10:00 UTC, Monday to
+  Friday, but not on Chinese public holidays. LiteLLM cannot follow those
+  holidays, so it records a peak price also on a holiday.
 - The `anthropic/` models have no key. LiteLLM forwards the OAuth token
   (`sk-ant-oat…`) that Claude Code sends. LiteLLM v1.106.5 forwards this
   token to each `anthropic/` model, also with a different `api_base`. Thus
