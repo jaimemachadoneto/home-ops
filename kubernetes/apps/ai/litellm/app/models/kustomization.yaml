@@ -9,6 +9,7 @@ resources:
   - ./deepseek-chat.yaml
   - ./deepseek-flash.yaml
   - ./deepseek-flash-api.yaml
+  - ./kev.yaml
   - ./memini-llm.yaml
   - ./ollama-chat.yaml
   - ./opencode-go-deepseek-flash.yaml
