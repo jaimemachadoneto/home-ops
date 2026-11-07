@@ -9,6 +9,11 @@ spec:
     kind: OCIRepository
     name: voice-router
   interval: 30m
+  upgrade:
+    remediation:
+      # A first install that fails has no previous revision to roll back to,
+      # so the controller stalls and does not retry. Retry the release.
+      remediateLastFailure: true
   values:
     controllers:
       voice-router:
