@@ -22,6 +22,14 @@ spec:
         value: "8000"
       - name: MCP_HTTP_HOST
         value: 0.0.0.0
+      # LiteLLM opens a new MCP session for each tool list. The image default
+      # of 20 initializes per minute is too low. It answers 429, and the
+      # gateway retries for 15 s before it drops this server. Only the
+      # gateway reaches this server, so a high limit is safe.
+      - name: MCP_RATE_INIT_MAX
+        value: "600"
+      - name: MCP_RATE_SESSION_MAX
+        value: "6000"
     resources:
       requests:
         cpu: 10m
