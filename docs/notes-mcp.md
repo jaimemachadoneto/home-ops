@@ -83,8 +83,8 @@ servers, and asking it to open a file in `~/Notes` is refused.
 
 [maxkuminov/obsidian-mcp](https://github.com/maxkuminov/obsidian-mcp) (MIT)
 already does most of this: it runs without the Obsidian app, has meaning
-search (pgvector) plus word search (Postgres full text), Ollama or any
-OpenAI-compatible embeddings, note create/edit/move/delete with content-hash
+search (pgvector) plus word search (Postgres full text), Ollama, OpenAI, or
+Hugging Face TEI embeddings, note create/edit/move/delete with content-hash
 preconditions, atomic writes, soft delete into `.trash/`, exclude patterns,
 Bearer API keys (read or read-write) and OAuth 2.0 PKCE (works with
 claude.ai), and Kubernetes manifests.
@@ -117,7 +117,7 @@ outside its tools.
   PVC to `ceph-filesystem` (RWX), changes the backup and restore of the
   vault, so prefer the shared pod.
 - Meaning search with a local model (no outside service): `bge-m3` on the
-  Ollama host, through the native Ollama provider. The first choice was
+  TEI host, through the native TEI provider. The first choice was
   `qwen3-embedding:4b`, as memini uses, but one batch of chunks took longer
   than the request timeout of the server.
 - Word search for exact names, codes and numbers: built in.
@@ -226,10 +226,10 @@ two models in one column make the search wrong without any error. The same
 check stops the indexer of a running pod. So a change of provider or model has
 a fixed order, and the reset must run before the new settings reach the pod.
 
-Today the server uses `bge-m3` on Ollama (port 11434). The target is the TEI
-container `tei-bge-m3` of the ai host (`hosts/ai/stacks/embeddings`, port 11436)
-through the OpenAI provider. The vectors of both give a cosine of 1.0000, so the
-reset is a precaution of the guard and not a need of the data. It costs a new
+The server uses the native `/embed` API of the TEI container `tei-bge-m3` on the
+ai host (`hosts/ai/stacks/embeddings`, port 11436). The earlier server used
+`bge-m3` on Ollama (port 11434). The vectors of both give a cosine of 1.0000, so
+the reset is a precaution of the guard and not a need of the data. It costs a new
 embedding of all notes (about 80 notes, a few minutes).
 
 What the reset does, in one transaction: it deletes every row of
@@ -239,14 +239,17 @@ settings. Notes, links and the word search are not touched. While the notes are
 embedded again, the search by meaning does not find the notes that are not yet
 done. The word search keeps working.
 
-TEI answers at most 96 inputs in one request, and the server sends at most 96
-(`OPENAI_BATCH_LIMIT`). Keep `--max-client-batch-size` of `tei-bge-m3` at 96 or
-more.
+TEI answers at most 96 inputs in one request. The server sends 16
+(`TEI_EMBED_BATCH_SIZE`), because 96 full-size chunks can exceed the 60 s
+request timeout on the shared GPU. Keep `--max-client-batch-size` of
+`tei-bge-m3` at 16 or more.
 
 Steps, in this order:
 
 1. Check that `tei-bge-m3` answers: `curl http://ai.local.<domain>:11436/health`
-   returns 200 and `/v1/embeddings` gives 1024 numbers for one input.
+   returns 200. Then `curl -X POST http://ai.local.<domain>:11436/embed -H
+   'Content-Type: application/json' -d '{"inputs":["test"]}'` gives one vector of
+   1024 numbers.
 2. Run the reset with the new settings. Stop the indexer first so that no pass
    writes between the reset and the new pod: scale the Deployment to 0
    (`kubectl -n selfhosted scale deploy syncthing --replicas=0`). Syncthing is
@@ -255,24 +258,45 @@ Steps, in this order:
    environment and Secret as the `obsidian-mcp` container, with the new
    settings, and the command `python -m scripts.reset_embeddings`:
 
-   ```sh
-   kubectl -n selfhosted run notes-reset --rm -i --restart=Never \
-     --image=<the image of the container obsidian-mcp> \
-     --overrides='<see below>' -- python -m scripts.reset_embeddings
+   The override supplies the Secret `obsidian-mcp-secret` (it has
+   `DATABASE_URL` and `SECRET_KEY`) and the new settings. It needs no volume:
+   the script only talks to Postgres.
+
+   ```yaml
+   # /tmp/notes-reset.yaml
+   spec:
+     containers:
+       - name: notes-reset
+         envFrom:
+           - secretRef:
+               name: obsidian-mcp-secret
+         env:
+           - name: EMBEDDING_PROVIDER
+             value: tei
+           - name: TEI_URL
+             value: http://10.30.50.13:11436
+           - name: TEI_EMBEDDING_MODEL
+             value: BAAI/bge-m3
+           - name: TEI_EMBED_BATCH_SIZE
+             value: "16"
+           - name: EMBEDDING_DIMENSIONS
+             value: "1024"
+           - name: EMBEDDING_ALLOW_PLAINTEXT
+             value: "true"
    ```
 
-   The pod needs: `envFrom` the Secret `obsidian-mcp-secret` (it has
-   `DATABASE_URL` and `SECRET_KEY`); and these variables, which are the new
-   settings: `EMBEDDING_PROVIDER=openai`,
-   `OPENAI_BASE_URL=http://ai.local.<domain>:11436/v1`,
-   `OPENAI_EMBEDDING_MODEL=BAAI/bge-m3`, `OPENAI_API_KEY=not-used`,
-   `EMBEDDING_DIMENSIONS=1024`, `EMBEDDING_ALLOW_PLAINTEXT=true`. The script
-   needs no volume: it only talks to Postgres. It prints the fingerprint it
-   stored; keep that line.
+   ```sh
+   kubectl -n selfhosted run notes-reset --rm -i --restart=Never \
+     --image=ghcr.io/jaimemachado/obsidian-mcp:main@sha256:dc2961396fe59d4c5eece88098e6f6c59ba255eff48aecca6d5b1a3e08bbb46d \
+     --overrides="$(cat /tmp/notes-reset.yaml)" \
+     -- python -m scripts.reset_embeddings
+   ```
+
+   The script prints the fingerprint it stored; keep that line.
 3. Merge the pull request that changes the settings in the HelmRelease of
-   `syncthing` (`EMBEDDING_PROVIDER`, `OPENAI_BASE_URL`,
-   `OPENAI_EMBEDDING_MODEL`, `OPENAI_API_KEY`). Scale the Deployment back to 1
-   if Flux did not, and wait for the pod.
+   `syncthing` (`EMBEDDING_PROVIDER`, `TEI_URL`, `TEI_EMBEDDING_MODEL`,
+   `TEI_EMBED_BATCH_SIZE`). Scale the Deployment back to 1 if Flux did not, and
+   wait for the pod.
 4. Check the log of the container: no line "fingerprint does not match", then
    "Embedding complete" for the notes. Run a search by meaning from an agent.
 5. Compare the number of notes that have an embedding with the number of notes
