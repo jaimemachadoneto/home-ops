@@ -9,17 +9,16 @@ spec:
   # steps, or the state of the house. A device command that the router will not
   # act on also comes here, so this model must be able to call the Assist API.
   #
-  # Cost: $1.32 input and $3.96 output per million tokens at peak, half of
-  # that off-peak. A spoken request is about 1,500 input and 100 output, so
-  # roughly a quarter of a cent. Depth matters more than price here, and this
-  # route is rare beside the device commands.
+  # Cost: $0.30 input and $1.20 output per million tokens at peak, half of that
+  # off-peak, the same as voice-chat. The pro model costs four times as much for
+  # a route that mostly answers one question or runs a tool; flash is enough.
   #
   # The name is the default of the Home Assistant component
   # (DEFAULT_COMPLEX_MODEL). If this entry is missing, the component is refused
   # with 400 and the request falls back to the built-in agent.
   modelName: voice-complex
   params:
-    model: deepseek/deepseek-v4-pro
+    model: deepseek/deepseek-flash
     apiBase: https://api.deepseek.com/v1
     apiKeyRef:
       name: litellm
