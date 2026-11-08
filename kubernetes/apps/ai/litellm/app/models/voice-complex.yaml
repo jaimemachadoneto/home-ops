@@ -24,6 +24,10 @@ spec:
     apiKeyRef:
       name: litellm
       key: DEEPSEEK_API_KEY
+    # Reasoning on: this route takes the requests that need several steps or a
+    # choice the words cannot make, so the extra work pays for itself here.
+    additional:
+      reasoning_effort: high
   info:
     maxInputTokens: 1000000
     maxOutputTokens: 393216
