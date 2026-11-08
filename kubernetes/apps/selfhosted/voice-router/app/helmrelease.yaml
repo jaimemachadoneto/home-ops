@@ -52,9 +52,12 @@ spec:
               # model alias moves in LiteLLM, not here.
               VOICE_ROUTER_JEV_URL: http://litellm.ai.svc.cluster.local:4000/v1/systemone
               VOICE_ROUTER_JEV_MODEL: jev
-              # Set when the local route runs on the `ai` host. Empty means the
-              # shadow step is off and Jev answers alone.
-              # VOICE_ROUTER_KEV_URL: http://10.30.50.x:8080
+              # Kev, the local decision model on the `ai` host, reached by its
+              # own name and not through LiteLLM. It answers the device
+              # question beside Jev, so a record holds both answers and the
+              # dashboard can compare them. Kev-0.8B answers in about 130 ms.
+              VOICE_ROUTER_KEV_URL: http://ai.local.${SECRET_DOMAIN}:8009/v1/systemone
+              VOICE_ROUTER_KEV_MODEL: kev
               HTTP_PORT: &httpPort 8000
             envFrom:
               - secretRef:
