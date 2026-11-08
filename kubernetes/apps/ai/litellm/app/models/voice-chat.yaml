@@ -20,14 +20,12 @@ spec:
       key: DEEPSEEK_API_KEY
     # No reasoning: this route answers a spoken question in one or two
     # sentences, and thinking would spend output tokens and seconds on it.
-    # Web search through the gateway, not through Home Assistant. LiteLLM runs
-    # the tool, so this route learns about the world without gaining the power
-    # to act on the house: the Assist API tools are still withheld from chat.
-    # "Vai chover em Fortaleza?" needs this; without it the model can only speak
-    # about what it already knows.
+    # Web search through the gateway search tool, not through Home Assistant.
+    # LiteLLM runs the tool, so this route learns about the world without
+    # gaining the power to act on the house: the Assist API tools are still
+    # withheld from chat. "Vai chover em Fortaleza?" needs this; without it the
+    # model can only speak about what it already knows.
     additional:
-      mcp_servers:
-        - web_search
       reasoning_effort: none
   info:
     maxInputTokens: 1000000

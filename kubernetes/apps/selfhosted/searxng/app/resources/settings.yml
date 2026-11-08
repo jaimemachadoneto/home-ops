@@ -1,6 +1,13 @@
 ---
 use_default_settings: true
 
+# query.wikidata.org answers this host with 403. A failed init leaves the engine
+# in the search list without a processor, and each search fails with
+# KeyError: 'wikidata'.
+engines:
+  - name: wikidata
+    inactive: true
+
 server:
   limiter: true
   image_proxy: true

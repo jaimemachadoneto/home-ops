@@ -26,6 +26,15 @@ spec:
   litellmSettings:
     success_callback:
       - prometheus
+    # Runs the web search tool on the server for the providers below, so a model
+    # without a native search tool can still search. The callback starts only
+    # when the request carries a web search tool.
+    callbacks:
+      - websearch_interception
+    websearch_interception_params:
+      enabled_providers:
+        - deepseek
+      search_tool_name: searxng-search
     prometheus_adapter: true
     cache: true
     cache_params:
@@ -35,6 +44,14 @@ spec:
     drop_params: true
     merge_reasoning_content_in_choices: true
     set_verbose: false
+  # search_tools has no dedicated field in the CRD, so it goes through the
+  # catch-all. The operator merges this key into the top level of config.yaml.
+  extraConfig:
+    search_tools:
+      - search_tool_name: searxng-search
+        litellm_params:
+          search_provider: searxng
+          api_base: http://searxng.selfhosted.svc.cluster.local:8080
   env:
     - name: LITELLM_LOG
       value: INFO
