@@ -7,6 +7,8 @@ use_default_settings: true
 engines:
   - name: wikidata
     inactive: true
+  - name: bing
+    disabled: false
 
 server:
   limiter: true
@@ -24,6 +26,11 @@ search:
   formats:
     - html
     - json
+
+# Google answers the default 3 s timeout with a slow page, and SearXNG drops
+# the late error. A longer timeout keeps the engine in the result list.
+outgoing:
+  request_timeout: 5.0
 
 general:
   instance_name: Holthome Search

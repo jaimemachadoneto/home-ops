@@ -1,8 +1,4 @@
-[real_ip]
-
-# Number of values to trust for X-Forwarded-For.
-
-x_for = 1
+[botdetection]
 
 # The prefix defines the number of leading bits in an address that are compared
 # to determine whether or not an address is part of a (client) network.
@@ -10,13 +6,23 @@ x_for = 1
 ipv4_prefix = 32
 ipv6_prefix = 48
 
+# SearXNG reads the client address from X-Forwarded-For only when the request
+# comes from a trusted proxy. Envoy in this cluster is the only proxy in front
+# of this instance. The LAN ranges are not proxies: add them to pass_ip below.
+
+trusted_proxies = [
+  '127.0.0.0/8',
+  '::1',
+  '10.0.0.0/8',
+]
+
 [botdetection.ip_limit]
 
-# To get unlimited access in a local network, by default link-lokal addresses
+# To get unlimited access in a local network, by default link-local addresses
 # (networks) are not monitored by the ip_limit
 filter_link_local = true
 
-# activate link_token method in the ip_limit method
+# Activate the link_token method in the ip_limit method
 link_token = false
 
 [botdetection.ip_lists]
@@ -32,6 +38,6 @@ pass_ip = [
   '10.0.0.0/8',     # IPv4 private network
 ]
 
-# Activate passlist of (hardcoded) IPs from the SearXNG organization,
-# e.g. `check.searx.space`.
+# Do not trust the hardcoded IPs of the SearXNG organisation, e.g.
+# `check.searx.space`.
 pass_searxng_org = false
