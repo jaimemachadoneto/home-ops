@@ -1,0 +1,28 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: voice-chat
+spec:
+  # The chat route of voice-router: "que horas sao", "esta a chover". Fast and
+  # cheap matters more than depth here, and the answer is spoken.
+  #
+  # The name is the default of the Home Assistant component (DEFAULT_CHAT_MODEL).
+  # If this entry is missing, the component is refused with 400 and the request
+  # falls back to the built-in agent of Home Assistant.
+  modelName: voice-chat
+  params:
+    model: deepseek/deepseek-flash
+    apiBase: https://api.deepseek.com/v1
+    apiKeyRef:
+      name: litellm
+      key: DEEPSEEK_API_KEY
+    # No reasoning: this route answers a spoken question in one or two
+    # sentences, and thinking would spend output tokens and seconds on it.
+    additional:
+      reasoning_effort: none
+  info:
+    maxInputTokens: 1000000
+    maxOutputTokens: 393216
+    supportsFunctionCalling: true

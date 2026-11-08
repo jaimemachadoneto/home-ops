@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: voice-complex
+spec:
+  # The complex route of voice-router: a request that needs tools, several
+  # steps, or the state of the house. A device command that the router will not
+  # act on also comes here, so this model must be able to call the Assist API.
+  #
+  # Cost: $1.32 input and $3.96 output per million tokens at peak, half of
+  # that off-peak. A spoken request is about 1,500 input and 100 output, so
+  # roughly a quarter of a cent. Depth matters more than price here, and this
+  # route is rare beside the device commands.
+  #
+  # The name is the default of the Home Assistant component
+  # (DEFAULT_COMPLEX_MODEL). If this entry is missing, the component is refused
+  # with 400 and the request falls back to the built-in agent.
+  modelName: voice-complex
+  params:
+    model: deepseek/deepseek-v4-pro
+    apiBase: https://api.deepseek.com/v1
+    apiKeyRef:
+      name: litellm
+      key: DEEPSEEK_API_KEY
+    # Reasoning on: this route takes the requests that need several steps or a
+    # choice the words cannot make, so the extra work pays for itself here.
+    additional:
+      reasoning_effort: high
+  info:
+    maxInputTokens: 1000000
+    maxOutputTokens: 393216
+    supportsFunctionCalling: true
