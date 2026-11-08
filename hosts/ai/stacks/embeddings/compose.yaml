@@ -82,8 +82,9 @@ services:
       # refuses to start when the batch limit is lower. A chunk has about 512
       # tokens, so the truncation never applies.
       - --auto-truncate
-      # The notes server sends up to 96 inputs in one request (OPENAI_BATCH_LIMIT
-      # in its provider). TEI refuses more than 32 by default (413).
+      # The notes server sends up to 16 inputs in one request
+      # (TEI_EMBED_BATCH_SIZE), because 96 full-size chunks can exceed its
+      # request timeout. TEI refuses more than 32 by default (413).
       - --max-client-batch-size
       - "96"
     deploy:

@@ -17,7 +17,7 @@ Proxmox host `jmn-medusa`. It runs Docker stacks that use the three GeForce GTX
 | Stack | Port | Used by |
 | --- | --- | --- |
 | `ollama` | 11434 | memini embeddings (`qwen3-embedding:4b`, Q4_K_M), LiteLLM `ollama/local` (`qwen3:8b`) |
-| `embeddings` | 11435, 11436 | `tei-qwen3-06b` for the Paperless MCP; `tei-bge-m3` for the notes MCP (in test) |
+| `embeddings` | 11435, 11436 | `tei-qwen3-06b` for the Paperless MCP; `tei-bge-m3` for the notes MCP |
 | `fast-wir-2` | 10300 | speech to text (Wyoming), Home Assistant. The older `fast-whisper-pt-br` stack is not running |
 | `text-speach-1` | 10201 | text to speech (Wyoming), a test |
 | `kokoro-pt-br` | 8880 | text to speech, a test |
