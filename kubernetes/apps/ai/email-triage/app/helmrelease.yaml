@@ -108,6 +108,13 @@ spec:
 
     route:
       internal:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: Read, group and label mail, with a review queue
+          gethomepage.dev/group: AI
+          gethomepage.dev/icon: mdi-email-sync
+          gethomepage.dev/name: Email Triage
+          gethomepage.dev/app: email-triage
         enabled: true
         hostnames:
           - "email-triage.${SECRET_DOMAIN}"
