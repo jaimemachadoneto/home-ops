@@ -73,6 +73,16 @@ spec:
         connectionLimit: 20
         passwordSecret:
           name: paperless-mcp-db-credentials
+      # The email triage service (email-triage.yaml). The API and the sync
+      # cronjob share this role. The cap keeps a poll loop from starving the
+      # other apps.
+      - name: email_triage
+        ensure: present
+        login: true
+        inherit: true
+        connectionLimit: 20
+        passwordSecret:
+          name: email-triage-db-credentials
 
   # PodDisruptionBudget on the primary (CNPG's default, explicit here): a
   # drain waits for a switchover instead of evicting the primary.

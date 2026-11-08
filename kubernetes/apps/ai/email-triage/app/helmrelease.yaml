@@ -1,0 +1,121 @@
+---
+# The API serves the screen and the groups. The cronjob polls the mailbox
+# every 15 minutes. Both use the same image and the same Secret. The sync
+# only reads the mailbox: a person confirms every archive in the screen.
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: email-triage
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: email-triage
+  interval: 30m
+  values:
+    defaultPodOptions:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+
+    controllers:
+      api:
+        type: deployment
+        replicas: 1
+        containers:
+          app:
+            image:
+              # The release workflow of email-triage sets the tag (sha-<commit>).
+              repository: ghcr.io/jaimemachadoneto/email-triage
+              tag: sha-aa71f2e
+            command:
+              - sh
+              - -c
+              - email-triage migrate && email-triage serve --host 0.0.0.0 --port 8000
+            envFrom:
+              - secretRef:
+                  name: email-triage-secret
+            ports:
+              - name: http
+                containerPort: 8000
+            probes:
+              readiness:
+                httpGet:
+                  path: /health
+                  port: http
+              liveness:
+                httpGet:
+                  path: /health
+                  port: http
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 25m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+
+      sync:
+        type: cronjob
+        cronjob:
+          schedule: "*/15 * * * *"
+          timeZone: Europe/Madrid
+          concurrencyPolicy: Forbid
+          successfulJobsHistory: 3
+          failedJobsHistory: 3
+          backoffLimit: 1
+        pod:
+          restartPolicy: Never
+        containers:
+          app:
+            image:
+              repository: ghcr.io/jaimemachadoneto/email-triage
+              tag: sha-aa71f2e
+            command:
+              - email-triage
+              - sync
+            envFrom:
+              - secretRef:
+                  name: email-triage-secret
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            resources:
+              requests:
+                cpu: 25m
+                memory: 128Mi
+              limits:
+                memory: 256Mi
+
+    service:
+      api:
+        controller: api
+        ports:
+          http:
+            port: 8000
+
+    route:
+      internal:
+        enabled: true
+        hostnames:
+          - "email-triage.${SECRET_DOMAIN}"
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: api
+                port: http
