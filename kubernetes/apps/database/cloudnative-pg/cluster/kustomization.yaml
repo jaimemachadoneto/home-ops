@@ -5,6 +5,7 @@ kind: Kustomization
 resources:
   - ./objectstore.yaml
   - ./cluster16.yaml
+  - ./email-triage.yaml
   - ./litellm.yaml
   - ./obsidian-mcp.yaml
   - ./paperless-mcp.yaml

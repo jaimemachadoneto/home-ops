@@ -10,6 +10,7 @@ resources:
   - ./namespace.yaml
   - ./browser-sessions-mcp/ks.yaml
   - ./context7-mcp/ks.yaml
+  - ./email-triage/ks.yaml
   - ./go-catalog-sync/ks.yaml
   - ./ha-mcp/ks.yaml
   - ./litellm/ks.yaml
