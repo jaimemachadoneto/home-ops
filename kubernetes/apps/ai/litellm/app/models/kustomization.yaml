@@ -14,3 +14,5 @@ resources:
   - ./opencode-go-deepseek-flash.yaml
   - ./openrouter-deepseek-deepseek-v4-1-flash-noreason.yaml
   - ./openrouter-typesafe-jev.yaml
+  - ./voice-chat.yaml
+  - ./voice-complex.yaml

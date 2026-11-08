@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: voice-complex
+spec:
+  # The complex route of voice-router: a request that needs tools, several
+  # steps, or the state of the house. A device command that the router will not
+  # act on also comes here, so this model must be able to call the Assist API.
+  #
+  # The name is the default of the Home Assistant component
+  # (DEFAULT_COMPLEX_MODEL). If this entry is missing, the component is refused
+  # with 400 and the request falls back to the built-in agent.
+  modelName: voice-complex
+  params:
+    model: deepseek/deepseek-chat
+    apiBase: https://api.deepseek.com/v1
+    apiKeyRef:
+      name: litellm
+      key: DEEPSEEK_API_KEY
+  info:
+    maxTokens: 65536
+    supportsFunctionCalling: true
