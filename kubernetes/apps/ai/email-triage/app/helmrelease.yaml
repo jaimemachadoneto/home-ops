@@ -44,13 +44,15 @@ spec:
                 containerPort: 8000
             probes:
               readiness:
-                httpGet:
-                  path: /health
-                  port: http
+                enabled: true
+                type: HTTP
+                path: /health
+                port: http
               liveness:
-                httpGet:
-                  path: /health
-                  port: http
+                enabled: true
+                type: HTTP
+                path: /health
+                port: http
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: true
