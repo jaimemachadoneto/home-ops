@@ -26,7 +26,12 @@ spec:
       key: DEEPSEEK_API_KEY
     # Reasoning on: this route takes the requests that need several steps or a
     # choice the words cannot make, so the extra work pays for itself here.
+    # Web search through the gateway. This route already holds the Assist API
+    # tools, so it can act on the house; the search tool adds what happens
+    # outside it.
     additional:
+      mcp_servers:
+        - web_search
       reasoning_effort: high
   info:
     maxInputTokens: 1000000
