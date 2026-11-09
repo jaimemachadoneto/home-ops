@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: opr-free-xing4-0-29b-a4b
+spec:
+  # Deployment 8 of the "opr-free" group, the last fallback.
+  modelName: opr-free
+  params:
+    model: openrouter/xingchen-agi/xing4.0-29b-a4b:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+    additional:
+      order: 8
+  info:
+    extra:
+      input_cost_per_token: 0
+      output_cost_per_token: 0

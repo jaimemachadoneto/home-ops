@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: opr-free-nemotron-3-ultra
+spec:
+  # Deployment 4 of the "opr-free" group. A rate limit or an error goes to the
+  # next deployment.
+  modelName: opr-free
+  params:
+    model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+    additional:
+      order: 4
+  info:
+    extra:
+      input_cost_per_token: 0
+      output_cost_per_token: 0

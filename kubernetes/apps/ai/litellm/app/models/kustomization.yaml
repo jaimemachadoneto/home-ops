@@ -12,6 +12,14 @@ resources:
   - ./memini-llm.yaml
   - ./ollama-chat.yaml
   - ./opencode-go-deepseek-flash.yaml
+  - ./opr-free-gemma-4-26b-a4b-it.yaml
+  - ./opr-free-gemma-4-31b-it.yaml
+  - ./opr-free-nemotron-3-5-lightning.yaml
+  - ./opr-free-nemotron-3-5-super-vl.yaml
+  - ./opr-free-nemotron-3-nano-omni.yaml
+  - ./opr-free-nemotron-3-ultra.yaml
+  - ./opr-free-north-mini-code.yaml
+  - ./opr-free-xing4-0-29b-a4b.yaml
   - ./openrouter-deepseek-deepseek-v4-1-flash-noreason.yaml
   - ./openrouter-typesafe-jev.yaml
   - ./voice-chat.yaml

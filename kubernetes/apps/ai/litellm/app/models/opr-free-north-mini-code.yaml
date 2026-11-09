@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: opr-free-north-mini-code
+spec:
+  # Deployment 7 of the "opr-free" group. This is a code model, so a general
+  # request reaches it only after the six general models fail.
+  modelName: opr-free
+  params:
+    model: openrouter/cohere/north-mini-code:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+    additional:
+      order: 7
+  info:
+    extra:
+      input_cost_per_token: 0
+      output_cost_per_token: 0

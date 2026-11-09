@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: opr-free-gemma-4-26b-a4b-it
+spec:
+  # Deployment 1 of the "opr-free" group. The router tries the orders in
+  # ascending order. A rate limit or an error goes to the next deployment.
+  # All deployments share OPENROUTER_API_KEY.
+  modelName: opr-free
+  params:
+    model: openrouter/google/gemma-4-26b-a4b-it:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+    additional:
+      order: 1
+  info:
+    extra:
+      input_cost_per_token: 0
+      output_cost_per_token: 0
