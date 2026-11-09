@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: opr-free-light-xing4-0-29b-a4b
+spec:
+  # Deployment 1 of the "opr-free-light" group. The router tries the orders in
+  # ascending order, with the most capable model first. A rate limit or an
+  # error goes to the next deployment. All deployments share OPENROUTER_API_KEY.
+  modelName: opr-free-light
+  params:
+    model: openrouter/xingchen-agi/xing4.0-29b-a4b:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+    additional:
+      order: 1
+  info:
+    extra:
+      input_cost_per_token: 0
+      output_cost_per_token: 0
