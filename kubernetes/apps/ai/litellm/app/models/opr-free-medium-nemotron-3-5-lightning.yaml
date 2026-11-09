@@ -1,0 +1,21 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: opr-free-medium-nemotron-3-5-lightning
+spec:
+  # Deployment 2 of the "opr-free-medium" group. A rate limit or an error goes to
+  # the next deployment.
+  modelName: opr-free-medium
+  params:
+    model: openrouter/nvidia/nemotron-3.5-lightning:free
+    apiKeyRef:
+      name: litellm
+      key: OPENROUTER_API_KEY
+    additional:
+      order: 2
+  info:
+    extra:
+      input_cost_per_token: 0
+      output_cost_per_token: 0
