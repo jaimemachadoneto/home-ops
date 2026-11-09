@@ -60,7 +60,9 @@ spec:
         cpu: 10m
         memory: 128Mi
       limits:
-        memory: 512Mi
+        # The base uses about 160 Mi and each open MCP session adds a child
+        # process of about 55 Mi. A burst of about six sessions reaches 512Mi.
+        memory: 1Gi
     volumes:
       - name: data
         persistentVolumeClaim:
