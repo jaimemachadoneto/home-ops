@@ -60,7 +60,9 @@ spec:
         cpu: 10m
         memory: 128Mi
       limits:
-        memory: 512Mi
+        # The base uses about 200 Mi and each MCP session starts a child
+        # process of about 110 Mi. At 512Mi, four sessions cause an OOM kill.
+        memory: 1Gi
     volumes:
       - name: data
         persistentVolumeClaim:
