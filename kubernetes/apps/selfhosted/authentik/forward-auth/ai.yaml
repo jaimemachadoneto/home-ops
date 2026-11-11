@@ -12,6 +12,12 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: memini
+    # The review screen and its API. The API serves message bodies, so
+    # every host on the home network must not reach it. The route keeps the
+    # name of the release: email-triage has one route only.
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: email-triage
   extAuth:
     # The outpost needs the session cookie to recognise the user.
     headersToExtAuth:

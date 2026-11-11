@@ -990,6 +990,35 @@ entries:
       negate: false
       timeout: 30
 
+  # --- Email Triage (ai/email-triage)
+  # The screen and its API. The API serves message bodies and the app has
+  # no login of its own, so every path needs this one.
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-email-triage
+    identifiers:
+      name: email-triage
+    attrs:
+      <<: *forward-auth
+      external_host: https://email-triage.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-email-triage
+    identifiers:
+      slug: email-triage
+    attrs:
+      name: Email Triage
+      provider: !KeyOf provider-email-triage
+      meta_launch_url: https://email-triage.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-email-triage
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
   # --- Embedded outpost: serves every provider above ------------------------
   # This list is the complete set: a provider missing here stops working.
   - model: authentik_outposts.outpost
@@ -1031,3 +1060,4 @@ entries:
         - !KeyOf provider-frigate
         - !KeyOf provider-frigate-go2rtc
         - !KeyOf provider-memini
+        - !KeyOf provider-email-triage
