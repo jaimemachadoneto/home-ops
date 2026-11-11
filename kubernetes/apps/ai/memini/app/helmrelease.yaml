@@ -35,18 +35,20 @@ spec:
               MEMINI_SHORT_TERM_CAP: "300"
               MEMINI_DEMOTE_AFTER: 1440h
               MEMINI_DISTILL_ON_WRITE: "true"
-              # Embeddings from the Ollama host (OpenAI-compatible API); the
-              # reranker stays in-cluster (llmkube), Ollama has no rerank API.
-              MEMINI_EMBED_BASE_URL: http://ai.local.jaimenet.com:11434/v1
-              MEMINI_EMBED_MODEL: qwen3-embedding:4b
-              MEMINI_EMBED_DIMS: "2560"
+              # Embeddings from text-embeddings-inference on the AI server
+              # (OpenAI-compatible API). The model answers in about 100 ms,
+              # so the default timeouts stay. A slow embedder then costs a
+              # keyword search and a memory without a vector, which the
+              # repair job fixes later, and not a long wait for the agent.
+              # The reranker stays in-cluster (llmkube).
+              MEMINI_EMBED_BASE_URL: http://ai.local.jaimenet.com:11435/v1
+              MEMINI_EMBED_MODEL: Qwen/Qwen3-Embedding-0.6B
+              MEMINI_EMBED_DIMS: "1024"
               MEMINI_EMBED_MAX_CONCURRENCY: "2"
-              # Ollama unloads an idle model after 5 min, and a cold load of
-              # the embedding model takes about 7 s. The defaults (5 s write,
-              # 2 s recall) then store writes without vectors and drop recall
-              # to keyword search.
-              MEMINI_WRITE_EMBED_TIMEOUT: 15s
-              MEMINI_RECALL_EMBED_TIMEOUT: 10s
+              # The width of a store cannot change. This file is the store
+              # with 1024 dimensions. The old file memini.db (2560
+              # dimensions) stays on the volume as a way back.
+              MEMINI_SQLITE_PATH: /data/memini-1024.db
               # Consolidation (contradictions, distillation) through LiteLLM,
               # where all models are managed. memini-llm is a name only: the
               # model behind it is in litellm/app/models/memini-llm.yaml. The
@@ -87,6 +89,7 @@ spec:
         containers:
           fsck:
             env:
+              MEMINI_SQLITE_PATH: /data/memini-1024.db
               MEMINI_API_KEY:
                 valueFrom:
                   secretKeyRef:
