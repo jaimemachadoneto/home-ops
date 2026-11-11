@@ -36,15 +36,19 @@ spec:
               MEMINI_DEMOTE_AFTER: 1440h
               MEMINI_DISTILL_ON_WRITE: "true"
               # Embeddings from text-embeddings-inference on the AI server
-              # (OpenAI-compatible API). The model answers in about 100 ms,
-              # so the default timeouts stay. A slow embedder then costs a
-              # keyword search and a memory without a vector, which the
-              # repair job fixes later, and not a long wait for the agent.
+              # (OpenAI-compatible API). The GPU is a GTX 1660 and it embeds
+              # about 1800 characters per second, so a long memory of 3500
+              # characters takes 2 s, and the repair job sends batches of 8.
+              # The write timeout is long for this reason. A recall query is
+              # short, so its timeout is short: a slow embedder then costs a
+              # keyword search and not a long wait for the agent.
               # The reranker stays in-cluster (llmkube).
               MEMINI_EMBED_BASE_URL: http://ai.local.jaimenet.com:11435/v1
               MEMINI_EMBED_MODEL: Qwen/Qwen3-Embedding-0.6B
               MEMINI_EMBED_DIMS: "1024"
               MEMINI_EMBED_MAX_CONCURRENCY: "2"
+              MEMINI_WRITE_EMBED_TIMEOUT: 30s
+              MEMINI_RECALL_EMBED_TIMEOUT: 5s
               # The width of a store cannot change. This file is the store
               # with 1024 dimensions. The old file memini.db (2560
               # dimensions) stays on the volume as a way back.
