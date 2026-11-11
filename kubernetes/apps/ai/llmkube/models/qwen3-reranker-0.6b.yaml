@@ -48,9 +48,10 @@ spec:
     port: 8080
     type: ClusterIP
   resources:
-    # A request, not a limit: idle most of the time, bursts when reranking.
+    # llmkube also sets this as the memory limit of the pod. The KV cache of
+    # 16384 tokens takes about 1.8 GiB, so 2Gi caused an OOMKill.
     cpu: 250m
-    memory: 2Gi
+    memory: 4Gi
   probeOverrides:
     startup:
       httpGet:
