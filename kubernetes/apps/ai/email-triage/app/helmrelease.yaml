@@ -36,6 +36,11 @@ spec:
               - sh
               - -c
               - email-triage migrate && email-triage serve --host 0.0.0.0 --port 8000
+            env:
+              # The rules and the actions come from the Secret that ESO
+              # fills, never from the image.
+              ACTIONS_PATH: /run/secrets/email-triage/actions.toml
+              RULES_PATH: /run/secrets/email-triage/rules.csv
             envFrom:
               - secretRef:
                   name: email-triage-secret
@@ -102,6 +107,16 @@ spec:
                 memory: 128Mi
               limits:
                 memory: 256Mi
+
+    # The rules and the actions arrive as two files in /run/secrets. ESO
+    # writes that Secret from the 1Password item email-triage.
+    persistence:
+      config:
+        type: secret
+        name: email-triage-config
+        globalMounts:
+          - path: /run/secrets/email-triage
+            readOnly: true
 
     service:
       api:
