@@ -58,6 +58,7 @@ spec:
               # dashboard can compare them. Kev-0.8B answers in about 130 ms.
               VOICE_ROUTER_KEV_URL: http://ai.local.${SECRET_DOMAIN}:8009/v1/systemone
               VOICE_ROUTER_KEV_MODEL: kev
+              VOICE_ROUTER_KEV_LIMIT: "1.5"
               HTTP_PORT: &httpPort 8000
             envFrom:
               - secretRef:
