@@ -27,7 +27,6 @@ Proxmox host `jmn-medusa`. It runs Docker stacks that use the three GeForce GTX
 | `piper-pt-br` | 10200 | text to speech (Wyoming), Home Assistant |
 | `ocr-service` (`ocr`) | 8000 | OCR |
 | `tika` | 9998 | document text extraction |
-| `summarizer` (`summirizer`) | 16000 | broken: see below |
 | `node-exporter` | 9100 | Prometheus (`scrapeconfigs/node-exporter.yaml`) |
 | `nvidia-gpu-exporter` | 9835 | Prometheus (`scrapeconfigs/nvidia-gpu-exporter.yaml`), with one series for each process on a GPU |
 
@@ -118,7 +117,7 @@ does not depend on files that live in the stack folder of the host:
 | `fast-wir-2`, `text-speach-1`, `ocr` | yes (`ai-host-extra`) | the relative bind mounts are now absolute (`/opt/stacks/<name>/...`), so the data stays where it is |
 | `phonon-pt-br`, `qweanvoice` | yes (`ai-host-extra`) | the variable comes from `env_files: /opt/stacks/<name>/.env`; the doco-cd container mounts `/opt/stacks` read-only |
 | `ollama` | never | a redeploy restarts the models that memini and LiteLLM use, and its volume holds 13 GiB |
-| `fast-whisper-pt-br`, `summirizer` | no | not running: a deploy would start them (`fast-whisper-pt-br` takes the port 10300 of `fast-wir-2`) |
+| `fast-whisper-pt-br` | no | not running: a deploy would start it (it takes the port 10300 of `fast-wir-2`) |
 
 A new stack follows the same rules: no `./` path (use `/opt/stacks/<name>/...`),
 no external network that does not exist on the host, and its variables in the
@@ -219,8 +218,6 @@ at boot.
 
 ## Open issues
 
-- `summarizer` fails at each start (pip cannot build `uvloop`) and points to
-  an Ollama at `10.30.3.10`, which does not answer. Remove it or correct it.
 - `fast-whisper-pt-br` and `tika` declare external networks of stacks that no
   longer exist. No service uses them; remove the declarations.
 - `ollama` uses `ollama/ollama` with no version tag.
