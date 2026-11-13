@@ -10,7 +10,7 @@
 #    (hosts/ai/doco-cd/compose.yaml) before this target is polled.
 #
 # Not here: ollama (a redeploy restarts the model server that memini and LiteLLM
-# use), fast-whisper-pt-br and summirizer (stopped: a deploy would start them).
+# use), fast-whisper-pt-br (stopped: a deploy would start it).
 #
 # The name of each document is the name of the Compose project that exists on the
 # host. A different name would make a second project and not update the first.

@@ -11,7 +11,6 @@
  "ai-host/phonon-pt-br": "Text to speech, GPU 2",
  "ai-host/piper-pt-br": "Text to speech (Wyoming)",
  "ai-host/qweanvoice": "TTS web studio, GPU 0",
- "ai-host/summirizer": "Summarizer (broken)",
  "ai-host/text-speach-1": "Text to speech (test)",
  "ai-host/tika": "Document text extraction",
  "ai/browser-sessions-mcp": "Browser sessions via MCP",

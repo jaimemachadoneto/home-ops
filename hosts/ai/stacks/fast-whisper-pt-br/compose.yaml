@@ -35,8 +35,6 @@ networks:
     external: true
   tika_default:
     external: true
-  summirizer_default:
-    external: true
   piper-pt-br_default:
     external: true
   paperless-ai_default:
