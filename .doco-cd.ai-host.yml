@@ -22,15 +22,6 @@ force_recreate: false
 remove_orphans: true
 prune_images: true
 ---
-name: piper-pt-br
-working_dir: hosts/ai/stacks/piper-pt-br
-compose_files:
-  - compose.yaml
-force_image_pull: false
-force_recreate: false
-remove_orphans: true
-prune_images: true
----
 name: node-exporter
 working_dir: hosts/ai/stacks/node-exporter
 compose_files:

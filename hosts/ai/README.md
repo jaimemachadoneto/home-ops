@@ -18,13 +18,9 @@ Proxmox host `jmn-medusa`. It runs Docker stacks that use the three GeForce GTX
 | --- | --- | --- |
 | `ollama` | 11434 | memini embeddings (`qwen3-embedding:4b`, Q4_K_M), LiteLLM `ollama/local` (`qwen3:8b`) |
 | `embeddings` | 11435, 11436 | `tei-qwen3-06b` for the Paperless MCP; `tei-bge-m3` for the notes MCP |
-| `fast-wir-2` | 10300 | speech to text (Wyoming), Home Assistant. The older `fast-whisper-pt-br` stack is not running |
-| `text-speach-1` | 10201 | text to speech (Wyoming), a test |
-| `kokoro-pt-br` | 8880 | text to speech, a test |
-| `phonon-pt-br` | 8881 | text to speech, a test. HF_TOKEN is in the `.env` of the stack on the host, never in git |
+| `fast-wir-2` | 10300 | speech to text (Wyoming), Home Assistant |
+| `kokoro-pt-br` | 8880 | text to speech (OpenAI API). Home Assistant uses it through `kokoro-wyoming` (10202), a container that is started by hand. Its source is in the repository `voice-lab` |
 | `qweanvoice` | 7860 | text to speech with a web studio, a test |
-| `fast-whisper-pt-br` | - | speech to text, the version before `fast-wir-2` |
-| `piper-pt-br` | 10200 | text to speech (Wyoming), Home Assistant |
 | `ocr-service` (`ocr`) | 8000 | OCR |
 | `tika` | 9998 | document text extraction |
 | `node-exporter` | 9100 | Prometheus (`scrapeconfigs/node-exporter.yaml`) |
@@ -33,7 +29,7 @@ Proxmox host `jmn-medusa`. It runs Docker stacks that use the three GeForce GTX
 The Ollama models are in the Docker volume `ollama_ollama` (about 32 GB):
 `qwen3:8b` (Q4_K_M), `qwen3-embedding:0.6b` (Q8_0), `qwen3.5:4b` (Q4_K_M),
 `qwen3-embedding:4b` (Q4_K_M), `bge-m3` (F16) and `nomic-embed-text` (F16). The
-Whisper and Piper data are in `/docker/fasterwhisper` and `/docker/piper`.
+old Whisper and Piper data are in `/docker/fasterwhisper` and `/docker/piper`.
 
 The `embeddings` stack answers embedding models with Text Embeddings Inference
 (TEI) instead of Ollama. TEI loads the model at start and keeps it in GPU
@@ -55,7 +51,7 @@ GPU is pinned to one card, so that a model cannot take the memory of another:
 | --- | --- | --- |
 | 0 | `qwen-tts` (2.6), `kokoro-tts` (0.7), the `bge-m3` of Ollama (0.5) | 3.7 GiB |
 | 1 | nothing. Ollama loads `qwen3:8b` here, about 5.6 GiB | 0 to 5.6 GiB |
-| 2 | the two TEI containers (2.5), the Whisper model of `fast-wir-2` (1.6), `phonon-pt-br` (up to 1.6 at its first request) | 4.1 GiB, up to 5.7 |
+| 2 | the two TEI containers (2.5), the Whisper model of `fast-wir-2` (1.6) | 4.1 GiB |
 
 Ollama is pinned with `device_ids: ["0", "1"]`. With `count: all` it loaded
 `qwen3:8b` over GPU 1 and GPU 2 for about 5 minutes each hour, and took 2.1
@@ -79,10 +75,10 @@ exist today:
 
 - `embeddings` (`hosts/ai/stacks/embeddings`);
 - `ai-host` (`.doco-cd.ai-host.yml`, one document for each stack): `kokoro-pt-br`,
-  `piper-pt-br`, `node-exporter` and `nvidia-gpu-exporter`;
-- `ai-host-extra` (`.doco-cd.ai-host-extra.yml`): `tika`, `ocr`, `fast-wir-2`,
-  `text-speach-1`, `phonon-pt-br` and `qweanvoice`. These need the absolute
-  paths and the `.env` files described below.
+  `node-exporter` and `nvidia-gpu-exporter`;
+- `ai-host-extra` (`.doco-cd.ai-host-extra.yml`): `tika`, `ocr`, `fast-wir-2`
+  and `qweanvoice`. These need the absolute paths and the `.env` files
+  described below.
 
 The list of targets that doco-cd polls is `/opt/doco-cd/data/poll-config.yml` on
 the host. It is a copy. A change to `hosts/ai/doco-cd/poll-config.yml` or to
@@ -111,13 +107,12 @@ does not depend on files that live in the stack folder of the host:
 
 | Stack | Automatic? | Reason |
 | --- | --- | --- |
-| `kokoro-pt-br`, `piper-pt-br`, `node-exporter`, `nvidia-gpu-exporter` | yes (`ai-host`) | no relative path, no variable from a `.env` |
+| `kokoro-pt-br`, `node-exporter`, `nvidia-gpu-exporter` | yes (`ai-host`) | no relative path, no variable from a `.env` |
 | `embeddings` | yes (`embeddings`) | named volumes only |
 | `tika` | yes (`ai-host-extra`) | the 12 external networks that it declared were not used by the service, and 7 do not exist on the host: they were removed |
-| `fast-wir-2`, `text-speach-1`, `ocr` | yes (`ai-host-extra`) | the relative bind mounts are now absolute (`/opt/stacks/<name>/...`), so the data stays where it is |
-| `phonon-pt-br`, `qweanvoice` | yes (`ai-host-extra`) | the variable comes from `env_files: /opt/stacks/<name>/.env`; the doco-cd container mounts `/opt/stacks` read-only |
+| `fast-wir-2`, `ocr` | yes (`ai-host-extra`) | the relative bind mounts are now absolute (`/opt/stacks/<name>/...`), so the data stays where it is |
+| `qweanvoice` | yes (`ai-host-extra`) | the variable comes from `env_files: /opt/stacks/<name>/.env`; the doco-cd container mounts `/opt/stacks` read-only |
 | `ollama` | never | a redeploy restarts the models that memini and LiteLLM use, and its volume holds 13 GiB |
-| `fast-whisper-pt-br` | no | not running: a deploy would start it (it takes the port 10300 of `fast-wir-2`) |
 
 A new stack follows the same rules: no `./` path (use `/opt/stacks/<name>/...`),
 no external network that does not exist on the host, and its variables in the
@@ -218,6 +213,6 @@ at boot.
 
 ## Open issues
 
-- `fast-whisper-pt-br` and `tika` declare external networks of stacks that no
-  longer exist. No service uses them; remove the declarations.
+- `tika` declares external networks of stacks that no longer exist. No service
+  uses them; remove the declarations.
 - `ollama` uses `ollama/ollama` with no version tag.

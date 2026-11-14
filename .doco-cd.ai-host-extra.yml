@@ -5,12 +5,12 @@
 # These stacks need two things that the target ai-host does not:
 #  - the bind mounts are absolute paths (/opt/stacks/<name>/...), because doco-cd
 #    runs compose from its own copy of the repository;
-#  - phonon-pt-br and qweanvoice read their variables from the .env file of the
-#    stack on the host. The doco-cd container must mount /opt/stacks read-only
+#  - qweanvoice reads its variables from the .env file of the stack on the
+#    host. The doco-cd container must mount /opt/stacks read-only
 #    (hosts/ai/doco-cd/compose.yaml) before this target is polled.
 #
 # Not here: ollama (a redeploy restarts the model server that memini and LiteLLM
-# use), fast-whisper-pt-br (stopped: a deploy would start it).
+# use).
 #
 # The name of each document is the name of the Compose project that exists on the
 # host. A different name would make a second project and not update the first.
@@ -38,28 +38,6 @@ name: fast-wir-2
 working_dir: hosts/ai/stacks/fast-wir-2
 compose_files:
   - compose.yaml
-force_image_pull: false
-force_recreate: false
-remove_orphans: true
-prune_images: true
----
-name: text-speach-1
-working_dir: hosts/ai/stacks/text-speach-1
-compose_files:
-  - compose.yaml
-force_image_pull: false
-force_recreate: false
-remove_orphans: true
-prune_images: true
----
-name: phonon-pt-br
-working_dir: hosts/ai/stacks/phonon-pt-br
-compose_files:
-  - compose.yaml
-# HF_TOKEN. The file is written by hosts/ai/env-from-1password.sh. A missing file
-# must fail the deploy and not give an empty token.
-env_files:
-  - /opt/stacks/phonon-pt-br/.env
 force_image_pull: false
 force_recreate: false
 remove_orphans: true
