@@ -5,12 +5,12 @@
 # These stacks need two things that the target ai-host does not:
 #  - the bind mounts are absolute paths (/opt/stacks/<name>/...), because doco-cd
 #    runs compose from its own copy of the repository;
-#  - qweanvoice reads its variables from the .env file of the stack on the
-#    host. The doco-cd container must mount /opt/stacks read-only
+#  - the doco-cd container must mount /opt/stacks read-only
 #    (hosts/ai/doco-cd/compose.yaml) before this target is polled.
 #
 # Not here: ollama (a redeploy restarts the model server that memini and LiteLLM
-# use).
+# use), and qweanvoice (stopped on purpose, started by hand: a deploy would
+# start it and take 2.6 GiB of GPU 0).
 #
 # The name of each document is the name of the Compose project that exists on the
 # host. A different name would make a second project and not update the first.
@@ -38,18 +38,6 @@ name: fast-wir-2
 working_dir: hosts/ai/stacks/fast-wir-2
 compose_files:
   - compose.yaml
-force_image_pull: false
-force_recreate: false
-remove_orphans: true
-prune_images: true
----
-name: qweanvoice
-working_dir: hosts/ai/stacks/qweanvoice
-compose_files:
-  - compose.yaml
-# QWEN_STUDIO_API_KEY. The compose file has a default when the file is empty.
-env_files:
-  - /opt/stacks/qweanvoice/.env
 force_image_pull: false
 force_recreate: false
 remove_orphans: true

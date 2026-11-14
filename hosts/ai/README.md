@@ -20,7 +20,7 @@ Proxmox host `jmn-medusa`. It runs Docker stacks that use the three GeForce GTX
 | `embeddings` | 11435, 11436 | `tei-qwen3-06b` for the Paperless MCP; `tei-bge-m3` for the notes MCP |
 | `fast-wir-2` | 10300 | speech to text (Wyoming), Home Assistant |
 | `kokoro-pt-br` | 8880 | text to speech (OpenAI API). Home Assistant uses it through `kokoro-wyoming` (10202), a container that is started by hand. Its source is in the repository `voice-lab` |
-| `qweanvoice` | 7860 | text to speech with a web studio, a test |
+| `qweanvoice` | 7860 | text to speech with a web studio (Qwen3-TTS, voice cloning), a test. Stopped. Start it by hand: `docker start qwen-tts`, or Start in Dockge. `doco-cd` does not deploy it |
 | `ocr-service` (`ocr`) | 8000 | OCR |
 | `tika` | 9998 | document text extraction |
 | `node-exporter` | 9100 | Prometheus (`scrapeconfigs/node-exporter.yaml`) |
@@ -49,9 +49,13 @@ GPU is pinned to one card, so that a model cannot take the memory of another:
 
 | GPU | What is on it | Used memory |
 | --- | --- | --- |
-| 0 | `qwen-tts` (2.6), `kokoro-tts` (0.7), the `bge-m3` of Ollama (0.5) | 3.7 GiB |
-| 1 | nothing. Ollama loads `qwen3:8b` here, about 5.6 GiB | 0 to 5.6 GiB |
-| 2 | the two TEI containers (2.5), the Whisper model of `fast-wir-2` (1.6) | 4.1 GiB |
+| 0 | nothing. `qwen-tts` (2.6 with the clone model only) runs here when you start it by hand. The `bge-m3` of Ollama (0.5) | 0 to 3.1 GiB |
+| 1 | the `/opt/kev` process (4.4). Ollama loads `qwen3:8b` here, about 5.6 GiB | 4.4 GiB or more |
+| 2 | the two TEI containers (2.5), the Whisper model of `fast-wir-2` (1.6), `kokoro-tts` (0.7) | 4.8 GiB |
+
+`kokoro-tts` runs on GPU 2 since 2026-11-14. On GPU 0 it shared 5.6 GiB with
+`qwen-tts`, which took 4.8 GiB with two models loaded. Kokoro ran out of memory
+and sent empty audio.
 
 Ollama is pinned with `device_ids: ["0", "1"]`. With `count: all` it loaded
 `qwen3:8b` over GPU 1 and GPU 2 for about 5 minutes each hour, and took 2.1
@@ -76,9 +80,8 @@ exist today:
 - `embeddings` (`hosts/ai/stacks/embeddings`);
 - `ai-host` (`.doco-cd.ai-host.yml`, one document for each stack): `kokoro-pt-br`,
   `node-exporter` and `nvidia-gpu-exporter`;
-- `ai-host-extra` (`.doco-cd.ai-host-extra.yml`): `tika`, `ocr`, `fast-wir-2`
-  and `qweanvoice`. These need the absolute paths and the `.env` files
-  described below.
+- `ai-host-extra` (`.doco-cd.ai-host-extra.yml`): `tika`, `ocr` and
+  `fast-wir-2`. These need the absolute paths described below.
 
 The list of targets that doco-cd polls is `/opt/doco-cd/data/poll-config.yml` on
 the host. It is a copy. A change to `hosts/ai/doco-cd/poll-config.yml` or to
@@ -111,7 +114,7 @@ does not depend on files that live in the stack folder of the host:
 | `embeddings` | yes (`embeddings`) | named volumes only |
 | `tika` | yes (`ai-host-extra`) | the 12 external networks that it declared were not used by the service, and 7 do not exist on the host: they were removed |
 | `fast-wir-2`, `ocr` | yes (`ai-host-extra`) | the relative bind mounts are now absolute (`/opt/stacks/<name>/...`), so the data stays where it is |
-| `qweanvoice` | yes (`ai-host-extra`) | the variable comes from `env_files: /opt/stacks/<name>/.env`; the doco-cd container mounts `/opt/stacks` read-only |
+| `qweanvoice` | no | it is stopped on purpose and started by hand. A deploy of `doco-cd` would start it again, and it takes 2.6 GiB of GPU 0 |
 | `ollama` | never | a redeploy restarts the models that memini and LiteLLM use, and its volume holds 13 GiB |
 
 A new stack follows the same rules: no `./` path (use `/opt/stacks/<name>/...`),
