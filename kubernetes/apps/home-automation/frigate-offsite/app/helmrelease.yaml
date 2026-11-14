@@ -40,7 +40,7 @@ spec:
               # In-cluster, plain http: never leaves the cluster.
               FRIGATE_URL: http://frigate.home-automation.svc.cluster.local:5000
               MQTT_HOST: mqtt.jaimenet.com
-              RCLONE_REMOTE: Onedrive-Jaime:/Frigate
+              RCLONE_REMOTE: Onedrive-Frigate:/Frigate
               RCLONE_CONFIG: /config/rclone/rclone.conf
               WORK_DIR: /work
               # Initial values only: both become HA entities (retention number,
