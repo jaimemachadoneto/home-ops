@@ -1,35 +1,72 @@
 ---
 # Speech to text for Home Assistant (Wyoming). The model downloads at the
 # first start into /opt/stacks/fast-wir-2/whisper-data.
+#
+# The image is the GPU build of linuxserver. The rhasspy/wyoming-whisper image
+# has no CUDA libraries, so each transcription failed with "libcublas.so.12 is
+# not found". Its model loaded on the GPU, which hid the fault until the first
+# request (found on 2026-11-06). Use the `gpu` tag: the `gpu-legacy` tag is for
+# cards older than Turing, and the GTX 1660 SUPER is Turing.
+#
+# The image does not set a compute type, so the model runs in float16. The
+# GTX 1660 SUPER has no tensor cores and float16 gives only "!!!!" there. The
+# start script below is the script of the image (v3.0.2-ls18) with one more
+# option: `--compute-type int8_float32`. Compare it with
+# /etc/s6-overlay/s6-rc.d/svc-whisper/run in the image after each update.
+# Each "$" is written "$$" because Compose reads "$" in the text of a config.
 services:
   wyoming-whisper:
-    image: rhasspy/wyoming-whisper:latest
+    image: lscr.io/linuxserver/faster-whisper:gpu
     container_name: wyoming-whisper-ptbr
     restart: unless-stopped
     ports:
       - 10300:10300
+    configs:
+      - source: whisper-run
+        target: /etc/s6-overlay/s6-rc.d/svc-whisper/run
+        mode: 0755
     volumes:
       # Absolute: doco-cd runs compose from its own copy of the repository,
       # and a ./ path would be an empty folder there.
-      - /opt/stacks/fast-wir-2/whisper-data:/data
+      - /opt/stacks/fast-wir-2/whisper-data:/config
     environment:
+      - PGID=1000
+      - PUID=1000
       - TZ=Europe/Madrid
-    command:
-      - --model
-      - large-v3-turbo
-      - --language
-      - pt
-      - --device
-      - cuda
-      - --compute-type
-      - float16
+      # The language when the client names none. `pt` here translated English
+      # speech into Portuguese (measured on 2026-11-06: 30% word error rate on
+      # English clips, against 8.5% when the client sends `en`). A language that
+      # the client names is used as it is.
+      - WHISPER_LANG=auto
+      - WHISPER_MODEL=large-v3-turbo
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               # GPU 2, shared with the two TEI containers and with phonon-pt-br.
-              # It holds 1.6 GiB at idle (the Whisper model); the peak during a
-              # transcription is not measured. GPU 2 had 3.5 GiB free before it.
+              # The rhasspy image held 1.6 GiB at idle (the Whisper model). The
+              # memory of this image, and the peak during a transcription, are
+              # not measured. GPU 2 had 3.5 GiB free before Whisper.
               device_ids: ["2"]
               capabilities: [gpu]
+configs:
+  whisper-run:
+    content: |
+      #!/command/with-contenv bash
+      # shellcheck shell=bash
+
+      export LD_LIBRARY_PATH=$$(python3 -c 'import os; import nvidia.cublas.lib; import nvidia.cudnn.lib; print(os.path.dirname(nvidia.cublas.lib.__path__[0]) + "/lib:" + os.path.dirname(nvidia.cudnn.lib.__path__[0]) + "/lib")')
+
+      exec \
+          s6-notifyoncheck -d -n 300 -w 1000 -c "nc -z localhost 10300" \
+              s6-setuidgid abc python3 -m wyoming_faster_whisper \
+              --uri 'tcp://0.0.0.0:10300' \
+              --device cuda \
+              --compute-type int8_float32 \
+              --model "$${WHISPER_MODEL}" \
+              --beam-size "$${WHISPER_BEAM:-1}" \
+              --language "$${WHISPER_LANG:-en}" \
+              --data-dir /config \
+              --download-dir /config \
+              $${LOCAL_ONLY:+--local-files-only}
