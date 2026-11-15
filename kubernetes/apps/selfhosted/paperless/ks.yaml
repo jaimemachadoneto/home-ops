@@ -107,8 +107,16 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: *appname
+  # The database moves from postgres16 to its own cluster. The import
+  # component copies it at the first start. TODO: remove the import component
+  # after the first backup of paperless-mcp-postgres.
+  components:
+    - ../../../../components/cnpg/pg18
+    - ../../../../components/cnpg/import
   # The server exits at start when Postgres is not ready.
   dependsOn:
+    - name: cloudnative-pg-barman-cloud
+      namespace: database
     - name: cloudnative-pg-cluster
       namespace: database
   interval: 10m
@@ -116,6 +124,10 @@ spec:
   postBuild:
     substitute:
       APP: *appname
+      CNPG_DATABASE: paperless_mcp
+      CNPG_OWNER: paperless_mcp
+      CNPG_PASSWORD_ITEM: Paperless
+      CNPG_PASSWORD_PROPERTY: paperless_mcp_db_password
     substituteFrom:
       - name: cluster-secrets
         kind: Secret
