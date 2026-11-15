@@ -80,7 +80,6 @@
             cue
             gum
             # Build tools
-            go-task
             gnumake
             # CLI utilities
             jq
