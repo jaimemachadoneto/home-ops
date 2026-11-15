@@ -1,21 +1,62 @@
 ---
-# The Flux MCP server reads the cluster with the built-in role view. That role
-# covers the Flux resources, pods, logs and events, and has no access to
-# Secrets. The server also runs with --read-only, so it has no tool that
-# changes the cluster. Do not bind a role with write access.
+# The Flux MCP server reads only what an agent needs to find why a release
+# fails: the Flux resources, the workloads, the pods with their logs, and the
+# events. The role gives get, list and watch only. It has no Secrets and no
+# ConfigMaps, because an app can keep a value in a ConfigMap that an agent
+# must not see. The server also runs with --read-only. Do not add a verb that
+# changes the cluster.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: flux-mcp
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: flux-mcp-read
+rules:
+  - apiGroups:
+      - fluxcd.controlplane.io
+      - helm.toolkit.fluxcd.io
+      - image.toolkit.fluxcd.io
+      - kustomize.toolkit.fluxcd.io
+      - notification.toolkit.fluxcd.io
+      - source.toolkit.fluxcd.io
+      - source.extensions.fluxcd.io
+    resources: ["*"]
+    verbs: [get, list, watch]
+  - apiGroups: [""]
+    resources:
+      - events
+      - namespaces
+      - nodes
+      - persistentvolumeclaims
+      - persistentvolumes
+      - pods
+      - pods/log
+      - services
+    verbs: [get, list, watch]
+  - apiGroups: [apps]
+    resources: [daemonsets, deployments, replicasets, statefulsets]
+    verbs: [get, list, watch]
+  - apiGroups: [batch]
+    resources: [cronjobs, jobs]
+    verbs: [get, list, watch]
+  - apiGroups: [events.k8s.io]
+    resources: [events]
+    verbs: [get, list, watch]
+  - apiGroups: [apiextensions.k8s.io]
+    resources: [customresourcedefinitions]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: flux-mcp-view
+  name: flux-mcp-read
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: view
+  name: flux-mcp-read
 subjects:
   - kind: ServiceAccount
     name: flux-mcp

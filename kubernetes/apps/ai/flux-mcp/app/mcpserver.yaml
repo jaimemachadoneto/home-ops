@@ -1,8 +1,9 @@
 ---
 # The Flux MCP server (flux-operator-mcp) through the LiteLLM MCP gateway. It
 # gives agents the state of the Flux resources, the events and the pod logs of
-# the cluster, for read only. Keep its version the same as the Flux Operator
-# (kubernetes/apps/flux-system/flux-operator).
+# the cluster, for read only. The server has no login of its own: the only
+# gate is the MCP permission of the LiteLLM key. Keep its version the same as
+# the Flux Operator (kubernetes/apps/flux-system/flux-operator).
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer

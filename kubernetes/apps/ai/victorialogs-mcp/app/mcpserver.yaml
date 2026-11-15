@@ -2,7 +2,9 @@
 # The VictoriaLogs MCP server (mcp-victorialogs) through the LiteLLM MCP
 # gateway. It gives agents LogsQL queries on the logs of the last 7 days
 # (observability/victoria-logs), for read only. The logs can hold personal
-# data, so only the home-ops project gets this server (repos.yaml, mcp:).
+# data and tokens, and the server has no login of its own. The only gate is
+# the MCP permission of the LiteLLM key: give it only to a key that may read
+# all logs. `mcp:` in repos.yaml only selects what a client asks for.
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer
