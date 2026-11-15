@@ -76,8 +76,8 @@ Use `just` for the operational commands (`just --list`).
 
 ## Secrets and safety
 
-- Do not commit a credential, a resolved secret, a kubeconfig, `talosconfig`
-  or `age.key`. An app gets its secrets from an ExternalSecret that reads
+- Do not commit a credential, a resolved secret, a kubeconfig or
+  `talosconfig`. An app gets its secrets from an ExternalSecret that reads
   1Password. The `cluster-secrets` component reads `SECRET_DOMAIN` and
   `TIMEZONE` from the 1Password item `cluster-secrets`. Do not write the
   domain in a file.

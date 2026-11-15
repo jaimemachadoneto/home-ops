@@ -75,8 +75,6 @@
             gh
             just
             # Configuration management
-            sops
-            age
             cue
             gum
             # Build tools
@@ -90,12 +88,10 @@
             # Set environment variables
             export JUST_UNSTABLE=1
             #export KUBECONFIG="$(pwd)/kubeconfig"
-            export SOPS_AGE_KEY_FILE="$(pwd)/age.key"
             export TALOSCONFIG="$(pwd)/talosconfig"
             export MINIJINJA_CONFIG_FILE="$(pwd)/.minijinja.toml"
             echo "🚀 Home-ops development environment loaded!"
             echo "📝 KUBECONFIG: $KUBECONFIG"
-            echo "🔐 SOPS_AGE_KEY_FILE: $SOPS_AGE_KEY_FILE"
             echo "⚙️  TALOSCONFIG: $TALOSCONFIG"
             echo "📦 talosctl version: $(talosctl version --client --short 2>/dev/null || echo 'unknown')"
           '';
