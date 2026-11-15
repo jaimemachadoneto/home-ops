@@ -1,0 +1,44 @@
+---
+# The VictoriaLogs MCP server (mcp-victorialogs) through the LiteLLM MCP
+# gateway. It gives agents LogsQL queries on the logs of the last 7 days
+# (observability/victoria-logs), for read only. The logs can hold personal
+# data, so only the home-ops project gets this server (repos.yaml, mcp:).
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: victorialogs-mcp
+spec:
+  alias: victorialogs
+  workload:
+    image: ghcr.io/victoriametrics/mcp-victorialogs:v1.9.0@sha256:753bb4fbe402ca1a782842f44636830f9895736f11d7fe783b924f8a0daf083d
+    port: 8081
+    # The server does not need a Kubernetes token.
+    automountServiceAccountToken: false
+    env:
+      - name: VL_INSTANCE_ENTRYPOINT
+        value: http://victoria-logs-server.observability.svc.cluster.local:9428
+      - name: MCP_SERVER_MODE
+        value: http
+      - name: MCP_LISTEN_ADDR
+        value: ":8081"
+    # The image runs as root by default. The server is one static Go binary,
+    # so it runs as nobody with a read-only root file system.
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
