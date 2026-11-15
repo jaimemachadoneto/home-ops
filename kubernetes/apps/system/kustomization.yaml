@@ -5,7 +5,7 @@ kind: Kustomization
 namespace: system
 components:
   - ../../components/flux-alerts
-  - ../../components/sops
+  - ../../components/cluster-secrets
 resources:
   - ./namespace.yaml
   - ./descheduler/ks.yaml

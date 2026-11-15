@@ -5,7 +5,7 @@ kind: Kustomization
 namespace: ai
 components:
   - ../../components/flux-alerts
-  - ../../components/sops
+  - ../../components/cluster-secrets
 resources:
   - ./namespace.yaml
   - ./browser-sessions-mcp/ks.yaml

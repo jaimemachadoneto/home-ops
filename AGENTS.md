@@ -10,7 +10,7 @@ also apply here. This file gives the rules of this repository only.
 | --- | --- |
 | `kubernetes/apps/<namespace>/<app>/` | One app: `ks.yaml` (the Flux Kustomization) and `app/` (the HelmRelease and its resources) |
 | `kubernetes/apps/<namespace>/kustomization.yaml` | The list of the apps of a namespace, and the components of the namespace |
-| `kubernetes/components/` | Kustomize components: `volsync`, `sops`, `flux-alerts`, `gpu`, `keda/nas-nfs-scaler` |
+| `kubernetes/components/` | Kustomize components: `volsync`, `cluster-secrets`, `flux-alerts`, `gpu`, `keda/nas-nfs-scaler` |
 | `kubernetes/flux/cluster/ks.yaml` | The Flux entry point, and the HelmRelease defaults that it adds to each app |
 | `kubernetes/talos/` | The Talos machine config template (`machineconfig.yaml.j2`), a node file and a schematic for each node, and `mod.just` |
 | `kubernetes/bootstrap/` | The Helmfile and the recipes that start a new cluster |
@@ -34,7 +34,7 @@ old. Do not use it.
   sets the namespace of the Flux Kustomizations. Do not add
   `metadata.namespace` to the resources of an app.
 - Each namespace `kustomization.yaml` adds the `flux-alerts` component, and
-  each one except `openebs` adds the `sops` component. Add both to a new
+  each one except `openebs` adds the `cluster-secrets` component. Add both to a new
   namespace. Each `namespace.yaml` has `kustomize.toolkit.fluxcd.io/prune:
   disabled`, so that a mistake in Flux cannot delete a namespace. Keep it.
 - `ks.yaml` reads `postBuild.substituteFrom: cluster-secrets`. That Secret
@@ -79,7 +79,9 @@ old. Do not use it.
 
 - Do not commit a credential, a resolved secret, a kubeconfig, `talosconfig`
   or `age.key`. An app gets its secrets from an ExternalSecret that reads
-  1Password. SOPS encrypts only `kubernetes/components/sops/cluster-secrets.sops.yaml`.
+  1Password. The `cluster-secrets` component reads `SECRET_DOMAIN` and
+  `TIMEZONE` from the 1Password item `cluster-secrets`. Do not write the
+  domain in a file.
 - A merge to `main` is a live change. A GitHub webhook starts Flux, so Flux
   applies a change in `kubernetes/` within minutes, and doco-cd applies a change in `hosts/` within 30 minutes.
   Examine the rendered result and its effect, not only the diff.

@@ -5,7 +5,7 @@ kind: Kustomization
 namespace: downloads
 components:
   - ../../components/flux-alerts
-  - ../../components/sops
+  - ../../components/cluster-secrets
 resources:
   - ./namespace.yaml
   # - ./autobrr/ks.yaml
