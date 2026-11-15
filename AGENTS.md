@@ -10,7 +10,7 @@ also apply here. This file gives the rules of this repository only.
 | --- | --- |
 | `kubernetes/apps/<namespace>/<app>/` | One app: `ks.yaml` (the Flux Kustomization) and `app/` (the HelmRelease and its resources) |
 | `kubernetes/apps/<namespace>/kustomization.yaml` | The list of the apps of a namespace, and the components of the namespace |
-| `kubernetes/components/` | Kustomize components: `volsync`, `cluster-secrets`, `flux-alerts`, `gpu`, `keda/nas-nfs-scaler` |
+| `kubernetes/components/` | Kustomize components: `volsync`, `cluster-secrets`, `flux-alerts`, `gpu`, `keda/nas-nfs-scaler`, `cnpg` (a Postgres cluster for one app) |
 | `kubernetes/flux/cluster/ks.yaml` | The Flux entry point, and the HelmRelease defaults that it adds to each app |
 | `kubernetes/talos/` | The Talos machine config template (`machineconfig.yaml.j2`), a node file and a schematic for each node, and `mod.just` |
 | `kubernetes/bootstrap/` | The Helmfile and the recipes that start a new cluster |

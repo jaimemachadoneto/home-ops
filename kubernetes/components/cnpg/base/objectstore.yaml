@@ -1,0 +1,31 @@
+---
+# The backups go to the same MinIO bucket as postgres16. The serverName
+# parameter of the Cluster gives each cluster its own path in the bucket.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/barmancloud.cnpg.io/objectstore_v1.json
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: ${APP}-postgres
+spec:
+  configuration:
+    destinationPath: s3://cloudnative/
+    endpointURL: http://nas.${SECRET_DOMAIN}:9000
+    s3Credentials:
+      accessKeyId:
+        name: ${APP}-postgres-objectstore
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: ${APP}-postgres-objectstore
+        key: SECRET_ACCESS_KEY
+    data:
+      compression: bzip2
+    wal:
+      compression: bzip2
+      maxParallel: 2
+  instanceSidecarConfiguration:
+    resources:
+      requests:
+        cpu: 10m
+      limits:
+        memory: 256Mi
+  retentionPolicy: ${CNPG_RETENTION:=31d}

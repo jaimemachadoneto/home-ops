@@ -1,0 +1,40 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/component.json
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# Only for the move of a database from postgres16. List it after ../pg18 in the
+# ks.yaml of the app, so that the new cluster copies the database at its first
+# start. Remove it after the first backup: CNPG reads `bootstrap` only at the
+# creation, and the permanent recovery of ../pg18 then takes its place.
+resources:
+  - ./externalsecret.yaml
+patches:
+  - target:
+      group: postgresql.cnpg.io
+      kind: Cluster
+    patch: |-
+      - op: replace
+        path: /spec/bootstrap
+        value:
+          initdb:
+            database: ${CNPG_DATABASE}
+            owner: ${CNPG_OWNER}
+            secret:
+              name: ${APP}-postgres-owner
+            import:
+              type: microservice
+              databases:
+                - ${CNPG_DATABASE}
+              source:
+                externalCluster: postgres16
+      - op: replace
+        path: /spec/externalClusters
+        value:
+          - name: postgres16
+            connectionParameters:
+              host: postgres16-rw.database.svc.cluster.local
+              user: postgres
+              dbname: postgres
+            password:
+              name: ${APP}-postgres-import
+              key: password
