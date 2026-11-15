@@ -5,7 +5,7 @@ kind: Kustomization
 namespace: selfhosted
 components:
   - ../../components/flux-alerts
-  - ../../components/sops
+  - ../../components/cluster-secrets
 resources:
   - ./namespace.yaml
   - ./paperless/ks.yaml

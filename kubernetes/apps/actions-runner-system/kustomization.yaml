@@ -5,7 +5,7 @@ kind: Kustomization
 namespace: actions-runner-system
 components:
   - ../../components/flux-alerts
-  - ../../components/sops
+  - ../../components/cluster-secrets
 resources:
   - ./namespace.yaml
   - ./actions-runner-controller/ks.yaml

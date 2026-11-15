@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: external-ingresses
 components:
   - ../../components/flux-alerts
-  - ../../components/sops
+  - ../../components/cluster-secrets
 resources:
   - ./namespace.yaml
   - ./proxmox/ks.yaml
