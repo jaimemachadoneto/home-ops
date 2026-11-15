@@ -6,12 +6,13 @@
 set -eu
 
 PORT=8081
-IFACE=eth0
 # The Talos nodes. A pod reaches the host with the address of its node.
 NODES="10.30.50.20 10.30.50.21 10.30.50.22 10.30.50.33"
 TAG="doco-cd-webhook"
 
-match="-i $IFACE -p tcp -m conntrack --ctorigdstport $PORT --ctdir ORIGINAL -m comment --comment $TAG"
+# No interface match: a DROP that names an interface does nothing when the
+# name is wrong, and the port would stay open.
+match="-p tcp -m conntrack --ctorigdstport $PORT --ctdir ORIGINAL -m comment --comment $TAG"
 
 # Delete every rule with the tag.
 while rule=$(iptables -S DOCKER-USER | grep -m1 -- "--comment $TAG"); do
@@ -27,3 +28,9 @@ for node in $NODES; do
   # shellcheck disable=SC2086
   iptables -I DOCKER-USER 1 -s "$node" $match -j RETURN
 done
+
+# Stop with an error if the DROP is not in the chain. The port must not stay open.
+iptables -S DOCKER-USER | grep -q -- "--comment $TAG -j DROP" || {
+  echo "doco-cd-firewall: the DROP rule is missing" >&2
+  exit 1
+}
