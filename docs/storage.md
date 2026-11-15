@@ -98,7 +98,6 @@
 | **paperless-gpt**                            | selfhosted            | PVC (1Gi)                             | `ceph-block`       | Yes                |
 | **rclone (syncDocumentsJaime)**              | selfhosted            | NFS (10.30.10.11)                     | NFS direct         | No                 |
 | **rclone (syncDocumentsMonica)**             | selfhosted            | NFS (10.30.10.11)                     | NFS direct         | No                 |
-| **rclone (syncPaperlessOcr)**                | selfhosted            | NFS (10.30.10.11)                     | NFS direct         | No                 |
 | **searxng**                                  | selfhosted            | emptyDir only                         | —                  | No                 |
 | **kopia**                                    | system                | emptyDir (temp)                       | —                  | No                 |
 | **volsync**                                  | system                | — (backup system itself)              | —                  | —                  |

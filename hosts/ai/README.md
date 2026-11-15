@@ -21,7 +21,6 @@ Proxmox host `jmn-medusa`. It runs Docker stacks that use the three GeForce GTX
 | `fast-wir-2` | 10300 | speech to text (Wyoming), Home Assistant |
 | `kokoro-pt-br` | 8880 | text to speech (OpenAI API). Home Assistant uses it through `kokoro-wyoming` (10202), a container that is started by hand. Its source is in the repository `voice-lab` |
 | `qweanvoice` | 7860 | text to speech with a web studio (Qwen3-TTS, voice cloning), a test. Stopped. Start it by hand: `docker start qwen-tts`, or Start in Dockge. `doco-cd` does not deploy it |
-| `ocr-service` (`ocr`) | 8000 | OCR |
 | `tika` | 9998 | document text extraction |
 | `node-exporter` | 9100 | Prometheus (`scrapeconfigs/node-exporter.yaml`) |
 | `nvidia-gpu-exporter` | 9835 | Prometheus (`scrapeconfigs/nvidia-gpu-exporter.yaml`), with one series for each process on a GPU |
@@ -80,7 +79,7 @@ exist today:
 - `embeddings` (`hosts/ai/stacks/embeddings`);
 - `ai-host` (`.doco-cd.ai-host.yml`, one document for each stack): `kokoro-pt-br`,
   `node-exporter` and `nvidia-gpu-exporter`;
-- `ai-host-extra` (`.doco-cd.ai-host-extra.yml`): `tika`, `ocr` and
+- `ai-host-extra` (`.doco-cd.ai-host-extra.yml`): `tika` and
   `fast-wir-2`. These need the absolute paths described below.
 
 The list of targets that doco-cd polls is `/opt/doco-cd/data/poll-config.yml` on
@@ -113,7 +112,7 @@ does not depend on files that live in the stack folder of the host:
 | `kokoro-pt-br`, `node-exporter`, `nvidia-gpu-exporter` | yes (`ai-host`) | no relative path, no variable from a `.env` |
 | `embeddings` | yes (`embeddings`) | named volumes only |
 | `tika` | yes (`ai-host-extra`) | the 12 external networks that it declared were not used by the service, and 7 do not exist on the host: they were removed |
-| `fast-wir-2`, `ocr` | yes (`ai-host-extra`) | the relative bind mounts are now absolute (`/opt/stacks/<name>/...`), so the data stays where it is |
+| `fast-wir-2` | yes (`ai-host-extra`) | the relative bind mounts are now absolute (`/opt/stacks/<name>/...`), so the data stays where it is |
 | `qweanvoice` | no | it is stopped on purpose and started by hand. A deploy of `doco-cd` would start it again, and it takes 2.6 GiB of GPU 0 |
 | `ollama` | never | a redeploy restarts the models that memini and LiteLLM use, and its volume holds 13 GiB |
 
