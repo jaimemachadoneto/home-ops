@@ -90,7 +90,12 @@ the host. It is a copy. A change to `hosts/ai/doco-cd/poll-config.yml` or to
 A merge to `main` changes the container of these stacks at the next poll (up to
 30 minutes). The webhook server in the cluster (`kubernetes/apps/selfhosted/webhook`)
 also sends each push to `main` to doco-cd on port 8081, so the deploy starts at once.
-The poll stays as a safety net. doco-cd reads the secret from `DOCO_CD_WEBHOOK_SECRET` in
+The poll stays as a safety net. Port 8081 accepts only the cluster nodes. The rule is in the chain
+`DOCKER-USER`, because Docker bypasses `ufw` for published ports. `ufw` is not installed.
+Copy `doco-cd/firewall/doco-cd-firewall.sh` to `/usr/local/sbin` and
+`doco-cd-firewall.service` to `/etc/systemd/system`, then run
+`systemctl enable --now doco-cd-firewall`. Change the list of nodes in the script when a
+node changes. doco-cd reads the secret from `DOCO_CD_WEBHOOK_SECRET` in
 `/opt/doco-cd/.env`. With `force_recreate: false`, a poll with no change in a compose
 file should restart nothing. The first poll of a new stack can still recreate its
 container once: on 2026-11-04 it recreated `kokoro-tts` (the GPU pin changed) and
