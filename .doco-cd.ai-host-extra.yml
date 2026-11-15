@@ -25,15 +25,6 @@ force_recreate: false
 remove_orphans: true
 prune_images: true
 ---
-name: ocr
-working_dir: hosts/ai/stacks/ocr
-compose_files:
-  - compose.yaml
-force_image_pull: false
-force_recreate: false
-remove_orphans: true
-prune_images: true
----
 name: fast-wir-2
 working_dir: hosts/ai/stacks/fast-wir-2
 compose_files:

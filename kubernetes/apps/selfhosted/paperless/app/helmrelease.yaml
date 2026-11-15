@@ -38,7 +38,7 @@ spec:
               PAPERLESS_WEBSERVER_WORKERS: "2"
               PAPERLESS_TASK_WORKERS: "2"
               # Configure folders
-              PAPERLESS_CONSUMPTION_DIR: /data/nas/incoming
+              PAPERLESS_CONSUMPTION_DIR: /data/consume
               PAPERLESS_DATA_DIR: /data/local/data
               PAPERLESS_EXPORT_DIR: /data/nas/export
               PAPERLESS_MEDIA_ROOT: /data/local/media
@@ -48,7 +48,8 @@ spec:
               PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
               # Configure OCR
               PAPERLESS_OCR_LANGUAGES: por
-              PAPERLESS_OCR_LANGUAGE: eng+spa+por
+              # Spanish first: Tesseract then reads accents better on Spanish scans.
+              PAPERLESS_OCR_LANGUAGE: spa+por+eng
               # Configure redis integration
               PAPERLESS_REDIS: redis://paperless-redis.selfhosted.svc.cluster.local:6379
               # Configure admin user
@@ -147,3 +148,12 @@ spec:
           paperless:
             app:
               - path: /data/nas
+      # The scanner saves files here. Paperless reads them and runs its own OCR.
+      consume:
+        type: nfs
+        server: nas.jaimenet.com
+        path: /mnt/Data1/Documents/pending
+        advancedMounts:
+          paperless:
+            app:
+              - path: /data/consume

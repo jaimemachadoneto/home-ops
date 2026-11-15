@@ -14,7 +14,6 @@ resources:
   - ./dockge/ks.yaml
   - ./semaphore/ks.yaml
   - ./zigbee2mqtt/ks.yaml
-  - ./ocr/ks.yaml
   - ./kasm/ks.yaml
   - ./vpn-streaming-casal/ks.yaml
   - ./vpn-tv-escritorio/ks.yaml

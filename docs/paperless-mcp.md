@@ -27,7 +27,7 @@ Agents work with my Paperless documents through one MCP server:
 - Paperless-ngx 3.3.4 in `selfhosted/paperless/app/`. It has only an
   internal route (`paperless.${SECRET_DOMAIN}` on envoy-internal), the
   Service `paperless.selfhosted.svc.cluster.local:8000`, and Authentik OIDC
-  logins. It consumes files from `/data/nas/incoming`.
+  logins. It consumes files from `/data/consume`, the NAS folder `Documents/pending`.
 - `paperless-ai` and `paperless-gpt` already use the Paperless API from the
   cluster (`selfhosted/paperless/ai/`, `selfhosted/paperless/gpt/`).
 - The LiteLLM MCP gateway (`docs/ai.md`). Claude Code reaches it on the LAN.
