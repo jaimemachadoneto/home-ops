@@ -1,0 +1,16 @@
+# Restricts port 8081 of doco-cd to the cluster nodes. It runs after Docker
+# starts, because Docker creates the chain DOCKER-USER, and again when Docker
+# restarts.
+[Unit]
+Description=Limit the webhook port of doco-cd to the cluster nodes
+After=docker.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/doco-cd-firewall.sh
+
+[Install]
+WantedBy=multi-user.target
