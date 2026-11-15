@@ -5,3 +5,7 @@ metadata:
   name: flux-system
   annotations:
     kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    # Report the pods that break the baseline profile. A later change enforces it.
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
