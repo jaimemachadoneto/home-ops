@@ -1,0 +1,10 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/component.json
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# The Postgres major version is the name of this folder. A major upgrade copies
+# the folder to ../pg19 and changes one line in the ks.yaml of the app.
+components:
+  - ../base
+resources:
+  - ./cluster.yaml

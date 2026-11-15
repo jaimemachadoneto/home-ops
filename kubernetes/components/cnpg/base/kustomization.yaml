@@ -1,0 +1,11 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/component.json
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# The parts that do not depend on the Postgres major version. An app does not
+# use this component directly: it uses ../pg18, which includes it.
+resources:
+  - ./externalsecret.yaml
+  - ./objectstore.yaml
+  - ./podmonitor.yaml
+  - ./scheduledbackup.yaml
