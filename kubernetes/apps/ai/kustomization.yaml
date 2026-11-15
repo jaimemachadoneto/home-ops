@@ -11,6 +11,7 @@ resources:
   - ./browser-sessions-mcp/ks.yaml
   - ./context7-mcp/ks.yaml
   - ./email-triage/ks.yaml
+  - ./flux-mcp/ks.yaml
   - ./go-catalog-sync/ks.yaml
   - ./ha-mcp/ks.yaml
   - ./litellm/ks.yaml
@@ -22,3 +23,4 @@ resources:
   - ./outlook-mcp/ks.yaml
   - ./paperless-mcp/ks.yaml
   - ./searxng-mcp/ks.yaml
+  - ./victorialogs-mcp/ks.yaml
