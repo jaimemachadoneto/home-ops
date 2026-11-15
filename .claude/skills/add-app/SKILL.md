@@ -111,7 +111,7 @@ Add `./<app>/ks.yaml` to `resources` of
 `kubernetes/apps/<namespace>/kustomization.yaml`, at the end of the list. For
 a new namespace, copy the folder of a small namespace: its `namespace.yaml`
 (keep `prune: disabled` and `name: _`) and its `kustomization.yaml` (keep the
-`flux-alerts` and `sops` components). `kubernetes/apps/` has no
+`flux-alerts` and `cluster-secrets` components). `kubernetes/apps/` has no
 `kustomization.yaml`: Flux finds each namespace folder itself.
 
 ## 7. Verify

@@ -5,7 +5,7 @@ kind: Kustomization
 namespace: renovate
 components:
   - ../../components/flux-alerts
-  - ../../components/sops
+  - ../../components/cluster-secrets
 resources:
   - ./namespace.yaml
   - ./renovate-operator/ks.yaml
