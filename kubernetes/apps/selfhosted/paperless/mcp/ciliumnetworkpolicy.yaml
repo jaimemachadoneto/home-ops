@@ -3,7 +3,7 @@
 # is its only check. Only the LiteLLM MCP gateway can call /mcp. Only
 # envoy-external can call /upload/ and /download/, where the single-use link
 # is the check. The server can call only Paperless, the Postgres pods
-# (`postgres16`), Ollama (and DNS).
+# (`paperless-mcp-postgres`), Ollama (and DNS).
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -82,8 +82,8 @@ spec:
     # this rule once Cilium tracks same-node Service replies again.
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: database
-            cnpg.io/cluster: postgres16
+            k8s:io.kubernetes.pod.namespace: selfhosted
+            cnpg.io/cluster: paperless-mcp-postgres
   egress:
     - toEndpoints:
         - matchLabels:
@@ -96,8 +96,8 @@ spec:
               protocol: TCP
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: database
-            cnpg.io/cluster: postgres16
+            k8s:io.kubernetes.pod.namespace: selfhosted
+            cnpg.io/cluster: paperless-mcp-postgres
       toPorts:
         - ports:
             - port: "5432"
