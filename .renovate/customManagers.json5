@@ -11,6 +11,19 @@
         "oci://(?<depName>[^:]+):(?<currentValue>\\S+)",
       ],
       datasourceTemplate: "docker",
-    }
+    },
+    {
+      customType: "regex",
+      // The lint workflow runs the validator with docker run, and the
+      // github-actions manager does not read an image in a script.
+      description: "Process the Renovate image of the lint workflow",
+      managerFilePatterns: [
+        "/^\\.github/workflows/lint\\.yaml$/"
+      ],
+      matchStrings: [
+        "(?<depName>ghcr\\.io/renovatebot/renovate):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]{64})",
+      ],
+      datasourceTemplate: "docker",
+    },
   ]
 }
