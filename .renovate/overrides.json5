@@ -21,5 +21,17 @@
       matchUpdateTypes: ["digest"],
       enabled: false,
     },
+    {
+      // A new major of Postgres needs pg_upgrade or a new cluster that
+      // restores from a backup. A tag change in a Renovate PR cannot do that,
+      // and PR 314 once moved the image from 16 to 17 this way. Minor and patch
+      // versions stay open. The docker versioning keeps the
+      // -standard-bullseye suffix, so the Debian release does not change.
+      description: "Never move the CloudNativePG Postgres image to a new major version",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/cloudnative-pg/postgresql"],
+      matchUpdateTypes: ["major"],
+      enabled: false,
+    },
   ],
 }
