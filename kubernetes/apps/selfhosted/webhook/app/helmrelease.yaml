@@ -32,7 +32,7 @@ spec:
             image:
               repository: ghcr.io/jaimemachadoneto/webhook-runner
               # Pinned by digest. Image repository: jaimemachadoneto/webhook-runner.
-              tag: latest@sha256:cb3cf9a2a2328dd7d0253e6f6abdec4aa853fbc4d3d61d44c2d15ee034530327
+              tag: latest@sha256:e2641495b2c82b3a0420fa228016824862832e50811d2ca00f19eea6a620129b
             args:
               - -hooks=/hooks/doco-cd.yaml
               - -template
