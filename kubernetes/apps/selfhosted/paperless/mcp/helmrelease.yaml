@@ -25,6 +25,9 @@ spec:
       paperless-mcp:
         annotations:
           reloader.stakater.com/auto: "true"
+        # TODO: set 1 again when DATABASE_URL points at paperless-mcp-postgres.
+        # The server stops, so it writes nothing during the import.
+        replicas: 0
         containers:
           app:
             image:
