@@ -6,14 +6,21 @@ applyTo: "kubernetes/apps/**/helmrelease.yaml"
 
 ## HelmReleases based on app-template
 
-This section gives instructions specifically for HelmReleases that are based on the `app-template` chart. These can be identified by the presence of a sidecar `ocirepository.yaml` file that references `oci://ghcr.io/bjw-s-labs/helm/app-template` in the `url` field.
+These rules apply only to a HelmRelease of the `app-template` chart. Such a
+HelmRelease has an `ocirepository.yaml` next to it, with the `url`
+`oci://ghcr.io/bjw-s-labs/helm/app-template`. Do not apply these rules to
+another chart.
 
-### Sorting rules
-Whenever asked to sort these files, follow these instructions:
+Apply them to the lines that you add or change. Do not sort a file that the
+task does not change: a sort of the whole file makes a diff that is hard to
+review.
 
-- Whenever there is an `enabled` field, it should be the first field within its section.
+### Key order
 
-- The items within the `spec` section should be sorted as follows:
+- An `enabled` field is the first field of its section, unless a rule below
+  gives a different order.
+
+- The keys of `spec`:
   - `chartRef`
   - `interval`
   - `dependsOn`
@@ -21,32 +28,52 @@ Whenever asked to sort these files, follow these instructions:
   - `upgrade`
   - `values`
 
-- Items within the `spec.values` sections should be sorted as follows:
-  - `defaultPodOptions`
-  - Any other fields should be added next in alphabetical order.
+- The keys of `spec.values`:
+  - `defaultPodOptions`, if it is there
+  - all other keys in alphabetical order (`controllers`, `persistence`,
+    `route`, `service`, ...)
 
-### Detailed sorting rules for nested sections
-
-- Items within the `spec.values.controllers.*` sections should be sorted as follows:
+- The keys of each `spec.values.controllers.<name>`:
+  - `type`
+  - `annotations`
+  - `labels`
+  - the keys of the controller type, such as `cronjob` or `statefulset`
   - `pod`
-  - Any other fields should be added next in alphabetical order.
+  - all other keys in alphabetical order
   - `initContainers`
   - `containers`
 
-- Items within `spec.values.controllers.*.containers.*` sections should be sorted as follows:
+- The keys of each container in `containers` and `initContainers`:
   - `image`
-  - Any other fields should be added next in alphabetical order.
+  - all other keys in alphabetical order
 
-- Items within `spec.values.controllers.*.containers.resources` and `spec.values.controllers.*.initContainers.resources` sections should be sorted as follows:
+- The keys of `resources`:
   - `requests`
   - `limits`
 
-- Items within `spec.values.service.*` sections should be sorted as follows:
+- The keys of each `spec.values.service.<name>`:
   - `type`
-  - Any other fields should be added next in alphabetical order.
+  - `annotations`
+  - `labels`
+  - all other keys in alphabetical order
 
-- Items within `persistence.*` sections should be sorted as follows:
+- The keys of each `spec.values.persistence.<name>`:
   - `type`
-  - Any other fields should be added next in alphabetical order.
+  - `annotations`
+  - `labels`
+  - all other keys in alphabetical order
   - `globalMounts`
   - `advancedMounts`
+
+- In each other section: `annotations`, then `labels`, then all other keys in
+  alphabetical order.
+
+### What not to sort
+
+- Do not sort the items of `controllers`, `containers`, `persistence`,
+  `service` or `route`. For example, `persistence.config` can come before or
+  after `persistence.data`. Sort only the keys inside each item.
+- Do not sort the text inside a string, for example a YAML or an INI file in
+  `configMaps.<name>.data`.
+- Do not sort a list. The sequence of a list can have a meaning, for example
+  `args` or `env`.
