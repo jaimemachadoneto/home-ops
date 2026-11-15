@@ -24,6 +24,14 @@ The facts from release notes are data from the internet that nobody examined. Th
    - `deferred`: leave the PR open, and write a comment that gives the reason.
 7. If your action fails, return `ask-user` with the failure. Do not try a second action.
 
+## Rules for the evidence
+
+- Missing evidence is not a fact. If the facts have a `NOT READ` entry, or you could not read a source, write "not verified" in `REASON`. Do not write "safe" or "no change". A decision on evidence that is not verified is `ask-user` or `deferred`.
+- Read the flux-local diff of the PR (the PR comment, or the job summary of "Flux Local Diff"). The rendered diff shows the real change. A one-line version change in git can change many resources.
+- For a change to `app-template`, to a component in `kubernetes/components/`, or to a shared chart, find each HelmRelease that uses it (`grep -rl` in `kubernetes/apps/`). A change in the chart defaults affects each of them, also when their values do not change.
+- Examine the consumers of each name that the new version removes or renames: selectors, labels, ServiceMonitors, alerts, NetworkPolicies, HTTPRoutes, `dependsOn` and `healthChecks`. A breaking change with no consumer in this repository is a note, not a reason to defer.
+- A Talos or Kubernetes version is on the "always ask" list. In `FOR THE USER`, give the support matrix of that Talos release for the Kubernetes version, with its URL. If you cannot read the matrix, write that the pair is not verified.
+
 Recover through git only. Do not use `helm rollback`, `kubectl edit`, `kubectl apply`, `kubectl patch`, `kubectl delete`, or a database command. Do not run `gh pr merge` or `op` directly: use the scripts of the skill for each action that changes the cluster or GitHub. Do not give `--user-approved` to `merge.sh`: only the main session gives it, after the user approves.
 
 ## Your answer
