@@ -14,6 +14,7 @@ resources:
   - ./flux-mcp/ks.yaml
   - ./go-catalog-sync/ks.yaml
   - ./ha-mcp/ks.yaml
+  - ./jeff-readonly/ks.yaml
   - ./litellm/ks.yaml
   - ./litellm-operator/ks.yaml
   - ./llmkube/ks.yaml
