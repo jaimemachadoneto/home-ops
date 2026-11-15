@@ -26,6 +26,7 @@ Kubernetes cluster stats:
 
 # Reference
 
+- [Architecture pages](https://jaimemachadoneto.github.io/home-ops/) (services, cluster overview, explorer)
 - [Storage Overview](docs/storage.md)
 - [Network Design (target-state)](docs/network.md)
 - [Homelab Context](docs/homelab-context.md)
