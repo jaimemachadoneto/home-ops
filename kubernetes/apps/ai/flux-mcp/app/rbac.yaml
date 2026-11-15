@@ -1,0 +1,22 @@
+---
+# The Flux MCP server reads the cluster with the built-in role view. That role
+# covers the Flux resources, pods, logs and events, and has no access to
+# Secrets. The server also runs with --read-only, so it has no tool that
+# changes the cluster. Do not bind a role with write access.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flux-mcp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: flux-mcp-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: flux-mcp
+    namespace: ai
