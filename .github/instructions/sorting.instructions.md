@@ -4,7 +4,9 @@ applyTo: "**/*.yaml"
 
 # Sorting instructions for all yaml files
 
-Whenever asked to sort these files, follow these instructions:
+Whenever asked to sort these files, follow these instructions. When a task only
+changes a file, apply them to the lines that you add or change. Do not sort the
+text inside a string, or the items of a list.
 
 - **Default rule**: All fields and properties should be sorted alphabetically at every level of the YAML structure, regardless of how deeply nested they are, unless a specific override rule is provided below or in other applicable instructions files.
 
