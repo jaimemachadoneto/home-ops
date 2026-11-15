@@ -41,6 +41,6 @@ spec:
       sectionName: https
   rules:
     - backendRefs:
-        - name: renovate-operator-webhook
+        - name: renovate-operator
           namespace: renovate
           port: 8082
