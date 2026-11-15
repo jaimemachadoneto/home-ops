@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./externalsecret.yaml
+  - ./ocirepository.yaml
+  - ./helmrelease.yaml
+  - ./ciliumnetworkpolicy.yaml
+configMapGenerator:
+  # One file for each hook, one script for each action. The name stays the
+  # same: the reloader restarts the pod when the content changes.
+  - name: webhook-hooks
+    files:
+      - ./config/doco-cd.yaml
+  - name: webhook-scripts
+    files:
+      - ./scripts/doco-cd-deploy.sh
+generatorOptions:
+  disableNameSuffixHash: true

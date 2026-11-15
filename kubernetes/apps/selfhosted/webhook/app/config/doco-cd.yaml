@@ -1,0 +1,32 @@
+# Hook doco-cd: a push to main on GitHub makes doco-cd on the AI host deploy
+# now, not after its 30-minute poll. The server reads this file as a Go
+# template (-template), so the secret comes from the environment and not from
+# git. To add a service, add a file next to this one and a script in scripts/.
+- id: doco-cd
+  execute-command: /scripts/doco-cd-deploy.sh
+  command-working-directory: /tmp
+  # doco-cd checks the signature of the exact body. The script must send the
+  # raw body, not a copy that the server parsed and wrote again.
+  pass-file-to-command:
+    - source: raw-request-body
+      envname: PAYLOAD_FILE
+  trigger-rule:
+    and:
+      - match:
+          type: payload-hmac-sha256
+          secret: '{{ getenv "GITHUB_WEBHOOK_SECRET" }}'
+          parameter:
+            source: header
+            name: X-Hub-Signature-256
+      - match:
+          type: value
+          value: push
+          parameter:
+            source: header
+            name: X-GitHub-Event
+      - match:
+          type: value
+          value: refs/heads/main
+          parameter:
+            source: payload
+            name: ref
