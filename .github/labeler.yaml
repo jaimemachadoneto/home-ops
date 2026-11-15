@@ -44,8 +44,3 @@ area/talos:
   - changed-files:
       - any-glob-to-any-file:
           - kubernetes/talos/**/*
-area/taskfile:
-  - changed-files:
-      - any-glob-to-any-file:
-          - .taskfiles/**/*
-          - Taskfile.yaml

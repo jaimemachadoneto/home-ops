@@ -22,8 +22,7 @@ also apply here. This file gives the rules of this repository only.
 | `.claude/skills/`, `.claude/agents/` | The skills and agents of this repository (see "Task guidance") |
 | `docs/` | The design notes: storage, network, AI host, backups, and more |
 
-Use `just` for the operational commands (`just --list`). `Taskfile.yaml` is
-old. Do not use it.
+Use `just` for the operational commands (`just --list`).
 
 ## Kubernetes conventions
 
