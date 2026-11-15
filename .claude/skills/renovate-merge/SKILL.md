@@ -52,7 +52,7 @@ T=<scratchpad>/gh-token
 Exit code 64 is a wrong call. Any other exit code is a script error. For a script error, examine the output, and do not merge.
 
 - Run `backup.sh` in the background. A backup can take 30 minutes, and the Bash tool stops a command after 10 minutes.
-- `precheck.sh` ignores two failures on purpose. The lint jobs fail because of style errors that are already on `main`, and the user decided to ignore them. A flux-local job that fails only at "Add Comment" renders correctly. Its diff is too long for a PR comment.
+- `precheck.sh` ignores no failure. Each check that fails gives 30. For a failed flux-local diff job, its output names the steps that failed.
 - `merge.sh` refuses a PR from an author that is not Renovate, and a PR with the "always ask" mark. It runs `precheck.sh` again, and it merges only the commit that `precheck.sh` examined.
 - Give `--user-approved` only after the user approved that PR in a message in this conversation.
 - If `backup.sh` gives 4, tell the user at once. The hourly backups of that app stay stopped until someone removes `spec.trigger.manual`.
@@ -133,7 +133,7 @@ The `renovate-escalation` agent does not decide these cases. Set the status of t
 | "The release notes are clean and I made a backup, so I can merge this major version." | A major version of a data store is on the "always ask" list. Ask. |
 | "It is a small app. A revert is routine." | The new version can migrate the database when it starts. The old version cannot read it. Ask. |
 | "Batches of five save time. The apps do not depend on each other." | One merge at a time. A failure in a batch has no clear cause, and a revert of a batch reverts good updates. |
-| "A lint check that fails is a real signal. I correct it first." | The user decided to ignore these lint errors. `precheck.sh` knows them. |
+| "The lint check fails, but lint errors do not matter." | A lint failure comes from the PR. Increase the class to `review`, as step 6 tells. |
 | "`helm rollback` is faster than a revert PR." | Flux applies the state in git again and cancels the rollback. Recover through git. |
 | "CI is green, so the chart upgrade is safe." | CI does not compare CRDs. Run `crd-diff.sh`. |
 | "Renovate offers the newest version, so a direct upgrade is correct." | Some software needs one major version at a time. The `renovate-escalation` agent examines the upgrade path. |
