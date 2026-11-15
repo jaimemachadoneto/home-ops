@@ -1,0 +1,112 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: webhook
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: webhook
+  interval: 30m
+  upgrade:
+    remediation:
+      # A first install that fails has no previous revision to roll back to,
+      # so the controller stalls and does not retry. Retry the release.
+      remediateLastFailure: true
+  values:
+    controllers:
+      webhook:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        replicas: 1
+        pod:
+          securityContext:
+            runAsGroup: 65532
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+        containers:
+          app:
+            image:
+              repository: ghcr.io/jaimemachadoneto/webhook-runner
+              # Pinned by digest. Image repository: jaimemachadoneto/webhook-runner.
+              tag: latest@sha256:cb3cf9a2a2328dd7d0253e6f6abdec4aa853fbc4d3d61d44c2d15ee034530327
+            args:
+              - -hooks=/hooks/doco-cd.yaml
+              - -template
+              - -port=9000
+              - -verbose
+            envFrom:
+              - secretRef:
+                  name: webhook-secret
+            env:
+              DOCO_CD_URL: http://10.30.50.13:8081
+            probes:
+              # The server has no health path. A TCP check tells that it listens.
+              liveness: &probe
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: &httpPort 9000
+                  initialDelaySeconds: 3
+                  periodSeconds: 10
+              readiness: *probe
+            resources:
+              requests:
+                cpu: 10m
+                memory: 16Mi
+              limits:
+                memory: 64Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+
+    service:
+      app:
+        ports:
+          http:
+            port: *httpPort
+
+    persistence:
+      hooks:
+        type: configMap
+        name: webhook-hooks
+        globalMounts:
+          - path: /hooks
+            readOnly: true
+      scripts:
+        type: configMap
+        name: webhook-scripts
+        defaultMode: 0555
+        globalMounts:
+          - path: /scripts
+            readOnly: true
+      # The server writes the body of each request to a file for the script.
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+
+    # Public, like the Flux webhook. The signature check is the gate, and the
+    # route passes only /hooks/.
+    route:
+      app:
+        hostnames:
+          - hooks.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-external
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: *httpPort
+            matches:
+              - path:
+                  type: PathPrefix
+                  value: /hooks/

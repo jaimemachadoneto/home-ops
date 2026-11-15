@@ -25,3 +25,4 @@ resources:
   - ./syncthing/ks.yaml
   - ./voice-router/ks.yaml
   - ./voice-router-dashboard/ks.yaml
+  - ./webhook/ks.yaml

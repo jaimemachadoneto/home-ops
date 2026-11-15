@@ -2,6 +2,10 @@
 # Runs doco-cd on the AI host: it polls home-ops and redeploys a stack
 # whenever a file named in .doco-cd.<target>.yml changes on `main`. The
 # targets are in poll-config.yml. See ../README.md.
+# A push to `main` also makes the webhook server in the cluster call the
+# endpoint /v1/webhook/<target> on port 8081, so a deploy does not wait for
+# the poll. The secret is DOCO_CD_WEBHOOK_SECRET in the .env file of
+# /opt/doco-cd (item `webhook` in 1Password).
 services:
   doco-cd:
     container_name: doco-cd
@@ -12,6 +16,13 @@ services:
     environment:
       TZ: Europe/Madrid
       POLL_CONFIG_FILE: /data/poll-config.yml
+      # doco-cd checks the signature of each webhook call with this secret.
+      # Set DOCO_CD_WEBHOOK_SECRET in .env before you start the container.
+      WEBHOOK_SECRET: ${DOCO_CD_WEBHOOK_SECRET}
+    ports:
+      # Only on the LAN address of the host: the cluster calls this port, and
+      # the port is not on every interface. The signature is the only check.
+      - "10.30.50.13:8081:80"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/doco-cd/data:/data

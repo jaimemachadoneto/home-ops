@@ -1,0 +1,37 @@
+---
+# The server is on the internet through envoy-external. A hook runs a script,
+# so the network limits what a bad hook or script can reach: the server can
+# call only doco-cd on the AI host (10.30.50.13, port 8081). Only envoy-external
+# can call the server.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: webhook
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: webhook
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: envoy-external
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    # The kubelet probes come from the node.
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+  egress:
+    - toCIDR:
+        - 10.30.50.13/32
+      toPorts:
+        - ports:
+            - port: "8081"
+              protocol: TCP
