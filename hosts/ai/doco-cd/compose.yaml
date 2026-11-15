@@ -17,8 +17,8 @@ services:
       TZ: Europe/Madrid
       POLL_CONFIG_FILE: /data/poll-config.yml
       # doco-cd checks the signature of each webhook call with this secret.
-      # Set DOCO_CD_WEBHOOK_SECRET in .env before you start the container.
-      WEBHOOK_SECRET: ${DOCO_CD_WEBHOOK_SECRET}
+      # The compose file stops with an error when the variable is not set.
+      WEBHOOK_SECRET: ${DOCO_CD_WEBHOOK_SECRET:?set DOCO_CD_WEBHOOK_SECRET in .env}
     ports:
       # Only on the LAN address of the host: the cluster calls this port, and
       # the port is not on every interface. The signature is the only check.

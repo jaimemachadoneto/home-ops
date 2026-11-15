@@ -123,7 +123,7 @@ jobs:
         while IFS= read -r file; do
           [ -f "${file}" ] || continue
           echo "::group::${file}"
-          docker compose -f "${file}" config --quiet --no-env-resolution || status=1
+          docker compose -f "${file}" config --quiet --no-interpolate --no-env-resolution || status=1
           echo "::endgroup::"
         done < <(jq -r '.[]' <<< "${CHANGED_FILES}")
         exit "${status}"
