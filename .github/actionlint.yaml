@@ -1,5 +1,7 @@
 ---
+# The labels of the runner scale sets in
+# kubernetes/apps/actions-runner-system/actions-runner-controller/runners/.
 self-hosted-runner:
   labels:
-    - arc-bjw-s-labs
-    - arc-bjw-s-labs-home-ops
+    - arc-jmn
+    - arc-jmn-home-ops

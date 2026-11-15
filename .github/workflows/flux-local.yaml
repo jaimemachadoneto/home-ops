@@ -51,7 +51,7 @@ jobs:
           persist-credentials: false
 
       - name: Run flux-local test
-        uses: docker://ghcr.io/allenporter/flux-local:v8.1.0
+        uses: docker://ghcr.io/allenporter/flux-local:v8.1.0@sha256:37c3c4309a351830b04f93c323adfcb0e28c368001818cd819cbce3e08828261
         with:
           args: test --enable-helm --all-namespaces --path /github/workspace/kubernetes/flux/cluster -v
 
@@ -107,7 +107,7 @@ jobs:
           persist-credentials: false
 
       - name: Run flux-local diff
-        uses: docker://ghcr.io/allenporter/flux-local:v8.1.0
+        uses: docker://ghcr.io/allenporter/flux-local:v8.1.0@sha256:37c3c4309a351830b04f93c323adfcb0e28c368001818cd819cbce3e08828261
         with:
           args: >-
             diff ${{ matrix.resources }}
@@ -122,10 +122,25 @@ jobs:
       - name: Generate Diff
         id: diff
         run: |
+          # A PR comment holds 65536 characters at most, and a longer diff made
+          # the "Add Comment" step fail. The comment gets the first part only;
+          # the job summary keeps the full diff.
+          # The limit leaves space for the header, the code fence and the note.
+          limit=50000
+          # A fixed delimiter such as EOF breaks the output when the diff has
+          # a line with the same text.
+          delimiter="DIFF_$(openssl rand -hex 16)"
           {
-              echo 'diff<<EOF'
-              cat diff.patch
-              echo EOF
+              echo "diff<<${delimiter}"
+              if [ "$(wc -c < diff.patch)" -gt "${limit}" ]; then
+                  # Remove the last line, which the cut can leave incomplete
+                  # or split in a multibyte character.
+                  head -c "${limit}" diff.patch | sed '$d'
+                  echo "... The diff is too long for a comment. The job summary has the full diff."
+              else
+                  cat diff.patch
+              fi
+              echo "${delimiter}"
           } >> "${GITHUB_OUTPUT}";
           {
               echo "## Flux ${{ matrix.resources }} diff"

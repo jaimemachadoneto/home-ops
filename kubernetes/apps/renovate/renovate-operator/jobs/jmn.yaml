@@ -48,7 +48,7 @@ spec:
     - jaimemachadoneto/*
   extraEnv:
     - name: LOG_LEVEL
-      value: debug
+      value: info
     - name: RENOVATE_ALLOWED_COMMANDS
       value: '["pnpm run bundle"]'
     - name: RENOVATE_PLATFORM_COMMIT
@@ -66,5 +66,10 @@ spec:
   secretRef: lab-assistant-jmn-labs
   webhook:
     enabled: true
+    # The route renovate-webhook is public (envoy-external). Without a
+    # check, anyone on the internet can start Renovate runs.
     authentication:
-      enabled: false
+      enabled: true
+      secretRef:
+        name: renovate-webhook-token
+        key: token

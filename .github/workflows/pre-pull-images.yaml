@@ -54,7 +54,7 @@ jobs:
           persist-credentials: false
 
       - name: Gather Images
-        uses: docker://ghcr.io/allenporter/flux-local:v8.1.0
+        uses: docker://ghcr.io/allenporter/flux-local:v8.1.0@sha256:37c3c4309a351830b04f93c323adfcb0e28c368001818cd819cbce3e08828261
         with:
           args: >-
             get cluster
@@ -115,12 +115,14 @@ jobs:
       - name: Attest
         env:
           GITHUB_TOKEN: ${{ github.token }}
+        # The image name comes from the PR, so the script reads it from the
+        # environment and not from an expression in the script text.
         run: |
-          case "${{ matrix.images }}" in
+          case "${MATRIX_IMAGE}" in
             *home-operations*)
-              gh attestation verify --owner home-operations oci://${MATRIX_IMAGE} ;;
+              gh attestation verify --owner home-operations "oci://${MATRIX_IMAGE}" ;;
             *bjw-s-labs*)
-              gh attestation verify --owner bjw-s-labs oci://${MATRIX_IMAGE} ;;
+              gh attestation verify --owner bjw-s-labs "oci://${MATRIX_IMAGE}" ;;
           esac
 
       # - name: Install talosctl

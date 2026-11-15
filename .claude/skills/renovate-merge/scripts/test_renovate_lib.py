@@ -33,17 +33,20 @@ class ClassifyChecks(unittest.TestCase):
         status, _ = lib.classify_checks([context("renovate/stability-days", "PENDING")], {})
         self.assertEqual(status, "pending")
 
-    def test_lint_failure_is_ignored(self):
+    def test_lint_failure_fails(self):
+        # main has no yamllint error now, so a lint failure comes from the PR.
         checks = [run("yamllint", "FAILURE"), run("Lint successful", "FAILURE"), run("x")]
         status, reasons = lib.classify_checks(checks, {})
-        self.assertEqual(status, "ok")
+        self.assertEqual(status, "failing")
         self.assertTrue(any("yamllint" in r for r in reasons))
 
-    def test_flux_local_comment_failure_is_ignored(self):
+    def test_flux_local_comment_failure_fails(self):
+        # The workflow cuts a long diff to fit the comment, so a failed comment is a real error.
         checks = [run("Flux Local Diff (helmrelease)", "FAILURE"), run("Flux Local successful", "FAILURE")]
         failed_steps = {"Flux Local Diff (helmrelease)": ["Add Comment"]}
-        status, _ = lib.classify_checks(checks, failed_steps)
-        self.assertEqual(status, "ok")
+        status, reasons = lib.classify_checks(checks, failed_steps)
+        self.assertEqual(status, "failing")
+        self.assertTrue(any("Add Comment" in r for r in reasons))
 
     def test_flux_local_render_failure_fails(self):
         checks = [run("Flux Local Diff (helmrelease)", "FAILURE"), run("Flux Local successful", "FAILURE")]

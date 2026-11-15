@@ -12,14 +12,9 @@ from datetime import datetime
 OK_CONCLUSIONS = {"SUCCESS", "SKIPPED", "NEUTRAL"}
 PENDING_STATES = {"PENDING", "EXPECTED", "QUEUED", "IN_PROGRESS", "WAITING", "REQUESTED"}
 
-# The user decided on 2026-10-25 to ignore these: the errors are already on main, and
-# the lint job examines only the files that a PR changes.
-IGNORED_CHECKS = {"yamllint", "Lint successful"}
-
-# flux-local renders correctly, but a large diff is too long for a PR comment.
-IGNORED_FLUX_LOCAL_STEPS = {"Add Comment"}
+# No failure is ignored. main had lint errors and the diff comment failed on a long diff
+# until 2026-11; both are corrected, so each failure now comes from the PR.
 FLUX_LOCAL_DIFF = "Flux Local Diff"
-FLUX_LOCAL_SUMMARY = "Flux Local successful"
 
 
 def _check_name(check):
@@ -47,38 +42,24 @@ def classify_checks(checks, failed_steps):
 
     failed_steps maps a failed flux-local job name to the names of its failed steps.
     """
-    reasons, failing, pending = [], [], False
-    explained_flux_local = True
+    failing, pending = [], False
     for check in checks:
         name, state = _check_name(check), _check_state(check)
         if state == "PENDING":
             pending = True
-            continue
-        if state == "SUCCESS":
-            continue
-        if name in IGNORED_CHECKS:
-            reasons.append(f"ignored: {name} fails (lint errors already on main)")
-        elif name.startswith(FLUX_LOCAL_DIFF):
-            steps = failed_steps.get(name, [])
-            if steps and set(steps) <= IGNORED_FLUX_LOCAL_STEPS:
-                reasons.append(f"ignored: {name} fails only at 'Add Comment' (diff too long)")
-            else:
-                explained_flux_local = False
+        elif state == "FAILURE":
+            if name.startswith(FLUX_LOCAL_DIFF):
+                # The step names tell the user where the render broke.
+                steps = failed_steps.get(name, [])
                 failing.append(f"{name} fails at: {', '.join(steps) or 'unknown step'}")
-        elif name == FLUX_LOCAL_SUMMARY:
-            continue  # the diff jobs decide this check, after the loop
-        else:
-            failing.append(f"{name} fails")
-    summary_failed = any(_check_name(c) == FLUX_LOCAL_SUMMARY and _check_state(c) == "FAILURE" for c in checks)
-    any_diff_failed = any(_check_name(c).startswith(FLUX_LOCAL_DIFF) and _check_state(c) == "FAILURE" for c in checks)
-    if summary_failed and not (any_diff_failed and explained_flux_local):
-        failing.append(f"{FLUX_LOCAL_SUMMARY} fails without an ignored diff job")
+            else:
+                failing.append(f"{name} fails")
     if failing:
-        return "failing", failing + reasons
+        return "failing", failing
     if not checks:
         # Just after Renovate pushes, GitHub has no checks yet. That is not a pass.
         return "pending", ["no checks yet"]
-    return ("pending" if pending else "ok"), reasons
+    return ("pending" if pending else "ok"), []
 
 
 _FILE = re.compile(r"^\+\+\+ b/(.+)$")

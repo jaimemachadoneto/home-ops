@@ -2,42 +2,37 @@
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   packageRules: [
     {
-      description: "Auto merge container digests",
+      description: "Auto merge container digests of trusted publishers",
       matchDatasources: ["docker"],
-      automerge: true,
       matchUpdateTypes: ["digest"],
-      matchPackagePrefixes: [
-        "ghcr.io/home-operations",
-        "ghcr.io/onedr0p",
-        "ghcr.io/bjw-s",
-        "ghcr.io/bjw-s-labs",
-        "ghcr.io/jaimemachadoneto",
-        "ghcr.io/jaimemachado",
-      ],
-      ignoreTests: false,
-    },
-    {
-      description: "Auto merge minors and patches",
-      matchDatasources: ["docker"],
-      automerge: true,
-      automergeType: "pr",
-      matchUpdateTypes: ["minor", "patch"],
+      // One glob for each owner, so that a prefix such as ghcr.io/bjw-s
+      // does not also match ghcr.io/bjw-s-labs or another owner.
       matchPackageNames: [
-        "/kube-prometheus-stack/",
-        "ghcr.io/bjw-s-labs/wrangler",
+        "ghcr.io/home-operations/**",
+        "ghcr.io/onedr0p/**",
+        "ghcr.io/bjw-s/**",
+        "ghcr.io/bjw-s-labs/**",
+        "ghcr.io/jaimemachadoneto/**",
+        "ghcr.io/jaimemachado/**",
       ],
+      automerge: true,
+      automergeType: "pr",
       ignoreTests: false,
     },
     {
-      description: "Auto merge minors and patches after minimumReleaseAge",
+      // These two release often. One merge each week is less work for Flux
+      // and for the renovate-merge skill than one merge for each release.
+      description: "Auto merge minors and patches of fast packages, weekly",
       matchDatasources: ["docker"],
-      automerge: true,
-      automergeType: "pr",
       matchUpdateTypes: ["minor", "patch"],
       matchPackageNames: [
         "ghcr.io/renovatebot/renovate",
+        "/kube-prometheus-stack/",
       ],
-      "minimumReleaseAge": "3 days",
+      minimumReleaseAge: "3 days",
+      schedule: ["before 6am on monday"],
+      automerge: true,
+      automergeType: "pr",
       ignoreTests: false,
     },
   ],

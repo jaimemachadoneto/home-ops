@@ -18,7 +18,7 @@ esac
 python3 -c 'import json,sys;json.dump(json.load(open(sys.argv[1]))["statusCheckRollup"],open(sys.argv[2],"w"))' \
   "$TMP/pr.json" "$TMP/checks.json"
 
-# For each failed flux-local diff job, find which steps failed: only "Add Comment" is harmless.
+# For each failed flux-local diff job, find which steps failed, so the output tells where it broke.
 repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 echo '{}' >"$TMP/steps.json"
 python3 - "$TMP/checks.json" <<'EOF' >"$TMP/jobs.txt"
