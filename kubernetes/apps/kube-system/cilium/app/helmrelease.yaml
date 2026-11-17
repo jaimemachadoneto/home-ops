@@ -38,8 +38,25 @@ spec:
       enabled: false
     gatewayAPI:
       enabled: false
+    # Flow data to write each network policy from real traffic, and to see
+    # what a policy drops (Work 2 ticket 10). The relay serves all nodes. No UI.
     hubble:
-      enabled: false
+      enabled: true
+      metrics:
+        enabled:
+          - drop
+          - policy:sourceContext=app|workload-name|reserved-identity;destinationContext=app|workload-name|reserved-identity;labelsContext=source_namespace,destination_namespace
+        serviceMonitor:
+          enabled: true
+        dashboards:
+          enabled: true
+          annotations:
+            grafana_folder: Cilium
+      relay:
+        enabled: true
+        rollOutPods: true
+      ui:
+        enabled: false
     ipam:
       mode: kubernetes
     ipv4NativeRoutingCIDR: 10.244.0.0/16
