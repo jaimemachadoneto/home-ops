@@ -53,19 +53,21 @@ spec:
     # agent sees it. BLOCK rejects the whole tool result. MASK is not usable:
     # the jailbreak and system-prompt categories match word pairs, and for
     # those LiteLLM logs the match and passes the text unchanged with MASK.
-    # LiteLLM cannot select a guardrail for one MCP server, so it is off by
-    # default and attached to the team paperclip-external (UI: Teams >
-    # Guardrails). Put each key that reaches an MCP server with external data
-    # (web_search) in that team. An MCP call made through a chat
-    # request does not inherit the guardrails of that request; the agents
-    # call /mcp directly with their own key. The filter matches patterns: it
-    # stops common injections, not each one.
+    # default_on: a direct /mcp call does not read the guardrails of its key
+    # or team (operations.py merges them only when the guardrail identity
+    # differs from the caller), and a test with the team paperclip-external
+    # confirmed it. So the guardrail scans the MCP results of every key.
+    # TODO: Test again after a LiteLLM upgrade if a team guardrail applies to
+    # direct /mcp calls. If it does, set default_on to false and keep the
+    # guardrail on the team paperclip-external, so that cluster tools (flux,
+    # victorialogs) are not scanned. The filter matches patterns: it stops
+    # common injections, not each one.
     guardrails:
       - guardrail_name: mcp-result-injection-filter
         litellm_params:
           guardrail: litellm_content_filter
           mode: post_mcp_call
-          default_on: false
+          default_on: true
           categories:
             - category: prompt_injection_jailbreak
               enabled: true
