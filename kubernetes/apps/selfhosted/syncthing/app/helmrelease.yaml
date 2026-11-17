@@ -17,9 +17,6 @@ spec:
         strategy: Recreate
         annotations:
           reloader.stakater.com/auto: "true"
-        # TODO: remove when DATABASE_URL points at obsidian-mcp-postgres. The
-        # obsidian-mcp container stops, so it writes nothing during the import.
-        replicas: 0
         pod:
           securityContext:
             fsGroup: 1000
