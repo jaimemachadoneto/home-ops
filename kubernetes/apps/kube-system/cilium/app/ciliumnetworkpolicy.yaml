@@ -1,0 +1,20 @@
+---
+# The relay serves the flows of all nodes on port 4245 with no client
+# authentication. Without this policy, any pod could read them. Only the
+# node itself reaches the relay: the kubelet probes, and the replies of the
+# agent on the same node. The agents run in the host network, and with
+# socketLB.hostNamespaceOnly their reply through the hubble-peer Service is
+# a new ingress flow, so the rule has no port. `kubectl port-forward` still
+# works: the container runtime opens that connection inside the pod.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hubble-relay
+spec:
+  endpointSelector:
+    matchLabels:
+      k8s-app: hubble-relay
+  ingress:
+    - fromEntities:
+        - host
