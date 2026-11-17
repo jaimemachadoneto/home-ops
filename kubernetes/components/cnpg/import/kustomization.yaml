@@ -22,7 +22,7 @@ patches:
             database: ${CNPG_DATABASE}
             owner: ${CNPG_OWNER}
             secret:
-              name: ${APP}-postgres-owner
+              name: ${CNPG_NAME:=${APP}}-postgres-owner
             import:
               type: microservice
               databases:
@@ -38,5 +38,5 @@ patches:
               user: ${CNPG_OWNER}
               dbname: ${CNPG_DATABASE}
             password:
-              name: ${APP}-postgres-owner
+              name: ${CNPG_NAME:=${APP}}-postgres-owner
               key: password
