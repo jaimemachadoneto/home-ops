@@ -50,11 +50,13 @@ spec:
   extraConfig:
     # Agents read external data through the MCP tools of this gateway (web
     # search, page reads). This guardrail scans each tool result before the
-    # agent sees it. MASK, not BLOCK: an article that quotes an injection
-    # loses the quote, not the whole page. LiteLLM cannot select a guardrail
-    # for one MCP server, so it is off by default and attached to a key (UI:
-    # Keys > key > Guardrails). Attach it to each key that reaches an MCP
-    # server with external data (web_search). An MCP call made through a chat
+    # agent sees it. BLOCK rejects the whole tool result. MASK is not usable:
+    # the jailbreak and system-prompt categories match word pairs, and for
+    # those LiteLLM logs the match and passes the text unchanged with MASK.
+    # LiteLLM cannot select a guardrail for one MCP server, so it is off by
+    # default and attached to the team paperclip-external (UI: Teams >
+    # Guardrails). Put each key that reaches an MCP server with external data
+    # (web_search) in that team. An MCP call made through a chat
     # request does not inherit the guardrails of that request; the agents
     # call /mcp directly with their own key. The filter matches patterns: it
     # stops common injections, not each one.
@@ -67,15 +69,15 @@ spec:
           categories:
             - category: prompt_injection_jailbreak
               enabled: true
-              action: MASK
+              action: BLOCK
               severity_threshold: medium
             - category: prompt_injection_system_prompt
               enabled: true
-              action: MASK
+              action: BLOCK
               severity_threshold: medium
             - category: prompt_injection_data_exfiltration
               enabled: true
-              action: MASK
+              action: BLOCK
               severity_threshold: medium
     search_tools:
       - search_tool_name: searxng-search
