@@ -51,16 +51,19 @@ spec:
     # Agents read external data through the MCP tools of this gateway (web
     # search, page reads). This guardrail scans each tool result before the
     # agent sees it. MASK, not BLOCK: an article that quotes an injection
-    # loses the quote, not the whole page. An MCP call does not inherit the
-    # guardrails of its parent request, so the guardrail must be default_on,
-    # and it applies to the result of every MCP tool. The filter matches
-    # patterns: it stops common injections, not each one.
+    # loses the quote, not the whole page. LiteLLM cannot select a guardrail
+    # for one MCP server, so it is off by default and attached to a key (UI:
+    # Keys > key > Guardrails). Attach it to each key that reaches an MCP
+    # server with external data (web_search). An MCP call made through a chat
+    # request does not inherit the guardrails of that request; the agents
+    # call /mcp directly with their own key. The filter matches patterns: it
+    # stops common injections, not each one.
     guardrails:
       - guardrail_name: mcp-result-injection-filter
         litellm_params:
           guardrail: litellm_content_filter
           mode: post_mcp_call
-          default_on: true
+          default_on: false
           categories:
             - category: prompt_injection_jailbreak
               enabled: true
