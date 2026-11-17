@@ -16,7 +16,7 @@
 # Each "$" is written "$$" because Compose reads "$" in the text of a config.
 services:
   wyoming-whisper:
-    image: lscr.io/linuxserver/faster-whisper:gpu
+    image: lscr.io/linuxserver/faster-whisper:gpu-v3.8.1-ls75
     container_name: wyoming-whisper-ptbr
     restart: unless-stopped
     ports:

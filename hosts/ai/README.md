@@ -225,4 +225,3 @@ at boot.
 
 - `tika` declares external networks of stacks that no longer exist. No service
   uses them; remove the declarations.
-- `ollama` uses `ollama/ollama` with no version tag.

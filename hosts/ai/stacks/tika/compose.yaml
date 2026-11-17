@@ -7,5 +7,5 @@ services:
   tika:
     ports:
       - 9998:9998
-    image: apache/tika:latest-full
+    image: apache/tika:4.2.0-full
     restart: always
