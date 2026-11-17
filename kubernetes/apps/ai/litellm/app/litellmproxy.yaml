@@ -146,6 +146,18 @@ spec:
     # The default is "sub", which is a hashed ID with hashed_user_id.
     - name: GENERIC_USER_DISPLAY_NAME_ATTRIBUTE
       value: name
+  # A start prepares the Prisma toolchain and syncs about 800 tool policies
+  # from the database. That took more than the 40 s of the default probe, so
+  # the kubelet restarted the pod in a loop. The readiness probe still keeps
+  # traffic away until the pod is ready.
+  livenessProbe:
+    httpGet:
+      path: /health/liveliness
+      port: 4000
+    initialDelaySeconds: 120
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
   resources:
     requests:
       cpu: 100m
