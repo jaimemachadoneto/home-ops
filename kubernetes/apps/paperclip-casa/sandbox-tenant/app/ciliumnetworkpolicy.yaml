@@ -1,0 +1,50 @@
+---
+# Agent pods read external data only through the LiteLLM gateway, where the
+# prompt-injection check runs. They can reach only DNS, the gateway, the
+# model API of the agent (OpenRouter) and the Paperclip server on the VM.
+# The plugin skips its own policies because these names exist.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: paperclip-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+    - Ingress
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: paperclip-egress-fqdn
+spec:
+  endpointSelector:
+    matchLabels:
+      paperclip.io/role: agent
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"
+    - toFQDNs:
+        - matchName: litellm.jaimenet.com
+        - matchName: openrouter.ai
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    # The Paperclip server (paperclip.jaimenet.com) on the VM.
+    - toCIDR:
+        - 10.30.70.5/32
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

@@ -1,0 +1,106 @@
+---
+# The tenant account of the agent pods. The plugin sets
+# automountServiceAccountToken to false, so a pod does not get this token.
+# The names and the rule are the ones that the plugin would create.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: paperclip-tenant-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: paperclip-tenant-role
+rules:
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: paperclip-tenant-rb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: paperclip-tenant-role
+subjects:
+  - kind: ServiceAccount
+    name: paperclip-tenant-sa
+    namespace: paperclip-casa
+---
+# The Paperclip VM starts and stops agent runs with this access. The account
+# is in the namespace ai, not here: a Sandbox selects the account of its pod,
+# so an account in this namespace could give its token to an agent pod.
+# It cannot create a network policy, so a task cannot widen the egress of
+# ciliumnetworkpolicy.yaml. It cannot read a Secret.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: paperclip-controller
+rules:
+  - apiGroups: [agents.x-k8s.io]
+    resources: [sandboxes]
+    verbs: [create, delete, get]
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [create, delete]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [delete, get, list]
+  - apiGroups: [""]
+    resources: [pods/exec]
+    verbs: [create, get]
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get]
+  # The plugin reads the tenant objects before each run.
+  - apiGroups: [""]
+    resources: [limitranges, resourcequotas, serviceaccounts]
+    verbs: [get]
+  - apiGroups: [rbac.authorization.k8s.io]
+    resources: [rolebindings, roles]
+    verbs: [get]
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies]
+    verbs: [get]
+  - apiGroups: [cilium.io]
+    resources: [ciliumnetworkpolicies]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: paperclip-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: paperclip-controller
+subjects:
+  - kind: ServiceAccount
+    name: paperclip-controller
+    namespace: ai
+---
+# The plugin also reads the Namespace object, which is cluster-scoped.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: paperclip-controller-namespace
+rules:
+  - apiGroups: [""]
+    resourceNames: [paperclip-casa]
+    resources: [namespaces]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: paperclip-controller-namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: paperclip-controller-namespace
+subjects:
+  - kind: ServiceAccount
+    name: paperclip-controller
+    namespace: ai

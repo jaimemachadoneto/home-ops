@@ -1,0 +1,35 @@
+---
+# Room for four agent pods. The plugin gives each pod requests of 250m and
+# 512Mi and limits of 2 CPU and 4Gi.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: paperclip-quota
+spec:
+  hard:
+    limits.cpu: "8"
+    limits.memory: 16Gi
+    pods: "4"
+    requests.cpu: "2"
+    requests.memory: 4Gi
+---
+# The values that the plugin would create.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: paperclip-limits
+spec:
+  limits:
+    - default:
+        cpu: "1"
+        memory: 2Gi
+      defaultRequest:
+        cpu: 250m
+        memory: 512Mi
+      max:
+        cpu: "4"
+        memory: 8Gi
+      min:
+        cpu: 100m
+        memory: 128Mi
+      type: Container

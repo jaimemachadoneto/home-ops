@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+# The agent-sandbox controller and its Sandbox CRD (kubernetes-sigs). The
+# Paperclip Kubernetes plugin runs each agent run as a Sandbox pod in the
+# namespace paperclip-casa. Upstream publishes plain manifests, not a chart.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/kubernetes-sigs/agent-sandbox/releases/download/v1.0.11/sandbox.yaml
+patches:
+  # namespace.yaml of this namespace owns the Namespace, with prune disabled.
+  - patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: agent-sandbox-system

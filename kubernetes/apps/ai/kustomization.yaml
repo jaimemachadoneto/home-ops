@@ -22,6 +22,7 @@ resources:
   - ./memini-mcp/ks.yaml
   - ./notes-mcp/ks.yaml
   - ./outlook-mcp/ks.yaml
+  - ./paperclip-controller/ks.yaml
   - ./paperless-mcp/ks.yaml
   - ./searxng-mcp/ks.yaml
   - ./victorialogs-mcp/ks.yaml

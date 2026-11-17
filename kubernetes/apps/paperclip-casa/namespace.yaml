@@ -1,0 +1,15 @@
+---
+# The agent runs of the Paperclip company "Casa". Each run is a Sandbox pod
+# that the Paperclip VM (10.30.70.5) creates through the agent-sandbox
+# controller. The pods run untrusted agent work, so the restricted profile is
+# enforced.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: _
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted
