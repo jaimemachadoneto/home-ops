@@ -44,9 +44,36 @@ spec:
     drop_params: true
     merge_reasoning_content_in_choices: true
     set_verbose: false
-  # search_tools has no dedicated field in the CRD, so it goes through the
-  # catch-all. The operator merges this key into the top level of config.yaml.
+  # search_tools and guardrails have no dedicated field in the CRD, so they go
+  # through the catch-all. The operator merges these keys into the top level
+  # of config.yaml.
   extraConfig:
+    # Agents read external data through the MCP tools of this gateway (web
+    # search, page reads). This guardrail scans each tool result before the
+    # agent sees it. MASK, not BLOCK: an article that quotes an injection
+    # loses the quote, not the whole page. An MCP call does not inherit the
+    # guardrails of its parent request, so the guardrail must be default_on,
+    # and it applies to the result of every MCP tool. The filter matches
+    # patterns: it stops common injections, not each one.
+    guardrails:
+      - guardrail_name: mcp-result-injection-filter
+        litellm_params:
+          guardrail: litellm_content_filter
+          mode: post_mcp_call
+          default_on: true
+          categories:
+            - category: prompt_injection_jailbreak
+              enabled: true
+              action: MASK
+              severity_threshold: medium
+            - category: prompt_injection_system_prompt
+              enabled: true
+              action: MASK
+              severity_threshold: medium
+            - category: prompt_injection_data_exfiltration
+              enabled: true
+              action: MASK
+              severity_threshold: medium
     search_tools:
       - search_tool_name: searxng-search
         litellm_params:
