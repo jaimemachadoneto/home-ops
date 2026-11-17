@@ -484,7 +484,7 @@
     },
     {
       "type": "row",
-      "title": "Postgres (postgres16)",
+      "title": "Postgres (CNPG clusters)",
       "id": 8,
       "collapsed": false,
       "gridPos": {
@@ -498,7 +498,7 @@
     {
       "type": "stat",
       "title": "Last base backup age",
-      "description": "Daily ScheduledBackup at 00:00; alert above 26 h.",
+      "description": "The oldest of the newest base backups of all clusters. Daily ScheduledBackup; alert above 26 h.",
       "id": 9,
       "datasource": {
         "type": "prometheus",
@@ -553,7 +553,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "time() - max(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace=\"database\", pod=~\"postgres16-[0-9]+\"})",
+          "expr": "max(time() - max by (namespace, cluster) (label_replace(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{pod!~\"postgres16-restore-test-.*\"}, \"cluster\", \"$1\", \"pod\", \"(.+)-[0-9]+\")))",
           "refId": "A",
           "legendFormat": "__auto",
           "range": false,
@@ -563,8 +563,8 @@
     },
     {
       "type": "stat",
-      "title": "Last WAL archived",
-      "description": "On the primary; alert above 1 h.",
+      "title": "WAL waiting to archive",
+      "description": "WAL segments that wait for the object store, in the worst cluster. Not the WAL age: an idle cluster writes no WAL for hours. Alert when segments wait for 30 min.",
       "id": 10,
       "datasource": {
         "type": "prometheus",
@@ -578,7 +578,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "s",
+          "unit": "none",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -588,7 +588,7 @@
               },
               {
                 "color": "red",
-                "value": 3600
+                "value": 1
               }
             ]
           },
@@ -619,7 +619,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "min(cnpg_pg_stat_archiver_seconds_since_last_archival{namespace=\"database\", pod=~\"postgres16-[0-9]+\"})",
+          "expr": "max(label_replace(cnpg_collector_pg_wal_archive_status{pod!~\"postgres16-restore-test-.*\", value=\"ready\"}, \"cluster\", \"$1\", \"pod\", \"(.+)-[0-9]+\"))",
           "refId": "A",
           "legendFormat": "__auto",
           "range": false,
@@ -629,8 +629,8 @@
     },
     {
       "type": "stat",
-      "title": "Oldest recovery point",
-      "description": "How far back point-in-time recovery reaches (retention 31d).",
+      "title": "Shortest recovery window",
+      "description": "How far back point-in-time recovery reaches, in the cluster with the shortest window (retention 31d).",
       "id": 11,
       "datasource": {
         "type": "prometheus",
@@ -681,7 +681,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "time() - min(barman_cloud_cloudnative_pg_io_first_recoverability_point{namespace=\"database\", pod=~\"postgres16-[0-9]+\"})",
+          "expr": "time() - max(min by (namespace, cluster) (label_replace(barman_cloud_cloudnative_pg_io_first_recoverability_point{pod!~\"postgres16-restore-test-.*\"}, \"cluster\", \"$1\", \"pod\", \"(.+)-[0-9]+\")))",
           "refId": "A",
           "legendFormat": "__auto",
           "range": false,
@@ -692,7 +692,7 @@
     {
       "type": "gauge",
       "title": "Connections used",
-      "description": "Of max_connections (800); alert above 80%.",
+      "description": "Of max_connections, in the busiest instance of all clusters; alert above 80%.",
       "id": 12,
       "datasource": {
         "type": "prometheus",
@@ -750,7 +750,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "max(sum by (pod) (cnpg_backends_total{namespace=\"database\", pod=~\"postgres16-[0-9]+\"}) / on (pod) max by (pod) (cnpg_pg_settings_setting{namespace=\"database\", pod=~\"postgres16-[0-9]+\", name=\"max_connections\"}))",
+          "expr": "max(sum by (namespace, pod) (cnpg_backends_total{pod!~\"postgres16-restore-test-.*\"}) / on (namespace, pod) max by (namespace, pod) (cnpg_pg_settings_setting{pod!~\"postgres16-restore-test-.*\", name=\"max_connections\"}))",
           "refId": "A",
           "legendFormat": "__auto",
           "range": false,
@@ -830,8 +830,8 @@
     },
     {
       "type": "stat",
-      "title": "Primary",
-      "description": "Pod currently primary.",
+      "title": "Clusters without a primary",
+      "description": "Each cluster must have one instance that is not in recovery.",
       "id": 14,
       "datasource": {
         "type": "prometheus",
@@ -852,20 +852,14 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
               }
             ]
           },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "",
-                  "color": "green"
-                }
-              }
-            }
-          ],
+          "mappings": [],
           "color": {
             "mode": "thresholds"
           }
@@ -882,7 +876,7 @@
         },
         "colorMode": "background",
         "graphMode": "none",
-        "textMode": "name",
+        "textMode": "value",
         "justifyMode": "center",
         "orientation": "auto"
       },
@@ -892,9 +886,9 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "cnpg_pg_replication_in_recovery{namespace=\"database\", pod=~\"postgres16-[0-9]+\"} == 0",
+          "expr": "count(min by (namespace, cluster) (label_replace(cnpg_pg_replication_in_recovery{pod!~\"postgres16-restore-test-.*\"}, \"cluster\", \"$1\", \"pod\", \"(.+)-[0-9]+\")) == 1) or vector(0)",
           "refId": "A",
-          "legendFormat": "{{pod}}",
+          "legendFormat": "__auto",
           "range": false,
           "instant": true
         }
@@ -968,9 +962,9 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "sum by (usename) (cnpg_backends_total{namespace=\"database\", pod=~\"postgres16-[0-9]+\"})",
+          "expr": "sum by (cluster, usename) (label_replace(cnpg_backends_total{pod!~\"postgres16-restore-test-.*\"}, \"cluster\", \"$1\", \"pod\", \"(.+)-[0-9]+\"))",
           "refId": "A",
-          "legendFormat": "{{usename}}",
+          "legendFormat": "{{cluster}} {{usename}}",
           "range": true,
           "instant": false
         }
@@ -978,8 +972,8 @@
     },
     {
       "type": "timeseries",
-      "title": "Backup and WAL age",
-      "description": "",
+      "title": "Base backup age per cluster",
+      "description": "Alert above 26 h.",
       "id": 16,
       "datasource": {
         "type": "prometheus",
@@ -1008,8 +1002,21 @@
               "group": "A"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "line"
             }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 93600
+              }
+            ]
           }
         },
         "overrides": []
@@ -1031,20 +1038,9 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "time() - max(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace=\"database\", pod=~\"postgres16-[0-9]+\"})",
+          "expr": "time() - max by (namespace, cluster) (label_replace(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{pod!~\"postgres16-restore-test-.*\"}, \"cluster\", \"$1\", \"pod\", \"(.+)-[0-9]+\"))",
           "refId": "A",
-          "legendFormat": "base backup",
-          "range": true,
-          "instant": false
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "min(cnpg_pg_stat_archiver_seconds_since_last_archival{namespace=\"database\", pod=~\"postgres16-[0-9]+\"})",
-          "refId": "B",
-          "legendFormat": "WAL",
+          "legendFormat": "{{cluster}}",
           "range": true,
           "instant": false
         }

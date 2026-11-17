@@ -8,4 +8,5 @@ resources:
   - ./externalsecret.yaml
   - ./objectstore.yaml
   - ./podmonitor.yaml
+  - ./prometheusrule.yaml
   - ./scheduledbackup.yaml

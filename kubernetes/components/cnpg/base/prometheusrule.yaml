@@ -1,0 +1,74 @@
+---
+# The alerts of one cluster. The rules of postgres16 in
+# apps/database/cloudnative-pg/cluster select only postgres16. The rules
+# without a selector there (transactions, replication lag, deadlocks) apply
+# to each cluster already.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ${CNPG_NAME:=${APP}}-postgres
+spec:
+  groups:
+    - name: ${CNPG_NAME:=${APP}}-postgres.rules
+      rules:
+        - alert: CNPGNoRecentBackup
+          annotations:
+            description: The newest base backup of {{ $labels.namespace }}/${CNPG_NAME:=${APP}}-postgres is {{ $value | humanizeDuration }} old (expected one per day). Examine the ScheduledBackup, the Backup objects and the MinIO bucket.
+            summary: No successful Postgres base backup in over 26 hours
+          expr: |-
+            time() - max by (namespace) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{pod=~"${CNPG_NAME:=${APP}}-postgres-[0-9]+"}) > 26 * 3600
+          for: 15m
+          labels:
+            severity: critical
+        - alert: CNPGBackupMetricsMissing
+          annotations:
+            description: Prometheus has no backup metrics for ${CNPG_NAME:=${APP}}-postgres, so the backup age is not known. The cluster or its PodMonitor can be down.
+            summary: Postgres backup metrics are missing
+          expr: |-
+            absent(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{pod=~"${CNPG_NAME:=${APP}}-postgres-[0-9]+"})
+          for: 1h
+          labels:
+            severity: critical
+        - alert: CNPGLastBackupFailed
+          annotations:
+            description: The most recent base backup of {{ $labels.namespace }}/${CNPG_NAME:=${APP}}-postgres failed, and no backup succeeded after it.
+            summary: Postgres base backup failed
+          expr: |-
+            max by (namespace) (barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp{pod=~"${CNPG_NAME:=${APP}}-postgres-[0-9]+"})
+              > max by (namespace) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{pod=~"${CNPG_NAME:=${APP}}-postgres-[0-9]+"})
+          for: 15m
+          labels:
+            severity: critical
+        - alert: CNPGWalArchivingStalled
+          annotations:
+            description: "{{ $value }} WAL segments of ${CNPG_NAME:=${APP}}-postgres wait for the object store. Examine the ContinuousArchiving condition of the cluster."
+            summary: Postgres WAL archiving has stalled
+          # Not the time since the last archive: an idle cluster writes no WAL
+          # for hours, and that is correct.
+          expr: |-
+            max by (namespace) (cnpg_collector_pg_wal_archive_status{pod=~"${CNPG_NAME:=${APP}}-postgres-[0-9]+", value="ready"}) > 0
+          for: 30m
+          labels:
+            severity: critical
+        - alert: CNPGConnectionsHigh
+          annotations:
+            description: "{{ $labels.pod }} uses {{ $value | humanizePercentage }} of max_connections. New connections fail when it is full: examine pg_stat_activity to find the role that holds them."
+            summary: Postgres connections above 80% of max_connections
+          expr: |-
+            sum by (namespace, pod) (cnpg_backends_total{pod=~"${CNPG_NAME:=${APP}}-postgres-[0-9]+"})
+              / on (namespace, pod) max by (namespace, pod) (cnpg_pg_settings_setting{pod=~"${CNPG_NAME:=${APP}}-postgres-[0-9]+", name="max_connections"})
+              > 0.8
+          for: 5m
+          labels:
+            severity: warning
+        - alert: PGVolumeSpaceLow
+          annotations:
+            description: PVC {{ $labels.persistentvolumeclaim }} in {{ $labels.namespace }} has less than 20% free space. At 0, Postgres crash-loops.
+            summary: A ${CNPG_NAME:=${APP}}-postgres PVC is low on disk space
+          expr: |-
+            kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"${CNPG_NAME:=${APP}}-postgres-[0-9]+"}
+              / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~"${CNPG_NAME:=${APP}}-postgres-[0-9]+"} < 0.20
+          for: 15m
+          labels:
+            severity: warning
