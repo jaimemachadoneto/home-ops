@@ -1,6 +1,6 @@
 ---
-# Agent pods read external data only through the LiteLLM gateway, where the
-# prompt-injection check runs. They can reach only DNS, the gateway, the
+# Agent pods read external data only through LiteLLM, where the
+# prompt-injection check runs. They can reach only DNS, the LiteLLM pods, the
 # model API of the agent (OpenRouter) and the Paperclip server on the VM.
 # The plugin skips its own policies because these names exist.
 apiVersion: networking.k8s.io/v1
@@ -34,8 +34,19 @@ spec:
           rules:
             dns:
               - matchPattern: "*"
+    # LiteLLM inside the cluster (http://litellm.ai.svc.cluster.local:4000).
+    # litellm.jaimenet.com resolves to the envoy-internal gateway, which also
+    # serves every other internal app, so the gateway stays closed.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: ai
+            app.kubernetes.io/instance: litellm
+            app.kubernetes.io/name: litellm
+      toPorts:
+        - ports:
+            - port: "4000"
+              protocol: TCP
     - toFQDNs:
-        - matchName: litellm.jaimenet.com
         - matchName: openrouter.ai
       toPorts:
         - ports:
