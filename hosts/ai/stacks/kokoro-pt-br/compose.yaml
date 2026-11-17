@@ -2,7 +2,7 @@
 # Text to speech, a test next to the piper stack.
 services:
   kokoro-tts:
-    image: ghcr.io/remsky/kokoro-fastapi-gpu:latest
+    image: ghcr.io/remsky/kokoro-fastapi-gpu:v0.10.0
     container_name: kokoro-tts
     restart: unless-stopped
     ports:

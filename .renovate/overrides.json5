@@ -33,5 +33,20 @@
       matchUpdateTypes: ["major"],
       enabled: false,
     },
+    {
+      // The GPU tags of linuxserver start with "gpu-", which the docker
+      // versioning does not read as a version.
+      description: "Read the version of the linuxserver faster-whisper GPU tags",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["lscr.io/linuxserver/faster-whisper"],
+      versioning: "regex:^gpu-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-ls(?<build>\\d+)$",
+    },
+    {
+      // Each llama.cpp build is a tag server-b<build number>.
+      description: "Read the build number of the llama.cpp server tags",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["ghcr.io/ggml-org/llama.cpp"],
+      versioning: "regex:^server-b(?<major>\\d+)$",
+    },
   ],
 }
