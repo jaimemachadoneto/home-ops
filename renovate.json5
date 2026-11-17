@@ -30,6 +30,16 @@
       pinDigests: true,
     },
     {
+      // The Talos machine config is applied by hand, so a digest there adds
+      // nothing. And Renovate reads the factory installers as
+      // ghcr.io/siderolabs/installer (overrides.json5), so it gives the
+      // digest of the installer with no extensions: a node would lose its
+      // schematic at the next upgrade.
+      description: "Do not pin the images of the Talos machine config",
+      matchFileNames: ["kubernetes/talos/**"],
+      pinDigests: false,
+    },
+    {
       description: "Configure Emby versioning",
       matchDatasources: ["docker"],
       matchPackageNames: ["ghcr.io/home-operations/emby"],
