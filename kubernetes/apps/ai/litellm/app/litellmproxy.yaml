@@ -44,43 +44,15 @@ spec:
     drop_params: true
     merge_reasoning_content_in_choices: true
     set_verbose: false
-  # search_tools and guardrails have no dedicated field in the CRD, so they go
-  # through the catch-all. The operator merges these keys into the top level
-  # of config.yaml.
+  # search_tools has no dedicated field in the CRD, so it goes through the
+  # catch-all. The operator merges this key into the top level of config.yaml.
+  # No MCP result guardrail here: a post_mcp_call litellm_content_filter (PRs
+  # 716 and 719) scanned some web_url_read results and not others (a page
+  # with "ignore all previous instructions" passed two times out of two), and
+  # it blocked harmless pages. The prompt-injection check moves to a scanning
+  # proxy in front of the web-search MCP server; see the paperclip-setup
+  # project notes.
   extraConfig:
-    # Agents read external data through the MCP tools of this gateway (web
-    # search, page reads). This guardrail scans each tool result before the
-    # agent sees it. BLOCK rejects the whole tool result. MASK is not usable:
-    # the jailbreak and system-prompt categories match word pairs, and for
-    # those LiteLLM logs the match and passes the text unchanged with MASK.
-    # default_on: a direct /mcp call does not read the guardrails of its key
-    # or team (operations.py merges them only when the guardrail identity
-    # differs from the caller), and a test with the team paperclip-external
-    # confirmed it. So the guardrail scans the MCP results of every key.
-    # TODO: Test again after a LiteLLM upgrade if a team guardrail applies to
-    # direct /mcp calls. If it does, set default_on to false and keep the
-    # guardrail on the team paperclip-external, so that cluster tools (flux,
-    # victorialogs) are not scanned. The filter matches patterns: it stops
-    # common injections, not each one.
-    guardrails:
-      - guardrail_name: mcp-result-injection-filter
-        litellm_params:
-          guardrail: litellm_content_filter
-          mode: post_mcp_call
-          default_on: true
-          categories:
-            - category: prompt_injection_jailbreak
-              enabled: true
-              action: BLOCK
-              severity_threshold: medium
-            - category: prompt_injection_system_prompt
-              enabled: true
-              action: BLOCK
-              severity_threshold: medium
-            - category: prompt_injection_data_exfiltration
-              enabled: true
-              action: BLOCK
-              severity_threshold: medium
     search_tools:
       - search_tool_name: searxng-search
         litellm_params:
