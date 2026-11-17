@@ -6,8 +6,10 @@ kind: Component
 # ks.yaml of the app, so that the new cluster copies the database at its first
 # start. Remove it after the first backup: CNPG reads `bootstrap` only at the
 # creation, and the permanent recovery of ../pg18 then takes its place.
-resources:
-  - ./externalsecret.yaml
+# The import reads postgres16 as the owner of the database, with the owner
+# Secret of ../base, so the superuser password never leaves the database
+# namespace. The owner must own each object of the database: examine that
+# before the move of a database.
 patches:
   - target:
       group: postgresql.cnpg.io
@@ -33,8 +35,8 @@ patches:
           - name: postgres16
             connectionParameters:
               host: postgres16-rw.database.svc.cluster.local
-              user: postgres
-              dbname: postgres
+              user: ${CNPG_OWNER}
+              dbname: ${CNPG_DATABASE}
             password:
-              name: ${APP}-postgres-import
+              name: ${APP}-postgres-owner
               key: password
