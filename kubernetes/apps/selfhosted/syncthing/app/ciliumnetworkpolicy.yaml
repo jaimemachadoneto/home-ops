@@ -58,8 +58,8 @@ spec:
     # this rule once Cilium tracks same-node Service replies again.
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: database
-            cnpg.io/cluster: postgres16
+            k8s:io.kubernetes.pod.namespace: selfhosted
+            cnpg.io/cluster: obsidian-mcp-postgres
     # Devices connect through the LoadBalancer, from the LAN or a relay.
     - fromEntities:
         - world

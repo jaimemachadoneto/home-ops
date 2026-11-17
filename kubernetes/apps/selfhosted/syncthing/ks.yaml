@@ -9,12 +9,10 @@ spec:
     labels:
       app.kubernetes.io/name: syncthing
   # The cluster obsidian-mcp-postgres holds the database of the obsidian-mcp
-  # container (components/cnpg). TODO: remove cnpg/import after the first
-  # backup of the new cluster.
+  # container (components/cnpg).
   components:
     - ../../../../components/volsync
     - ../../../../components/cnpg/pg18
-    - ../../../../components/cnpg/import
   dependsOn:
     - name: cloudnative-pg-barman-cloud
       namespace: database
