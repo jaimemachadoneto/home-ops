@@ -820,7 +820,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "sum(cnpg_backends_total{namespace=\"database\", pod=~\"postgres16-[0-9]+\", usename=\"user\"})",
+          "expr": "sum(cnpg_backends_total{pod=~\"authentik-postgres-[0-9]+\", usename=\"user\"})",
           "refId": "A",
           "legendFormat": "__auto",
           "range": false,

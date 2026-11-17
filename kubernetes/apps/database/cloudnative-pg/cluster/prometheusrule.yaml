@@ -40,15 +40,6 @@ spec:
           for: 5m
           labels:
             severity: warning
-        - alert: CNPGAuthentikConnectionsHigh
-          annotations:
-            description: Authentik holds {{ $value }} Postgres connections (cap 500, normally under 100). Its embedded outpost leaks connection pools after a Postgres restart or switchover. Fix with `kubectl -n selfhosted rollout restart deploy/authentik-server deploy/authentik-worker`.
-            summary: Authentik is leaking Postgres connections
-          expr: |-
-            sum by (namespace) (cnpg_backends_total{namespace="database", pod=~"postgres16-[0-9]+", usename="user"}) > 400
-          for: 5m
-          labels:
-            severity: warning
         - alert: PGDatabase
           annotations:
             description: Over 150,000,000 transactions from frozen xid on pod {{ $labels.pod }}

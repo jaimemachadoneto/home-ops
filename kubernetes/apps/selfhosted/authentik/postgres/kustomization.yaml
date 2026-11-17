@@ -7,6 +7,8 @@ kind: Component
 # List it after cnpg/pg18, which adds the Cluster.
 # The embedded outpost leaks connection pools after a Postgres restart, so
 # the limits are the same as on postgres16: role user 500, server 600.
+resources:
+  - ./prometheusrule.yaml
 patches:
   - target:
       group: postgresql.cnpg.io

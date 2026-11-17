@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/monitoring.coreos.com/prometheusrule_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: authentik-postgres-connections
+spec:
+  groups:
+    - name: authentik-postgres-connections.rules
+      rules:
+        - alert: CNPGAuthentikConnectionsHigh
+          annotations:
+            description: Authentik holds {{ $value }} Postgres connections (cap 500, normally under 100). Its embedded outpost leaks connection pools after a Postgres restart or switchover. Correct it with `kubectl -n selfhosted rollout restart deploy/authentik-server deploy/authentik-worker`.
+            summary: Authentik leaks Postgres connections
+          expr: |-
+            sum by (namespace) (cnpg_backends_total{pod=~"authentik-postgres-[0-9]+", usename="user"}) > 400
+          for: 5m
+          labels:
+            severity: warning
