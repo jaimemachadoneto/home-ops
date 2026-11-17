@@ -1,0 +1,27 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/component.json
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# The connection limits of authentik-postgres. This is a component and not a
+# patch in ks.yaml, because cluster-apps replaces spec.patches of each app.
+# List it after cnpg/pg18, which adds the Cluster.
+# The embedded outpost leaks connection pools after a Postgres restart, so
+# the limits are the same as on postgres16: role user 500, server 600.
+patches:
+  - target:
+      group: postgresql.cnpg.io
+      kind: Cluster
+    patch: |-
+      - op: add
+        path: /spec/postgresql/parameters/max_connections
+        value: "600"
+      - op: add
+        path: /spec/managed
+        value:
+          roles:
+            - name: user
+              connectionLimit: 500
+              ensure: present
+              login: true
+              passwordSecret:
+                name: authentik-postgres-owner
