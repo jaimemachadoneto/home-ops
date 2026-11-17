@@ -8,13 +8,10 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: openwebui
-  # The database moves from postgres16 to its own cluster. The import
-  # component copies it at the first start. TODO: remove the import component
-  # after the first backup of openwebui-postgres.
+  # The cluster openwebui-postgres holds the database (components/cnpg).
   components:
     - ../../../../components/volsync
     - ../../../../components/cnpg/pg18
-    - ../../../../components/cnpg/import
   dependsOn:
     - name: cloudnative-pg-barman-cloud
       namespace: database

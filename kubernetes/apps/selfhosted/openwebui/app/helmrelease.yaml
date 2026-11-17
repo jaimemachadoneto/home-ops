@@ -17,17 +17,6 @@ spec:
       openwebui:
         annotations:
           secret.reloader.stakater.com/reload: &secret openwebui-secret
-        # TODO: remove when DATABASE_URL points at openwebui-postgres. The app
-        # stops, so it writes nothing during the import.
-        replicas: 0
-        initContainers:
-          init-db:
-            image:
-              repository: ghcr.io/home-operations/postgres-init
-              tag: 18.7@sha256:6d4cfa4b8d343eb6fa0de8dd9ec416a2007f346bb631fc8e246e1f39eee6c4aa
-            envFrom:
-              - secretRef:
-                  name: *secret
         containers:
           app:
             image:
