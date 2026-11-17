@@ -8,7 +8,7 @@ spec:
   alias: ha_mcp
   workload:
     # renovate: datasource=docker depName=ghcr.io/homeassistant-ai/ha-mcp
-    image: ghcr.io/homeassistant-ai/ha-mcp:9.2.0
+    image: ghcr.io/homeassistant-ai/ha-mcp:9.2.0@sha256:9de5bf6c4216142fdffe862900abe72dac8dfe9621dd0b2b050d132372b676ba
     port: 8086
     command:
       - ha-mcp-web

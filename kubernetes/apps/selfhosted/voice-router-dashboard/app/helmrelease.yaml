@@ -31,7 +31,7 @@ spec:
               repository: ghcr.io/jaimemachadoneto/voice-router-dashboard
               # Pin an immutable tag. CI publishes sha-<commit> for exactly
               # this, and the release PR updates it.
-              tag: sha-d604161b535490d4c0292089a6de9a0270bfd1e4
+              tag: sha-d604161b535490d4c0292089a6de9a0270bfd1e4@sha256:1fe6369f1d2ccf80fcf3851f6d9205ab8c240681b7642bf2bd0b0551ceeff082
             env:
               # The container writes the proxy configuration from this, so the
               # token stays in the pod and never reaches the browser.

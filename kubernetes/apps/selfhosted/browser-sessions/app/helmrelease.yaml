@@ -40,7 +40,7 @@ spec:
             image:
               repository: ghcr.io/jaimemachadoneto/browser-sessions
               # Immutable: CI publishes sha-<short commit> for every push to main.
-              tag: sha-fb0d3c1
+              tag: sha-fb0d3c1@sha256:191209ddb5be78734194d86e1262c975d349e3d634bd28ed76ed322c0f6cc23b
             env:
               BWS_PORT: &httpPort 8080
               # OIDC redirects, the admin UI's Origin check and the MCP URLs
