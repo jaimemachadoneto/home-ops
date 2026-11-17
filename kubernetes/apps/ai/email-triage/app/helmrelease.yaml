@@ -25,9 +25,7 @@ spec:
     controllers:
       api:
         type: deployment
-        # TODO: set 1 again when DATABASE_URL points at email-triage-postgres.
-        # The API stops, so it writes nothing during the import.
-        replicas: 0
+        replicas: 1
         containers:
           app:
             image:
@@ -82,9 +80,6 @@ spec:
           successfulJobsHistory: 3
           failedJobsHistory: 3
           backoffLimit: 1
-          # TODO: remove when DATABASE_URL points at email-triage-postgres.
-          # The sync stops, so it writes nothing during the import.
-          suspend: true
         pod:
           restartPolicy: Never
         containers:

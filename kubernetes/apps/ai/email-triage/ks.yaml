@@ -8,16 +8,11 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: email-triage
-  # The database moves from postgres16 to its own cluster. The import
-  # component copies it at the first start. TODO: remove the import component
-  # after the first backup of email-triage-postgres.
+  # The cluster email-triage-postgres holds the database (components/cnpg).
   components:
     - ../../../../components/cnpg/pg18
-    - ../../../../components/cnpg/import
   dependsOn:
     - name: cloudnative-pg-barman-cloud
-      namespace: database
-    - name: cloudnative-pg-cluster
       namespace: database
   interval: 1h
   path: "./kubernetes/apps/ai/email-triage/app"
