@@ -43,11 +43,17 @@ Use `just` for the operational commands (`just --list`).
   `rook-ceph-cluster` (namespace `rook-ceph`). The variables of the component
   are `APP`, `VOLSYNC_CLAIM` and `VOLSYNC_CAPACITY`. The storage class is
   `ceph-block`.
-- A database is in the shared CloudNativePG cluster `postgres16`. A file in
-  `kubernetes/apps/database/cloudnative-pg/cluster/` holds its `Database` and
-  the ExternalSecret of its password. The role is in `managed.roles` of
-  `cluster16.yaml`. An app that needs Postgres depends on
-  `cloudnative-pg-cluster` (namespace `database`).
+- Each app that needs Postgres has its own CloudNativePG cluster
+  `<app>-postgres` in its namespace, from the components in
+  `kubernetes/components/cnpg` (`pg18`, plus `initdb` for a new app until its
+  first backup). The app depends on `cloudnative-pg-barman-cloud` (namespace
+  `database`). Do not add a database to the old shared cluster `postgres16`.
+  The `add-app` skill gives the steps.
+- Do not put `spec.patches` in the `ks.yaml` of an app: `cluster-apps`
+  replaces that list with the HelmRelease defaults. Put the patch in a
+  component next to the app.
+- An app on `envoy-external` gets a CiliumNetworkPolicy. Hubble shows the
+  flows and the drops.
 - The secret store is the `ClusterSecretStore` named `onepassword`. Other
   home-ops repositories call it `onepassword-connect`. Do not copy that name.
 - The gateways are `envoy-internal` (home network only) and `envoy-external`

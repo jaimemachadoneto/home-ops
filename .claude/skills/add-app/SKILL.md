@@ -13,8 +13,8 @@ reference app. Do not invent a new layout.
 | `kubernetes/apps/network/echo-server` | A minimal app with no state |
 | `kubernetes/apps/selfhosted/atuin` | Storage with `volsync`, a route, a non-root user |
 | `kubernetes/apps/selfhosted/karakeep` | An ExternalSecret with `dataFrom` and `rewrite` |
-| `kubernetes/apps/selfhosted/paperless` (`mcp` part) | An app that uses the Postgres cluster |
-| `kubernetes/apps/database/cloudnative-pg/cluster/paperless-mcp.yaml` | The `Database` and the password of an app |
+| `kubernetes/apps/ai/email-triage` | An app with its own Postgres cluster (`components/cnpg`) |
+| `kubernetes/apps/selfhosted/paperless/mcp/ciliumnetworkpolicy.yaml` | A network policy: ingress, egress, DNS and the Postgres reply rule |
 | `kubernetes/apps/ai/ha-mcp` | An MCP server that the LiteLLM operator runs |
 
 ## 1. Get the facts
@@ -31,6 +31,8 @@ Ask the user for each fact that the request does not state:
    in the Secret, and the app then fails later with a different error.
 6. A Postgres database: yes or no.
 7. The other Flux Kustomizations that the app needs.
+8. For the network policy: which pods call the app, and which services and
+   hosts the app calls.
 
 ## 2. Write `ks.yaml`
 
@@ -46,8 +48,10 @@ Copy `kubernetes/apps/selfhosted/atuin/ks.yaml`, then change it:
   variables are in `kubernetes/components/volsync/`.
 - An app with no state: remove `components`, the `rook-ceph-cluster`
   dependency and the `VOLSYNC_*` values.
-- An app with Postgres: add a `dependsOn` on `cloudnative-pg-cluster`
-  (namespace `database`).
+- An app with Postgres: see step 4. Do not use `spec.patches` in `ks.yaml`:
+  `cluster-apps` replaces that list with the HelmRelease defaults, so the
+  patch never applies. Put a patch in a component next to the app (see
+  `litellm/postgres`).
 - Set `wait: true` only when another Kustomization depends on this one.
 
 ## 3. Write `app/`
@@ -82,17 +86,52 @@ Follow the key order of `.github/instructions/helmrelease.instructions.md`.
 
 ## 4. A Postgres database (only if the app needs one)
 
-1. Copy `kubernetes/apps/database/cloudnative-pg/cluster/paperless-mcp.yaml`
-   to `<app>.yaml` in that folder. It holds the ExternalSecret of the
-   password and the `Database`. Keep `databaseReclaimPolicy: retain`.
-2. Add the file to `kustomization.yaml` of that folder.
-3. Add the role to `managed.roles` of `cluster16.yaml`, with a comment that
-   names the app. The password comes from the Secret of step 1.
-4. The app reads the same 1Password field for its connection string.
-5. Tell the user: this changes the shared `postgres16` cluster, and the role
-   and the database come up at the next reconcile.
+Each app has its own CloudNativePG cluster `<app>-postgres` in its namespace,
+from `kubernetes/components/cnpg`. Copy `email-triage/ks.yaml`. Do not add a
+database to `postgres16`: it is removed.
 
-## 5. An MCP server for agents (only for an MCP server)
+1. In `ks.yaml`, add the components `../../../../components/cnpg/pg18` and
+   then `../../../../components/cnpg/initdb`, and a `dependsOn` on
+   `cloudnative-pg-barman-cloud` (namespace `database`).
+2. Set `CNPG_DATABASE` and `CNPG_OWNER` (use `_`, not `-`), and
+   `CNPG_PASSWORD_ITEM` and `CNPG_PASSWORD_PROPERTY`: the 1Password item and
+   field of the password of the owner.
+3. Optional: `CNPG_INSTANCES: "2"` with `CNPG_PDB: "true"` for an app that
+   other apps need. `CNPG_SIDECAR_MEMORY_LIMIT: 1Gi` for a database above
+   about 200 MB: the backup sidecar runs out of memory at the default 256Mi.
+   `CNPG_NAME` when the cluster must not have the name of `APP`.
+4. The app connects to `<app>-postgres-rw.<namespace>.svc.cluster.local:5432`
+   with the owner and the same 1Password field.
+5. After the first backup of the cluster is complete, remove `cnpg/initdb`
+   in a second PR. `cnpg/pg18` alone restores from the backup each time the
+   cluster is made again. Until then, a delete of the cluster loses the data.
+
+The component adds the backups, the PodMonitor and the alerts of the cluster.
+
+## 5. A network policy
+
+Each app on `envoy-external` gets a `ciliumnetworkpolicy.yaml` in `app/`. Add
+one to an internal app when the user asks. Copy
+`selfhosted/paperless/mcp/ciliumnetworkpolicy.yaml`. Write a
+CiliumNetworkPolicy, not the `networkpolicies` values of app-template: only
+the Cilium kind has HTTP path and DNS name rules.
+
+- `endpointSelector`: `app.kubernetes.io/name: <app>`.
+- Ingress: the gateway pods (namespace `network`, label
+  `gateway.networking.k8s.io/gateway-name`), `host` for the kubelet probes,
+  Prometheus (namespace `observability`, `app.kubernetes.io/name:
+  prometheus`) if the app has a ServiceMonitor, and each pod from fact 8.
+- Egress: kube-dns on port 53, and each destination from fact 8. Omit
+  `egress` if you do not know the destinations: an empty egress blocks all.
+- If the app calls a Service whose pods can run on the same node (for
+  example its Postgres cluster), add an ingress `fromEndpoints` rule for
+  those pods, with no port. With `socketLB.hostNamespaceOnly`, the reply of a
+  same-node backend is a new ingress flow, and the policy drops it.
+- After the deploy, look for drops with Hubble:
+  `kubectl -n kube-system exec ds/cilium -c cilium-agent -- hubble observe
+  --namespace <namespace> --verdict DROPPED --last 50`.
+
+## 6. An MCP server for agents (only for an MCP server)
 
 - The server runs as a `LiteLLMMCPServer` in `kubernetes/apps/ai/<app>/`.
   Copy `ha-mcp`: `spec.workload` makes the operator run the container. If
@@ -105,7 +144,7 @@ Follow the key order of `.github/instructions/helmrelease.instructions.md`.
 - Tell the user that a project gets the server only after the alias is in
   `harness/mcp.yaml` of the workspace and in `mcp:` of `repos.yaml`.
 
-## 6. Register the app
+## 7. Register the app
 
 Add `./<app>/ks.yaml` to `resources` of
 `kubernetes/apps/<namespace>/kustomization.yaml`, at the end of the list. For
@@ -114,7 +153,7 @@ a new namespace, copy the folder of a small namespace: its `namespace.yaml`
 `flux-alerts` and `cluster-secrets` components). `kubernetes/apps/` has no
 `kustomization.yaml`: Flux finds each namespace folder itself.
 
-## 7. Verify
+## 8. Verify
 
 ```sh
 kustomize build kubernetes/apps/<namespace>/<app>/app
@@ -125,8 +164,8 @@ kubeconform -strict -summary -ignore-missing-schemas \
 ```
 
 `${SECRET_DOMAIN}` and the other `${VARS}` stay literal in the output. That is
-correct: Flux replaces them. The `volsync` component is not in this output,
-because `ks.yaml` adds it. Show the files to the user before the commit. CI runs
+correct: Flux replaces them. The `volsync` and `cnpg` components are not in
+this output, because `ks.yaml` adds them. Show the files to the user before the commit. CI runs
 flux-local on the PR. Read its diff.
 
 ## Common mistakes
@@ -140,3 +179,8 @@ flux-local on the PR. Read its diff.
 | `readOnlyRootFilesystem` with no `/tmp` | The app fails when it writes a temporary file. |
 | `existingClaim` that is not `VOLSYNC_CLAIM` | The pod waits for a PVC that does not exist. |
 | A rename of an app later | Flux deletes the old resources, and the PVC with them. Ask the user first. |
+| A new database in `postgres16` | Each app has its own cluster from `components/cnpg`. |
+| `cnpg/pg18` with no `cnpg/initdb` for a new app | The cluster tries to restore a backup that does not exist, and does not start. |
+| `cnpg/initdb` kept after the first backup | Remove it. Otherwise a cluster made again starts empty instead of from the backup. |
+| A patch in `spec.patches` of `ks.yaml` | `cluster-apps` replaces the list. Use a component next to the app. |
+| A network policy with no rule for a same-node Postgres reply | The app times out on its database. |

@@ -1,0 +1,23 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/component.json
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# Only for the first start of a new app. ../pg18 always restores from the
+# backup of the cluster, and a new app has no backup yet. List this component
+# after ../pg18 in the ks.yaml of the app, so that the new cluster starts with
+# an empty database. Remove it after the first backup: CNPG reads `bootstrap`
+# only at the creation, and the permanent recovery of ../pg18 then takes its
+# place.
+patches:
+  - target:
+      group: postgresql.cnpg.io
+      kind: Cluster
+    patch: |-
+      - op: replace
+        path: /spec/bootstrap
+        value:
+          initdb:
+            database: ${CNPG_DATABASE}
+            owner: ${CNPG_OWNER}
+            secret:
+              name: ${CNPG_NAME:=${APP}}-postgres-owner
