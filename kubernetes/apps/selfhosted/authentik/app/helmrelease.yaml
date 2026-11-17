@@ -48,7 +48,9 @@ spec:
     server:
       # The embedded outpost runs in the server: with forward auth in front of
       # apps, one server pod down would lock them all out.
-      replicas: 2
+      # TODO: set 2 again when the database host is authentik-postgres.
+      # Authentik stops, so it writes nothing during the import.
+      replicas: 0
       pdb:
         enabled: true
         minAvailable: 1
@@ -125,7 +127,8 @@ spec:
         limits:
           memory: 2Gi
     worker:
-      replicas: 1
+      # TODO: set 1 again when the database host is authentik-postgres.
+      replicas: 0
       # Blueprints are discovered when the worker starts. Recreate (not a
       # rolling update) so the new worker, which has the updated blueprint
       # ConfigMap mounted, is the one that runs that discovery; reload it when
