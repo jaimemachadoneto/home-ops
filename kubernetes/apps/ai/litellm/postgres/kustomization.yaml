@@ -1,0 +1,30 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/component.json
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# The roles of litellm-postgres. This is a component and not a patch in
+# ks.yaml, because cluster-apps replaces spec.patches of each app with the
+# HelmRelease defaults. List it after cnpg/pg18, which adds the Cluster.
+# Grafana reads the cost view as litellm_grafana. The connection limits are
+# the same as on postgres16. The GRANT on the view is in docs/ai.md.
+patches:
+  - target:
+      group: postgresql.cnpg.io
+      kind: Cluster
+    patch: |-
+      - op: add
+        path: /spec/managed
+        value:
+          roles:
+            - name: litellm
+              connectionLimit: 40
+              ensure: present
+              login: true
+              passwordSecret:
+                name: litellm-postgres-owner
+            - name: litellm_grafana
+              connectionLimit: 5
+              ensure: present
+              login: true
+              passwordSecret:
+                name: litellm-grafana-db-credentials

@@ -158,7 +158,7 @@ spec:
             uid: litellm-postgres
             type: postgres
             access: proxy
-            url: postgres16-rw.database.svc.cluster.local:5432
+            url: litellm-postgres-rw.ai.svc.cluster.local:5432
             user: litellm_grafana
             secureJsonData:
               password: $${LITELLM_DB_PASSWORD}

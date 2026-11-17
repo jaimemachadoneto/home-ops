@@ -27,5 +27,5 @@ spec:
       requests:
         cpu: 10m
       limits:
-        memory: 256Mi
+        memory: ${CNPG_SIDECAR_MEMORY_LIMIT:=256Mi}
   retentionPolicy: ${CNPG_RETENTION:=31d}
