@@ -37,8 +37,9 @@ spec:
             configBlock: |-
               pods verified
               fallthrough in-addr.arpa ip6.arpa
-          - name: autopath
-            parameters: "@kubernetes"
+          # No autopath: it answers "<name>.<namespace>.svc.cluster.local" with
+          # the records of "<name>", so the Cilium DNS proxy files the IPs under
+          # the long name, and a toFQDNs rule for "<name>" never matches.
           - name: forward
             parameters: . /etc/resolv.conf
           - name: cache
