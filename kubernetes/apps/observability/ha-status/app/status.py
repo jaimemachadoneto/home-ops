@@ -57,7 +57,6 @@ CEPH_HEALTH = {0: "HEALTH_OK", 1: "HEALTH_WARN", 2: "HEALTH_ERR"}
 
 # Thresholds for the "Backups" problem sensor; they match the Prometheus alerts.
 MAX_POSTGRES_BACKUP_AGE_H = 26
-MAX_POSTGRES_WAL_AGE_MIN = 60
 # ZFS slows down when a pool fills up, and snapshots need room.
 MAX_NAS_USED_PCT = 90
 
@@ -88,6 +87,21 @@ def prom_scalar(expr):
     return float(result[0]["value"][1]) if result else None
 
 
+def prom_worst_cluster(aggregation, metric, matchers=""):
+    """Highest value over the CNPG clusters, and "namespace/cluster" of it.
+
+    The metrics have no cluster label, so the pod name gives it. The restore
+    test is a temporary copy of postgres16 and does not count.
+    """
+    selector = ", ".join(m for m in ('pod!~"postgres16-restore-test-.*"', matchers) if m)
+    series = f'label_replace({metric}{{{selector}}}, "cluster", "$1", "pod", "(.+)-[0-9]+")'
+    result = prom_query(f"topk(1, {aggregation.format(series)})")
+    if not result:
+        return None, None
+    labels = result[0]["metric"]
+    return float(result[0]["value"][1]), f'{labels.get("namespace", "?")}/{labels.get("cluster", "?")}'
+
+
 def collect():
     status = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds")}
 
@@ -104,11 +118,22 @@ def collect():
         nodes_ready = prom_scalar('sum(kube_node_status_condition{condition="Ready", status="true"})')
         nodes_total = prom_scalar('count(kube_node_status_condition{condition="Ready", status="true"})')
         ceph = prom_scalar("max(ceph_health_status)")
-        pg_backup = prom_scalar(
-            'time() - max(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="database", pod=~"postgres16-[0-9]+"})'
+        # Each app has its own CNPG cluster: report the worst one.
+        pg_backup, pg_backup_cluster = prom_worst_cluster(
+            "time() - max by (namespace, cluster) ({})",
+            "barman_cloud_cloudnative_pg_io_last_available_backup_timestamp",
         )
-        pg_wal = prom_scalar(
-            'min(cnpg_pg_stat_archiver_seconds_since_last_archival{namespace="database", pod=~"postgres16-[0-9]+"})'
+        # The minimum over the pods is the primary: a replica does not archive.
+        # Only for the sensor: an idle cluster writes no WAL for hours.
+        pg_wal, _ = prom_worst_cluster(
+            "min by (namespace, cluster) ({})", "cnpg_pg_stat_archiver_seconds_since_last_archival"
+        )
+        # WAL segments that wait for the object store for 15 minutes: the
+        # archive is stalled.
+        pg_wal_waiting, pg_wal_cluster = prom_worst_cluster(
+            "max by (namespace, cluster) (min_over_time({}[15m:1m]))",
+            "cnpg_collector_pg_wal_archive_status",
+            'value="ready"',
         )
         nas_up = prom_scalar(f'up{{instance="{NAS_INSTANCE}"}}')
         nas_pools = prom_query(f'node_zfs_zpool_state{{instance="{NAS_INSTANCE}"}} == 1')
@@ -142,9 +167,9 @@ def collect():
     if pg_backup is None:
         problems.append("postgres backup metric missing")
     elif status["postgres_backup_age_h"] > MAX_POSTGRES_BACKUP_AGE_H:
-        problems.append(f'postgres base backup {status["postgres_backup_age_h"]}h old')
-    if pg_wal is not None and status["postgres_wal_age_min"] > MAX_POSTGRES_WAL_AGE_MIN:
-        problems.append(f'postgres WAL archive {status["postgres_wal_age_min"]}min old')
+        problems.append(f'postgres base backup of {pg_backup_cluster} {status["postgres_backup_age_h"]}h old')
+    if pg_wal_waiting:
+        problems.append(f"postgres WAL archive of {pg_wal_cluster} stalled: {int(pg_wal_waiting)} segments wait")
     status["backup_problem"] = "ON" if problems else "OFF"
     status["backup_problems"] = problems
 
