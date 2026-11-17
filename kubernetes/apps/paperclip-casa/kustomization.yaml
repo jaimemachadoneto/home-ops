@@ -1,0 +1,12 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: paperclip-casa
+# No cluster-secrets component, on purpose: a Sandbox can mount any Secret of
+# this namespace, and nothing here reads ${SECRET_DOMAIN} or ${TIMEZONE}.
+components:
+  - ../../components/flux-alerts
+resources:
+  - ./namespace.yaml
+  - ./sandbox-tenant/ks.yaml

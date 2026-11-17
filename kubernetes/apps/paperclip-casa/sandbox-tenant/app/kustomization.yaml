@@ -1,0 +1,12 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+# The Paperclip Kubernetes plugin creates these tenant objects on its first
+# run, unless they exist. It never changes an object that exists, so git
+# owns them, and the plugin cannot widen them.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./ciliumnetworkpolicy.yaml
+  - ./limits.yaml
+  - ./rbac.yaml
+  - ./validatingadmissionpolicy.yaml
