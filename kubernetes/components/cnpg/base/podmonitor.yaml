@@ -3,11 +3,11 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: ${APP}-postgres
+  name: ${CNPG_NAME:=${APP}}-postgres
 spec:
   selector:
     matchLabels:
-      cnpg.io/cluster: ${APP}-postgres
+      cnpg.io/cluster: ${CNPG_NAME:=${APP}}-postgres
       cnpg.io/podRole: instance
   podMetricsEndpoints:
     - port: metrics

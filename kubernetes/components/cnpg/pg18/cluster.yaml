@@ -3,7 +3,7 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: ${APP}-postgres
+  name: ${CNPG_NAME:=${APP}}-postgres
   annotations:
     # Each new cluster restores from this path and then archives into it, so
     # the path is never empty. Without this annotation, the archive refuses it.
@@ -14,20 +14,20 @@ spec:
   # nothing to a running cluster. To restore, delete the Cluster and its PVCs.
   bootstrap:
     recovery:
-      source: ${APP}-postgres
+      source: ${CNPG_NAME:=${APP}}-postgres
       database: ${CNPG_DATABASE}
       owner: ${CNPG_OWNER}
       secret:
-        name: ${APP}-postgres-owner
+        name: ${CNPG_NAME:=${APP}}-postgres-owner
   enablePDB: ${CNPG_PDB:=false}
   enableSuperuserAccess: false
   externalClusters:
-    - name: ${APP}-postgres
+    - name: ${CNPG_NAME:=${APP}}-postgres
       plugin:
         name: barman-cloud.cloudnative-pg.io
         parameters:
-          barmanObjectName: ${APP}-postgres
-          serverName: ${APP}-postgres-pg18
+          barmanObjectName: ${CNPG_NAME:=${APP}}-postgres
+          serverName: ${CNPG_NAME:=${APP}}-postgres-pg18
   # The standard image has pgvector, which paperless_mcp and obsidian_mcp need.
   # A major upgrade does not change this file: see pg18/kustomization.yaml.
   imageName: ghcr.io/cloudnative-pg/postgresql:18.7-standard-trixie@sha256:23719505c7cc417b043ffd9998b44ab8d57fec1d92f0bf11b231a1754a5962f2
@@ -36,8 +36,8 @@ spec:
     - name: barman-cloud.cloudnative-pg.io
       isWALArchiver: true
       parameters:
-        barmanObjectName: ${APP}-postgres
-        serverName: ${APP}-postgres-pg18
+        barmanObjectName: ${CNPG_NAME:=${APP}}-postgres
+        serverName: ${CNPG_NAME:=${APP}}-postgres-pg18
   postgresql:
     parameters:
       max_slot_wal_keep_size: 2GB

@@ -8,9 +8,16 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: syncthing
+  # The cluster obsidian-mcp-postgres holds the database of the obsidian-mcp
+  # container (components/cnpg). TODO: remove cnpg/import after the first
+  # backup of the new cluster.
   components:
     - ../../../../components/volsync
+    - ../../../../components/cnpg/pg18
+    - ../../../../components/cnpg/import
   dependsOn:
+    - name: cloudnative-pg-barman-cloud
+      namespace: database
     - name: rook-ceph-cluster
       namespace: rook-ceph
   interval: 1h
@@ -20,6 +27,11 @@ spec:
       APP: syncthing
       APP_GID: "1000"
       APP_UID: "1000"
+      CNPG_DATABASE: obsidian_mcp
+      CNPG_NAME: obsidian-mcp
+      CNPG_OWNER: obsidian_mcp
+      CNPG_PASSWORD_ITEM: obsidian-mcp
+      CNPG_PASSWORD_PROPERTY: db_password
       VOLSYNC_CLAIM: syncthing
       VOLSYNC_CAPACITY: 5Gi
     substituteFrom:
