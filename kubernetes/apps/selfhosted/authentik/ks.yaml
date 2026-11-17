@@ -11,10 +11,8 @@ spec:
       app.kubernetes.io/name: authentik
   # The cluster authentik-postgres holds the database (components/cnpg).
   # ../postgres sets its connection limits.
-  # TODO: remove cnpg/import after the first backup of the new cluster.
   components:
     - ../../../../components/cnpg/pg18
-    - ../../../../components/cnpg/import
     - ../postgres
   dependsOn:
     - name: cloudnative-pg-barman-cloud

@@ -48,9 +48,7 @@ spec:
     server:
       # The embedded outpost runs in the server: with forward auth in front of
       # apps, one server pod down would lock them all out.
-      # TODO: set 2 again when the database host is authentik-postgres.
-      # Authentik stops, so it writes nothing during the import.
-      replicas: 0
+      replicas: 2
       pdb:
         enabled: true
         minAvailable: 1
@@ -68,12 +66,6 @@ spec:
         options:
           - name: ndots
             value: "2"
-      initContainers:
-        - envFrom:
-            - secretRef:
-                name: *secret
-          image: ghcr.io/rafaribe/postgres-init:16
-          name: init-db
       route:
         main:
           enabled: true
@@ -127,8 +119,7 @@ spec:
         limits:
           memory: 2Gi
     worker:
-      # TODO: set 1 again when the database host is authentik-postgres.
-      replicas: 0
+      replicas: 1
       # Blueprints are discovered when the worker starts. Recreate (not a
       # rolling update) so the new worker, which has the updated blueprint
       # ConfigMap mounted, is the one that runs that discovery; reload it when
