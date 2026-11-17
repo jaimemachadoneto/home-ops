@@ -19,6 +19,17 @@
   },
   packageRules: [
     {
+      // A tag can point to a new image at any time. The digest makes each
+      // change of the image a PR. Only the container images: the flux
+      // manager also reads the OCIRepository charts, and their digests are
+      // not decided yet (Work 2 ticket 9d). The Docker hosts follow later.
+      description: "Pin the container images of the cluster by digest",
+      matchDatasources: ["docker"],
+      matchManagers: ["kubernetes", "helm-values"],
+      matchFileNames: ["kubernetes/**"],
+      pinDigests: true,
+    },
+    {
       description: "Configure Emby versioning",
       matchDatasources: ["docker"],
       matchPackageNames: ["ghcr.io/home-operations/emby"],
