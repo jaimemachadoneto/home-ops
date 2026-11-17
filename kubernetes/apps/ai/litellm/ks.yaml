@@ -9,55 +9,17 @@ spec:
     labels:
       app.kubernetes.io/name: litellm
   # The cluster litellm-postgres holds the database (components/cnpg).
-  # TODO: remove cnpg/import and the postImportApplicationSQL patch after the
-  # first backup of the new cluster.
+  # ../postgres adds its roles.
   components:
     - ../../../../components/cnpg/pg18
-    - ../../../../components/cnpg/import
+    - ../postgres
   dependsOn:
     - name: dragonfly-cluster
       namespace: database
     - name: cloudnative-pg-barman-cloud
       namespace: database
-    - name: cloudnative-pg-cluster
-      namespace: database
     - name: litellm-operator
   interval: 1h
-  patches:
-    # Grafana reads the cost view as litellm_grafana. The connection limits
-    # are the same as on postgres16.
-    - target:
-        group: postgresql.cnpg.io
-        kind: Cluster
-      patch: |-
-        - op: add
-          path: /spec/managed
-          value:
-            roles:
-              - name: litellm
-                connectionLimit: 40
-                ensure: present
-                login: true
-                passwordSecret:
-                  name: litellm-postgres-owner
-              - name: litellm_grafana
-                connectionLimit: 5
-                ensure: present
-                login: true
-                passwordSecret:
-                  name: litellm-grafana-db-credentials
-    # The import does not copy roles and grants (pg_restore --no-acl), and the
-    # managed roles start after the import. So the import makes the role and
-    # gives it the view. The managed role then sets its password.
-    - target:
-        group: postgresql.cnpg.io
-        kind: Cluster
-      patch: |-
-        - op: add
-          path: /spec/bootstrap/initdb/import/postImportApplicationSQL
-          value:
-            - CREATE ROLE litellm_grafana LOGIN
-            - GRANT SELECT ON public.litellm_grafana_spend TO litellm_grafana
   path: "./kubernetes/apps/ai/litellm/app"
   postBuild:
     substitute:
@@ -68,6 +30,8 @@ spec:
       CNPG_PASSWORD_ITEM: LiteLLM
       CNPG_PASSWORD_PROPERTY: db_password
       CNPG_PDB: "true"
+      # The backup of the 290 MB database ran out of memory at 256Mi.
+      CNPG_SIDECAR_MEMORY_LIMIT: 1Gi
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

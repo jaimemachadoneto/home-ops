@@ -288,7 +288,7 @@ body to OpenRouter only, with no model_list, fallbacks or per-key spend.
 ## LiteLLM database: per-client keys
 
 LiteLLM keeps keys, users, teams and spend logs in database `litellm` on
-`postgres16` (role capped at 40 connections, pool 10). With it, give each
+its own cluster `litellm-postgres` in `ai` (role capped at 40 connections, pool 10). With it, give each
 client its own key instead of the master key, limited to the models and MCP
 servers it needs: dashboard → Virtual Keys → Create, and under MCP choose the
 servers and tools (e.g. only `web_search` and `context7` for a coding agent,
@@ -310,16 +310,17 @@ panels still use Prometheus. Costs are LiteLLM's estimates: for the Claude
 subscription and OpenCode Go they are list-price equivalents, not invoices.
 
 Before reconciling Grafana, generate a password in 1Password item `LiteLLM`,
-field `grafana_db_password`. Two ExternalSecrets use it: the CNPG role's
-`litellm-grafana-db-credentials` and Grafana's `grafana-litellm-db`.
+field `grafana_db_password`. Two ExternalSecrets use it: `litellm-grafana-db` in
+`ai` (the managed role of `litellm-postgres`, see `litellm/postgres`) and
+Grafana's `grafana-litellm-db`.
 
 After CNPG has created the role, create the restricted view and grant once.
 The view deliberately omits API keys, prompts, responses and request metadata;
 Grafana has SELECT only on this view, not on any LiteLLM table.
 
 ```bash
-PRIMARY=$(kubectl -n database get pods -l cnpg.io/cluster=postgres16,role=primary -o jsonpath='{.items[0].metadata.name}')
-kubectl -n database exec -i "$PRIMARY" -c postgres -- psql -v ON_ERROR_STOP=1 -U postgres -d litellm <<'SQL'
+PRIMARY=$(kubectl -n ai get pods -l cnpg.io/cluster=litellm-postgres,role=primary -o jsonpath='{.items[0].metadata.name}')
+kubectl -n ai exec -i "$PRIMARY" -c postgres -- psql -v ON_ERROR_STOP=1 -U postgres -d litellm <<'SQL'
 BEGIN;
 CREATE OR REPLACE VIEW public.litellm_grafana_spend
 WITH (security_invoker = false) AS
@@ -344,7 +345,9 @@ SQL
 
 There is no spend-log cleanup configured; the history grows until LiteLLM's
 `maximum_spend_logs_retention_period` is set. Re-run the SQL only if the
-`litellm` database is recreated, or to change the view.
+`litellm` database is recreated, or to change the view. A restore from the
+backup keeps the view and the grant. A new import from another cluster does
+not keep the grant (`pg_restore --no-acl`): run the SQL again.
 
 ## claude.ai connector
 
