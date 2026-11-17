@@ -14,7 +14,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: verify
-          image: ghcr.io/cloudnative-pg/postgresql:17.2-29
+          image: ghcr.io/cloudnative-pg/postgresql:17.2-29@sha256:bd862903f459f10db8f2ab59289693dd239c7f7b87012ea3476a19e6f5fb8ade
           env:
             - name: PGHOST
               value: postgres16-restore-test-rw.database.svc.cluster.local

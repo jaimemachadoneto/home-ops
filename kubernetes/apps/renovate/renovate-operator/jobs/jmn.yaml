@@ -56,7 +56,7 @@ spec:
   provider:
     name: github
     endpoint: https://api.github.com/
-  image: ghcr.io/renovatebot/renovate:44.31.0
+  image: ghcr.io/renovatebot/renovate:44.31.0@sha256:bb8dbd817302a65fd0daea5601a27e4e0124172eb2fea25cf724d3a79b09e044
   parallelism: 5
   resources:
     requests:
