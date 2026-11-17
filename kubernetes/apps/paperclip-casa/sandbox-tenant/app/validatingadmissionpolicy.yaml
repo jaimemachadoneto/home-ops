@@ -1,0 +1,57 @@
+---
+# The Paperclip VM can create Sandboxes, and a Sandbox selects the volumes,
+# the Secrets, the account and the image of its pod. Without this policy, a
+# leaked VM token could start a pod that reads the Secret of another agent
+# run. The policy accepts only the pod that the Paperclip plugin builds.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: paperclip-sandbox-pod
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [agents.x-k8s.io]
+        apiVersions: ["*"]
+        operations: [CREATE, UPDATE]
+        resources: [sandboxes]
+  variables:
+    - name: pod
+      expression: object.spec.podTemplate.spec
+  validations:
+    - expression: >-
+        has(variables.pod.serviceAccountName) &&
+        variables.pod.serviceAccountName == 'paperclip-tenant-sa' &&
+        has(variables.pod.automountServiceAccountToken) &&
+        variables.pod.automountServiceAccountToken == false
+      message: An agent pod uses paperclip-tenant-sa and does not mount its token.
+    - expression: >-
+        !has(variables.pod.volumes) ||
+        variables.pod.volumes.all(v, has(v.emptyDir))
+      message: An agent pod has only emptyDir volumes.
+    - expression: >-
+        !has(variables.pod.initContainers) &&
+        !has(variables.pod.ephemeralContainers)
+      message: An agent pod has no init or ephemeral containers.
+    - expression: >-
+        variables.pod.containers.all(c,
+          c.image.startsWith('ghcr.io/jaimemachadoneto/paperclip-agent-') &&
+          (!has(c.env) || c.env.all(e, !has(e.valueFrom))) &&
+          (!has(c.envFrom) || c.envFrom.all(e,
+            has(e.secretRef) && !has(e.configMapRef) &&
+            e.secretRef.name == object.metadata.name + '-env')))
+      message: >-
+        An agent pod runs a paperclip-agent image and reads only the Secret
+        of its own run (<sandbox name>-env).
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: paperclip-sandbox-pod
+spec:
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: paperclip-casa
+  policyName: paperclip-sandbox-pod
+  validationActions: [Deny]

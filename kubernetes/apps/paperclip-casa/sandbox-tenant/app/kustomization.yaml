@@ -9,3 +9,4 @@ resources:
   - ./ciliumnetworkpolicy.yaml
   - ./limits.yaml
   - ./rbac.yaml
+  - ./validatingadmissionpolicy.yaml
