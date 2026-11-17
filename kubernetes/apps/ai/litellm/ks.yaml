@@ -8,17 +8,66 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: litellm
+  # The cluster litellm-postgres holds the database (components/cnpg).
+  # TODO: remove cnpg/import and the postImportApplicationSQL patch after the
+  # first backup of the new cluster.
+  components:
+    - ../../../../components/cnpg/pg18
+    - ../../../../components/cnpg/import
   dependsOn:
     - name: dragonfly-cluster
+      namespace: database
+    - name: cloudnative-pg-barman-cloud
       namespace: database
     - name: cloudnative-pg-cluster
       namespace: database
     - name: litellm-operator
   interval: 1h
+  patches:
+    # Grafana reads the cost view as litellm_grafana. The connection limits
+    # are the same as on postgres16.
+    - target:
+        group: postgresql.cnpg.io
+        kind: Cluster
+      patch: |-
+        - op: add
+          path: /spec/managed
+          value:
+            roles:
+              - name: litellm
+                connectionLimit: 40
+                ensure: present
+                login: true
+                passwordSecret:
+                  name: litellm-postgres-owner
+              - name: litellm_grafana
+                connectionLimit: 5
+                ensure: present
+                login: true
+                passwordSecret:
+                  name: litellm-grafana-db-credentials
+    # The import does not copy roles and grants (pg_restore --no-acl), and the
+    # managed roles start after the import. So the import makes the role and
+    # gives it the view. The managed role then sets its password.
+    - target:
+        group: postgresql.cnpg.io
+        kind: Cluster
+      patch: |-
+        - op: add
+          path: /spec/bootstrap/initdb/import/postImportApplicationSQL
+          value:
+            - CREATE ROLE litellm_grafana LOGIN
+            - GRANT SELECT ON public.litellm_grafana_spend TO litellm_grafana
   path: "./kubernetes/apps/ai/litellm/app"
   postBuild:
     substitute:
       APP: litellm
+      CNPG_DATABASE: litellm
+      CNPG_INSTANCES: "2"
+      CNPG_OWNER: litellm
+      CNPG_PASSWORD_ITEM: LiteLLM
+      CNPG_PASSWORD_PROPERTY: db_password
+      CNPG_PDB: "true"
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

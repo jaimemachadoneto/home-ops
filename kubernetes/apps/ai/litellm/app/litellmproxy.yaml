@@ -11,7 +11,9 @@ spec:
   # TODO: Go back to a version tag when a release has llms/opencode/chat.
   # renovate: datasource=docker depName=ghcr.io/berriai/litellm
   image: ghcr.io/berriai/litellm:main-latest@sha256:8a1e132563ef9cae391f0518f652eb7c643fac39ded5c40a0106ee3e06945986
-  replicas: 1
+  # TODO: set 1 again when DATABASE_URL points at litellm-postgres. The proxy
+  # stops, so it writes nothing during the import.
+  replicas: 0
   generalSettings:
     store_model_in_db: true
     health_check_endpoint: /v1/health
