@@ -118,11 +118,12 @@ spec:
             severity: critical
         - alert: CNPGWalArchivingStalled
           annotations:
-            description: No WAL segment has been shipped to the object store for {{ $value | humanizeDuration }}. Point-in-time recovery is falling behind; check the ContinuousArchiving condition on the cluster.
+            description: "{{ $value }} WAL segments of postgres16 wait for the object store. Examine the ContinuousArchiving condition of the cluster."
             summary: Postgres WAL archiving has stalled
-          # min across pods selects the primary; replicas do not archive
+          # The same rule as components/cnpg. Not the time since the last
+          # archive: postgres16 is idle and writes no WAL for hours.
           expr: |-
-            min by (namespace) (cnpg_pg_stat_archiver_seconds_since_last_archival{namespace="database", pod=~"postgres16-[0-9]+"}) > 3600
-          for: 15m
+            max by (namespace) (cnpg_collector_pg_wal_archive_status{namespace="database", pod=~"postgres16-[0-9]+", value="ready"}) > 0
+          for: 30m
           labels:
             severity: critical
