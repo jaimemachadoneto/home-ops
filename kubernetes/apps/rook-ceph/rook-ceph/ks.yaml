@@ -84,8 +84,9 @@ spec:
       # cluster's cephx key type (aes), which the chart picks because our node
       # kernels (6.18) are below the 7.0 threshold for a stronger cipher. This
       # is expected, not a fault, so HEALTH_ERR no longer blocks Flux here.
-      # TODO: revisit once a real fix (newer kernel, or an accepted Ceph-side
-      # config) removes the AUTH_INSECURE_* checks instead of tolerating them.
+      # The daemon key rotation (security.cephx.daemon in the HelmRelease)
+      # removes the ERR. The client keys (CSI, admin) keep aes and a WARN.
+      # TODO: rotate the CSI keys to aes256k when the nodes run Linux 7.0.
       failed: "false"
       current: status.ceph.health in ['HEALTH_OK', 'HEALTH_WARN', 'HEALTH_ERR']
   interval: 1h

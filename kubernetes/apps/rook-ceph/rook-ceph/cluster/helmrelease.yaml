@@ -101,6 +101,17 @@ spec:
             memory: 2Gi
           limits:
             memory: 4Gi
+      # Ceph 20.2.4 reports HEALTH_ERR (AUTH_INSECURE_SERVICE_KEY_TYPE) while
+      # the daemon keys use aes (CVE-2025-30156). Generation 2 rotates the keys
+      # of the mon, mgr, OSD and MDS daemons to the best type that Rook detects.
+      # Most Ceph daemons restart. CSI volumes do not change. The CSI keys keep
+      # aes (the chart default): the kernel client needs Linux 7.0 for aes256k.
+      # Increase keyGeneration to rotate the keys again.
+      security:
+        cephx:
+          daemon:
+            keyRotationPolicy: KeyGeneration
+            keyGeneration: 2
       storage:
         # Restrict OSDs to the three control-plane/data nodes and avoid scheduling on home-ops-03
         useAllNodes: false
