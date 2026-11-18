@@ -1,0 +1,48 @@
+---
+# Org runners with a Docker daemon, for jobs that build or run images and
+# for jobs with service containers. Use `runs-on: arc-jmn-docker`. The
+# arc-jmn set stays in kubernetes mode, with no privilege.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: arc-jmn-docker
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: gha-runner-scale-set
+  driftDetection:
+    mode: enabled
+  values:
+    githubConfigUrl: https://github.com/jaimemachadoneto
+    githubConfigSecret: actions-runner-controller-secret
+
+    minRunners: 0
+    maxRunners: 3
+
+    # The chart adds a privileged dind sidecar and points DOCKER_HOST at it.
+    containerMode:
+      type: dind
+
+    controllerServiceAccount:
+      name: actions-runner-controller
+      namespace: actions-runner-system
+
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: arc-jmn-docker-runner
+      spec:
+        containers:
+          - name: runner
+            image: ghcr.io/home-operations/actions-runner:2.338.2@sha256:2dd7caa094a425c041539447cb0e6ae63cda10b5242773764683b695b8fa5613
+            command:
+              - /home/runner/run.sh
+            resources:
+              limits:
+                cpu: "2.0"
+                memory: "6Gi"
+              requests:
+                cpu: "1.0"
+                memory: "2Gi"
