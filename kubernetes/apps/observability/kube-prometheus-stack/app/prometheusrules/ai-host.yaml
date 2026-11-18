@@ -75,10 +75,15 @@ spec:
             summary: >-
               The sync of the Paperless MCP search index fails: a new or
               changed document is not in the index.
+          # sum: "and" keeps only series with the same labels, and the two
+          # sides have a different outcome label. Without sum, the alert never
+          # fired (Paperless 3.5 refused the sync for 3 hours on 2026-11-18).
+          # "or vector(0)": the success series does not exist after a restart
+          # with no successful run.
           expr: |
-            increase(paperless_sync_runs_total{outcome="failure"}[30m]) > 0
+            sum(increase(paperless_sync_runs_total{outcome="failure"}[30m])) > 0
             and
-            increase(paperless_sync_runs_total{outcome="success"}[30m]) == 0
+            (sum(increase(paperless_sync_runs_total{outcome="success"}[30m])) or vector(0)) == 0
           for: 10m
           labels:
             severity: warning
