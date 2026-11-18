@@ -33,6 +33,10 @@ spec:
                     name: paperless-secret
                     key: PAPERLESS_SECRET_KEY
               PAPERLESS_URL: https://paperless.${SECRET_DOMAIN}
+              # Since 3.5, Paperless allows only the host of PAPERLESS_URL (and
+              # localhost) when this is not set. paperless-mcp, paperless-ai,
+              # its share-objects job and paperless-gpt call the Service name.
+              PAPERLESS_ALLOWED_HOSTS: paperless.${SECRET_DOMAIN},paperless.selfhosted.svc.cluster.local
               PAPERLESS_PORT: "8000"
               PAPERLESS_TIME_ZONE: Europe/Madrid
               PAPERLESS_WEBSERVER_WORKERS: "2"
