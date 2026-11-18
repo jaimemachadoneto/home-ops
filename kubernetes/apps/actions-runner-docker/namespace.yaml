@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: _
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+  labels:
+    # The dind sidecar of each runner is a privileged container. This
+    # namespace holds only the arc-jmn-docker runners, so the baseline
+    # profile stays on actions-runner-system, beside the Talos credentials.
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
