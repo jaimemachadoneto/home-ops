@@ -1,12 +1,13 @@
 ---
-# Routes in kube-system that require an Authentik login. Each one also needs a
-# provider in ../app/blueprints/forward-auth.yaml (see docs/authentik-sso.md).
+# The Authentik login of the Hubble UI (provider "hubble" in
+# selfhosted/authentik/app/blueprints/forward-auth.yaml). This policy is here,
+# not in selfhosted/authentik/forward-auth/, so that Flux applies it together
+# with httproute.yaml: the route never exists without its login.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
   name: authentik-forward-auth
-  namespace: kube-system
 spec:
   targetRefs:
     - group: gateway.networking.k8s.io

@@ -1,7 +1,7 @@
 ---
 # The Hubble UI shows every flow of the cluster and has no login of its own.
-# The SecurityPolicy in selfhosted/authentik/forward-auth/kube-system.yaml lets
-# only authentik Admins through (provider "hubble" in forward-auth.yaml).
+# securitypolicy.yaml lets only authentik Admins through, and the policy
+# hubble-ui in ciliumnetworkpolicy.yaml lets only envoy-internal reach the pod.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute

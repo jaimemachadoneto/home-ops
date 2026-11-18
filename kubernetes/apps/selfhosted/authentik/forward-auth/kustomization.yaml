@@ -7,7 +7,6 @@ resources:
   - ./downloads.yaml
   - ./external-ingresses.yaml
   - ./home-automation.yaml
-  - ./kube-system.yaml
   - ./observability.yaml
   - ./renovate.yaml
   - ./selfhosted.yaml
