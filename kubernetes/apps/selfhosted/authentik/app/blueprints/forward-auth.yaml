@@ -237,6 +237,34 @@ entries:
       negate: false
       timeout: 30
 
+  # --- Hubble UI (kube-system/hubble-ui) --------------------------------------
+  # Shows every network flow of the cluster: Admins only.
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-hubble
+    identifiers:
+      name: hubble
+    attrs:
+      <<: *forward-auth
+      external_host: https://hubble.${SECRET_DOMAIN}
+  - model: authentik_core.application
+    id: app-hubble
+    identifiers:
+      slug: hubble
+    attrs:
+      name: Hubble
+      provider: !KeyOf provider-hubble
+      meta_launch_url: https://hubble.${SECRET_DOMAIN}
+      policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-hubble
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
+
   # --- Prometheus (observability/kube-prometheus-stack-prometheus)
   - model: authentik_providers_proxy.proxyprovider
     id: provider-prometheus
@@ -1032,6 +1060,7 @@ entries:
         - !KeyOf provider-paperless-gpt
         - !KeyOf provider-headlamp
         - !KeyOf provider-prometheus
+        - !KeyOf provider-hubble
         - !KeyOf provider-alertmanager
         - !KeyOf provider-logs
         - !KeyOf provider-kopia

@@ -55,8 +55,10 @@ spec:
       relay:
         enabled: true
         rollOutPods: true
+      # The route and the Authentik login are in httproute.yaml.
       ui:
-        enabled: false
+        enabled: true
+        rollOutPods: true
     ipam:
       mode: kubernetes
     ipv4NativeRoutingCIDR: 10.244.0.0/16

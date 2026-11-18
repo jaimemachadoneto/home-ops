@@ -6,6 +6,8 @@
 # socketLB.hostNamespaceOnly their reply through the hubble-peer Service is
 # a new ingress flow, so the rule has no port. `kubectl port-forward` still
 # works: the container runtime opens that connection inside the pod.
+# The Hubble UI reads the flows from the relay on port 4245. Authentik guards
+# the UI (httproute.yaml).
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -18,3 +20,11 @@ spec:
   ingress:
     - fromEntities:
         - host
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: hubble-ui
+      toPorts:
+        - ports:
+            - port: "4245"
+              protocol: TCP
