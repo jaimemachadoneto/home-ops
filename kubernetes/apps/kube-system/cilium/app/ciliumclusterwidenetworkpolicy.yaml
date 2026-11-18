@@ -5,8 +5,10 @@
 # (syncthing dropped about 9,000 replies in 24 hours). This policy allows that
 # reply for every pod. enableDefaultDeny false: the policy only adds an allow
 # rule, so a pod with no other policy keeps all its ingress open.
-# No toPorts: the reply goes to an ephemeral port.
-# shortcut: coredns pods may also open connections to any pod; remove this
+# The reply goes to the ephemeral source port of the client: the kernel range
+# 32768-60999 (net.ipv4.ip_local_port_range). No service listens there, so
+# coredns cannot open a connection to a service port.
+# shortcut: coredns can still reach an ephemeral port of any pod; remove this
 # policy if Cilium tracks same-node Service replies again.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumclusterwidenetworkpolicy_v2.json
 apiVersion: cilium.io/v2
@@ -23,3 +25,11 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: kube-system
             k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "32768"
+              endPort: 60999
+              protocol: UDP
+            - port: "32768"
+              endPort: 60999
+              protocol: TCP
