@@ -1,0 +1,44 @@
+---
+# Only the gateways reach the Authentik server: the sign-in pages, OIDC, and
+# the forward auth of the embedded outpost (each app calls sso.<domain>
+# through a gateway, never the Service). Hubble showed no other caller in 6
+# hours. Port 9300 (metrics) and 9443 (HTTPS) have no caller and stay closed.
+# The worker has no caller, so this policy does not select it.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: authentik-server
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: authentik
+      app.kubernetes.io/component: server
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: envoy-internal
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: envoy-external
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    # The kubelet probes come from the node.
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    # Replies from Postgres to the server. When the primary runs on the same
+    # node, Cilium (socketLB.hostNamespaceOnly) drops its SYN-ACK as a new
+    # ingress flow. No toPorts: the reply goes to an ephemeral port.
+    # shortcut: Postgres pods may also open connections to the server; remove
+    # this rule once Cilium tracks same-node Service replies again.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: selfhosted
+            cnpg.io/cluster: authentik-postgres
