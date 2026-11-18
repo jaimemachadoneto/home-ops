@@ -6,6 +6,8 @@
 # socketLB.hostNamespaceOnly their reply through the hubble-peer Service is
 # a new ingress flow, so the rule has no port. `kubectl port-forward` still
 # works: the container runtime opens that connection inside the pod.
+# The Hubble UI reads the flows from the relay on port 4245. Authentik guards
+# the UI (httproute.yaml).
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -18,3 +20,46 @@ spec:
   ingress:
     - fromEntities:
         - host
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: hubble-ui
+      toPorts:
+        - ports:
+            - port: "4245"
+              protocol: TCP
+---
+# The UI shows every flow of the cluster and has no login of its own. Only
+# envoy-internal reaches it, after the Authentik login (securitypolicy.yaml).
+# Without this policy, any pod could call the hubble-ui Service and skip the
+# login. The backend port 8090 is used only inside the pod.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hubble-ui
+spec:
+  endpointSelector:
+    matchLabels:
+      k8s-app: hubble-ui
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: envoy-internal
+      toPorts:
+        - ports:
+            - port: "8081"
+              protocol: TCP
+    # The kubelet probes, and the replies of the API server on the same node:
+    # with socketLB.hostNamespaceOnly, such a reply is a new ingress flow, so
+    # the rule has no port.
+    - fromEntities:
+        - host
+    # Replies of the relay to the backend when both run on the same node.
+    # shortcut: the relay may also open connections to the UI; remove this
+    # rule once Cilium tracks same-node Service replies again.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: hubble-relay

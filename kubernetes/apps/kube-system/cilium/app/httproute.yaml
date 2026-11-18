@@ -1,0 +1,26 @@
+---
+# The Hubble UI shows every flow of the cluster and has no login of its own.
+# securitypolicy.yaml lets only authentik Admins through, and the policy
+# hubble-ui in ciliumnetworkpolicy.yaml lets only envoy-internal reach the pod.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.networking.k8s.io/httproute_v1.json
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hubble-ui
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: Network flows
+    gethomepage.dev/group: Kubernetes
+    gethomepage.dev/icon: cilium.svg
+    gethomepage.dev/name: Hubble
+spec:
+  hostnames:
+    - hubble.${SECRET_DOMAIN}
+  parentRefs:
+    - name: envoy-internal
+      namespace: network
+      sectionName: https
+  rules:
+    - backendRefs:
+        - name: hubble-ui
+          port: 80

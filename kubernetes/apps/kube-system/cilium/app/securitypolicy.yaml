@@ -1,0 +1,34 @@
+---
+# The Authentik login of the Hubble UI (provider "hubble" in
+# selfhosted/authentik/app/blueprints/forward-auth.yaml). This policy is here,
+# not in selfhosted/authentik/forward-auth/, so that Flux applies it together
+# with httproute.yaml: the route never exists without its login.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: authentik-forward-auth
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: hubble-ui
+  extAuth:
+    # The outpost needs the session cookie to recognise the user.
+    headersToExtAuth:
+      - cookie
+    http:
+      backendRefs:
+        - name: authentik-server
+          namespace: selfhosted
+          port: 80
+      # Prefixed to the request path; the outpost's Envoy endpoint also serves
+      # the /outpost.goauthentik.io/ sign-in callback through it.
+      path: /outpost.goauthentik.io/auth/envoy
+      # Identity of the signed-in user, for apps that can use it.
+      headersToBackend:
+        - x-authentik-username
+        - x-authentik-groups
+        - x-authentik-email
+        - x-authentik-name
+        - x-authentik-uid
