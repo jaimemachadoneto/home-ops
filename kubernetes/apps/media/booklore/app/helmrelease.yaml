@@ -26,6 +26,11 @@ spec:
             image:
               repository: docker.io/library/mariadb
               tag: 12.3.3-noble@sha256:4ebbcf100a3ba320766dfa0e1af008df12261301db6ef72798c7650f70794aed
+            # The default seccomp profile of containerd v2 blocks io_uring
+            # (containerd PR 9320). InnoDB then uses synchronous I/O, so the
+            # container needs no Unconfined profile and passes the baseline.
+            args:
+              - --innodb-use-native-aio=0
             env:
               MARIADB_DATABASE: booklore
               MARIADB_PASSWORD:
@@ -59,9 +64,6 @@ spec:
                 drop:
                   - ALL
               readOnlyRootFilesystem: true
-              # NOTE: io_uring is blocked by the default containerd v2 seccomp profile
-              # https://github.com/containerd/containerd/pull/9320
-              seccompProfile: {type: Unconfined}
           nginx-config:
             image:
               repository: ghcr.io/booklore-app/booklore
