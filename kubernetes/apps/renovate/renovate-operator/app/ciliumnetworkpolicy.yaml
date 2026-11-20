@@ -1,0 +1,38 @@
+---
+# envoy-internal reaches the UI on port 8081, and envoy-external reaches the
+# GitHub webhook on port 8082. The kubelet probes use port 8083. Hubble showed
+# no other caller in 6 hours. The Renovate job pods do not have the label
+# app=renovate-operator, so this policy does not select them.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: renovate-operator
+spec:
+  endpointSelector:
+    matchLabels:
+      app: renovate-operator
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: envoy-internal
+      toPorts:
+        - ports:
+            - port: "8081"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: envoy-external
+      toPorts:
+        - ports:
+            - port: "8082"
+              protocol: TCP
+    # The kubelet probes come from the node.
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "8083"
+              protocol: TCP
