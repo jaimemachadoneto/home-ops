@@ -1,0 +1,38 @@
+---
+# envoy-external reaches the GitHub webhook Receiver on port 9292. The other
+# Flux controllers send their events to port 9090. The kubelet probes use port
+# 9440. Hubble showed no other caller in 6 hours. Nothing scrapes the metrics
+# port 8080, so it stays closed.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: notification-controller
+spec:
+  endpointSelector:
+    matchLabels:
+      app: notification-controller
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: envoy-external
+      toPorts:
+        - ports:
+            - port: "9292"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: flux-system
+            app.kubernetes.io/part-of: flux
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+    # The kubelet probes come from the node.
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "9440"
+              protocol: TCP
