@@ -1,0 +1,28 @@
+---
+# Only envoy-external reaches the Kromgo API on port 8080: the public badges.
+# The kubelet probes use port 8888. Hubble showed no other caller in 6 hours.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kromgo
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: kromgo
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: envoy-external
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    # The kubelet probes come from the node.
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "8888"
+              protocol: TCP
