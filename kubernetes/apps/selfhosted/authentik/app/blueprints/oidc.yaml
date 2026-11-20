@@ -232,7 +232,8 @@ entries:
   # --- Audiobookshelf (media/audiobookshelf) ----------------------------------
   # The OIDC settings live in the app's own database (Settings > Authentication),
   # not in git. The slug must stay "audiobookshelf": it is part of the issuer
-  # URL. The second redirect URI is for the mobile app.
+  # URL. The app serves under /audiobookshelf (its ROUTER_BASE_PATH), so the
+  # redirect URIs start with it. The second one is for the mobile app.
   - model: authentik_providers_oauth2.oauth2provider
     id: provider-audiobookshelf
     identifiers:
@@ -250,9 +251,9 @@ entries:
       signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
       redirect_uris:
         - matching_mode: strict
-          url: https://audiobookshelf.${SECRET_DOMAIN}/auth/openid/callback
+          url: https://audiobookshelf.${SECRET_DOMAIN}/audiobookshelf/auth/openid/callback
         - matching_mode: strict
-          url: https://audiobookshelf.${SECRET_DOMAIN}/auth/openid/mobile-redirect
+          url: https://audiobookshelf.${SECRET_DOMAIN}/audiobookshelf/auth/openid/mobile-redirect
       property_mappings:
         - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
         - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
