@@ -255,13 +255,16 @@ entries:
         - matching_mode: strict
           url: https://audiobookshelf.${SECRET_DOMAIN}/audiobookshelf/auth/openid/mobile-redirect
       # The app matches a user by email only when email_verified is true. The
-      # default email mapping sends false, so use the browser-sessions one.
+      # default email mapping sends false, so use the browser-sessions one. It
+      # vouches for every email, so only authentik Admins may sign in (binding
+      # below), and users cannot change their own email in Authentik.
       property_mappings:
         - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
         - !KeyOf scope-browser-sessions-email
         - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
       sub_mode: hashed_user_id
   - model: authentik_core.application
+    id: app-audiobookshelf
     identifiers:
       slug: audiobookshelf
     attrs:
@@ -269,3 +272,12 @@ entries:
       provider: !KeyOf provider-audiobookshelf
       meta_launch_url: https://audiobookshelf.${SECRET_DOMAIN}
       policy_engine_mode: any
+  - model: authentik_policies.policybinding
+    identifiers:
+      target: !KeyOf app-audiobookshelf
+      group: !Find [authentik_core.group, [name, authentik Admins]]
+      order: 0
+    attrs:
+      enabled: true
+      negate: false
+      timeout: 30
