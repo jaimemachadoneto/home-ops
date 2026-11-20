@@ -1,0 +1,28 @@
+---
+# Only envoy-external reaches Atuin: the shell clients sync through
+# atuin.<domain>. Hubble showed no other caller in 6 hours.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: atuin
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: atuin
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: network
+            gateway.networking.k8s.io/gateway-name: envoy-external
+      toPorts:
+        - ports:
+            - port: "8888"
+              protocol: TCP
+    # The kubelet probes come from the node.
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "8888"
+              protocol: TCP
