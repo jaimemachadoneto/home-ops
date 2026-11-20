@@ -34,15 +34,46 @@ spec:
         labels:
           app.kubernetes.io/name: arc-jmn-docker-runner
       spec:
+        # One runner on each node. On 2026-11-20 the runners of a devBase CI
+        # run filled the disk of home-ops-00, and the kubelet stopped the
+        # control plane of that node.
+        # home-ops-03 is the GPU node and gets no CI work. Its taint alone
+        # does not keep runners off if the taint changes, so exclude it here.
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: NotIn
+                      values:
+                        - home-ops-03
+        topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            # Count only the nodes that the affinity and the taints allow.
+            nodeAffinityPolicy: Honor
+            nodeTaintsPolicy: Honor
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: arc-jmn-docker-runner
         containers:
           - name: runner
             image: ghcr.io/home-operations/actions-runner:2.338.2@sha256:2dd7caa094a425c041539447cb0e6ae63cda10b5242773764683b695b8fa5613
             command:
               - /home/runner/run.sh
+            # The chart gives the dind sidecar no resources. The kubelet
+            # compares the disk use of the whole pod (the Docker data of
+            # dind and the emptyDir volumes too) with the sum of the
+            # container limits, so this limit evicts the runner pod before
+            # the node runs short of disk.
             resources:
               limits:
                 cpu: "2.0"
                 memory: "6Gi"
+                ephemeral-storage: "20Gi"
               requests:
                 cpu: "1.0"
                 memory: "2Gi"
+                ephemeral-storage: "5Gi"
