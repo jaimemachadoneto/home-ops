@@ -37,11 +37,23 @@ spec:
         # One runner on each node. On 2026-11-20 the runners of a devBase CI
         # run filled the disk of home-ops-00, and the kubelet stopped the
         # control plane of that node.
+        # home-ops-03 is the GPU node and gets no CI work. Its taint alone
+        # does not keep runners off if the taint changes, so exclude it here.
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: NotIn
+                      values:
+                        - home-ops-03
         topologySpreadConstraints:
           - maxSkew: 1
             topologyKey: kubernetes.io/hostname
             whenUnsatisfiable: DoNotSchedule
-            # home-ops-03 has the GPU taint, so it is not a place for a runner.
+            # Count only the nodes that the affinity and the taints allow.
+            nodeAffinityPolicy: Honor
             nodeTaintsPolicy: Honor
             labelSelector:
               matchLabels:
