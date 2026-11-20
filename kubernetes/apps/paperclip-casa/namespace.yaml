@@ -2,12 +2,15 @@
 # The agent runs of the Paperclip company "Casa". Each run is a Sandbox pod
 # that the Paperclip VM (10.30.70.5) creates through the agent-sandbox
 # controller. The pods run untrusted agent work, so the restricted profile is
-# enforced.
+# enforced. k8tz does not inject: its init container made a run start too
+# slowly for the 15 s first check of Paperclip, and the agents need no local
+# time zone in the pod.
 apiVersion: v1
 kind: Namespace
 metadata:
   name: _
   annotations:
+    k8tz.io/inject: "false"
     kustomize.toolkit.fluxcd.io/prune: disabled
   labels:
     pod-security.kubernetes.io/audit: restricted
