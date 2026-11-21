@@ -44,6 +44,12 @@ spec:
     drop_params: true
     merge_reasoning_content_in_choices: true
     set_verbose: false
+    # A key with object_permission.mcp_tool_search_enabled sees 4 search and
+    # call tools, not every MCP schema. Keyword ranking found the wrong tools
+    # ("note" matched "NOTE:" in ha_mcp), so the search ranks by meaning.
+    mcp_tool_search:
+      embedding_model: tool-search-embed
+      top_k: 5
   # search_tools has no dedicated field in the CRD, so it goes through the
   # catch-all. The operator merges this key into the top level of config.yaml.
   # No MCP result guardrail here: a post_mcp_call litellm_content_filter (PRs
