@@ -39,3 +39,12 @@ force_image_pull: false
 force_recreate: false
 remove_orphans: true
 prune_images: true
+---
+name: reranker
+working_dir: hosts/ai/stacks/reranker
+compose_files:
+  - compose.yaml
+force_image_pull: false
+force_recreate: false
+remove_orphans: true
+prune_images: true

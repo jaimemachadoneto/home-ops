@@ -68,7 +68,10 @@ spec:
                     # memini keeps running without consolidation until the
                     # 1Password field exists.
                     optional: true
-              MEMINI_RERANK: http://qwen3-reranker-0-6b.ai.svc.cluster.local:8080/v1
+              # The reranker runs on GPU 0 of the AI server
+              # (hosts/ai/stacks/reranker). On the CPU of the cluster, memini
+              # cancelled most reranks.
+              MEMINI_RERANK: http://ai.local.jaimenet.com:11437/v1
               MEMINI_RERANK_MODEL: qwen3-reranker
               MEMINI_LOG_FORMAT: json
               MEMINI_RECALL_MIN_SEMANTIC_SCORE: "0.46"

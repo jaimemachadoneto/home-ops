@@ -1,0 +1,62 @@
+# The reranker of memini: Qwen3-Reranker-0.6B (Q8_0) on llama.cpp with CUDA.
+# It ran in the cluster on CPU (llmkube), where a rerank of 300 tokens took 4
+# to 19 s and memini cancelled most of them. See ../README.md.
+#
+# The image is pinned by tag and digest. Bump both together, and check the
+# CUDA requirement of the new image first:
+#   docker buildx imagetools inspect <image> --format '{{json .Image}}' | grep NVIDIA_REQUIRE_CUDA
+# server-cuda-b11946 asks for cuda>=12.8, and the driver 570.144 of the host
+# answers CUDA 12.8 only. A newer build that asks for 12.9 does not start.
+services:
+  qwen3-reranker:
+    container_name: qwen3-reranker
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda-b11946@sha256:59633c1493f104de906b83a2588e9b44714ef2db0c9d7efbf01495dd5447e425
+    restart: unless-stopped
+    ports:
+      # The host address only: memini calls it at MEMINI_RERANK.
+      - 10.30.50.13:11437:8080
+    environment:
+      # llama-server downloads the model here at the first start.
+      LLAMA_CACHE: /models
+    volumes:
+      - reranker-models:/models
+    command:
+      - --hf-repo
+      - ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
+      - --hf-file
+      - qwen3-reranker-0.6b-q8_0.gguf
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      # memini asks for this model name (MEMINI_RERANK_MODEL).
+      - --alias
+      - qwen3-reranker
+      - --rerank
+      - --pooling
+      - rank
+      - --n-gpu-layers
+      - "99"
+      # 4096 tokens for each of the 2 slots. The largest document of memini
+      # was 810 tokens. A small context keeps the KV cache at about 0.5 GiB.
+      - --ctx-size
+      - "8192"
+      - --parallel
+      - "2"
+      - --cont-batching
+      - --batch-size
+      - "2048"
+      - --ubatch-size
+      - "2048"
+    # GPU 0 is free when qwen-tts is stopped. Ollama can also load a model on
+    # GPU 0 and has about 1 GiB less there. See "The GPUs" in ../README.md.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
+
+volumes:
+  reranker-models: {}
