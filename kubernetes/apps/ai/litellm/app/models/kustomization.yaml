@@ -30,5 +30,6 @@ resources:
   - ./opr-free-strong-nemotron-3-ultra.yaml
   - ./openrouter-deepseek-deepseek-v4-1-flash-noreason.yaml
   - ./openrouter-typesafe-jev.yaml
+  - ./tool-search-embed.yaml
   - ./voice-chat.yaml
   - ./voice-complex.yaml

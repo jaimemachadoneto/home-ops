@@ -1,0 +1,18 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmodel_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: tool-search-embed
+spec:
+  # Ranks the MCP tools for mcp_tool_search (litellmproxy.yaml). TEI on the ai
+  # host keeps the model in GPU memory, so a search never waits for a model
+  # load. The Paperless MCP uses the same server.
+  modelName: tool-search-embed
+  params:
+    model: openai/Qwen/Qwen3-Embedding-0.6B
+    apiBase: http://ai.local.${SECRET_DOMAIN}:11435/v1
+    # TEI has no authentication, but the openai client refuses an empty key.
+    apiKey: none
+  info:
+    mode: embedding
