@@ -1,7 +1,7 @@
 ---
 # The kubesearch MCP server has no login of its own. Only the LiteLLM MCP
-# gateway can call it. The policy has no egress rule, because the server
-# downloads from GitHub and clones public repositories.
+# gateway can call it. It downloads from GitHub and clones public
+# repositories, so it can call the internet on 443, but not the home network.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -28,3 +28,27 @@ spec:
         - ports:
             - port: "3000"
               protocol: TCP
+  egress:
+    - toCIDRSet:
+        - cidr: 0.0.0.0/0
+          except:
+            - 10.0.0.0/8
+            - 100.64.0.0/10
+            - 169.254.0.0/16
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"
