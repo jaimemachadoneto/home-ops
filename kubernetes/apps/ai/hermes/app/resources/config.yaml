@@ -23,6 +23,8 @@ terminal:
     - SEARXNG_URL
     - GH_TOKEN
     - GITHUB_TOKEN
+    - GITHUB_TOKEN_PERSONAL
+    - GIT_CONFIG_SYSTEM
 
 telemetry:
   shared_metrics:

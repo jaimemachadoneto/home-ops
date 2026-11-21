@@ -70,6 +70,9 @@ spec:
               HOME: /opt/data
               PATH: /opt/data/.local/bin:/opt/hermes/.venv/bin:/opt/hermes/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
               SEARXNG_URL: http://searxng.selfhosted.svc.cluster.local:8080
+              # git picks the GitHub token by the owner of the repository (see
+              # resources/gitconfig). A system file, so `git config --global` still works.
+              GIT_CONFIG_SYSTEM: /etc/hermes/gitconfig
             envFrom:
               - secretRef:
                   name: hermes-secret
@@ -154,6 +157,13 @@ spec:
           - path: /tmp
     route:
       webapp:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: Hermes agent
+          gethomepage.dev/group: AI
+          gethomepage.dev/icon: mdi-robot-outline
+          gethomepage.dev/name: Hermes
+          gethomepage.dev/app: hermes
         hostnames:
           - hermes.${SECRET_DOMAIN}
         parentRefs:
@@ -167,6 +177,13 @@ spec:
             timeouts:
               request: 0s
       dashboard:
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/description: Hermes administration
+          gethomepage.dev/group: AI
+          gethomepage.dev/icon: mdi-robot-outline
+          gethomepage.dev/name: Hermes Dashboard
+          gethomepage.dev/app: hermes
         hostnames:
           - hermes-dash.${SECRET_DOMAIN}
         parentRefs:
