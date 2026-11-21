@@ -40,7 +40,7 @@ spec:
               repository: ghcr.io/jaimemachadoneto/voice-router
               # Pin an immutable tag. `main` moves under you; CI publishes
               # sha-<commit> for exactly this, and the release PR updates it.
-              tag: sha-ef0f8864d8c153fe18faa201b5398accf3ad9458
+              tag: sha-ef0f8864d8c153fe18faa201b5398accf3ad9458@sha256:b0d16b8253b47b127cf20a8fc40146c5d66b3f794a9d45f232dc2c29ec42e234
             env:
               TZ: Europe/Madrid
               # The log and the generated word file live on the volume, so a
