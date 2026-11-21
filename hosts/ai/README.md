@@ -21,6 +21,7 @@ Proxmox host `jmn-medusa`. It runs Docker stacks that use the three GeForce GTX
 | `fast-wir-2` | 10300 | speech to text (Wyoming), Home Assistant |
 | `kokoro-pt-br` | 8880 | text to speech (OpenAI API). Home Assistant uses it through `kokoro-wyoming` (10202), a container that is started by hand. Its source is in the repository `voice-lab` |
 | `qweanvoice` | 7860 | text to speech with a web studio (Qwen3-TTS, voice cloning), a test. Stopped. Start it by hand: `docker start qwen-tts`, or Start in Dockge. `doco-cd` does not deploy it |
+| `reranker` | 11437 | memini rerank (`qwen3-reranker`, Qwen3-Reranker-0.6B Q8_0 on llama.cpp) |
 | `tika` | 9998 | document text extraction |
 | `node-exporter` | 9100 | Prometheus (`scrapeconfigs/node-exporter.yaml`) |
 | `nvidia-gpu-exporter` | 9835 | Prometheus (`scrapeconfigs/nvidia-gpu-exporter.yaml`), with one series for each process on a GPU |
@@ -48,7 +49,7 @@ GPU is pinned to one card, so that a model cannot take the memory of another:
 
 | GPU | What is on it | Used memory |
 | --- | --- | --- |
-| 0 | nothing. `qwen-tts` (2.6 with the clone model only) runs here when you start it by hand. The `bge-m3` of Ollama (0.5) | 0 to 3.1 GiB |
+| 0 | the `reranker` of memini (about 1). `qwen-tts` (2.6 with the clone model only) runs here when you start it by hand. The `bge-m3` of Ollama (0.5) | 1 to 4.1 GiB |
 | 1 | the `/opt/kev` process (4.4). Ollama loads `qwen3:8b` here, about 5.6 GiB | 4.4 GiB or more |
 | 2 | the two TEI containers (2.5), the Whisper model of `fast-wir-2` (1.6), `kokoro-tts` (0.7) | 4.8 GiB |
 
@@ -117,7 +118,7 @@ does not depend on files that live in the stack folder of the host:
 
 | Stack | Automatic? | Reason |
 | --- | --- | --- |
-| `kokoro-pt-br`, `node-exporter`, `nvidia-gpu-exporter` | yes (`ai-host`) | no relative path, no variable from a `.env` |
+| `kokoro-pt-br`, `node-exporter`, `nvidia-gpu-exporter`, `reranker` | yes (`ai-host`) | no relative path, no variable from a `.env` |
 | `embeddings` | yes (`embeddings`) | named volumes only |
 | `tika` | yes (`ai-host-extra`) | the 12 external networks that it declared were not used by the service, and 7 do not exist on the host: they were removed |
 | `fast-wir-2` | yes (`ai-host-extra`) | the relative bind mounts are now absolute (`/opt/stacks/<name>/...`), so the data stays where it is |
