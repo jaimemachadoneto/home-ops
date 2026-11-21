@@ -14,7 +14,10 @@ resources:
   - ./flux-mcp/ks.yaml
   - ./go-catalog-sync/ks.yaml
   - ./ha-mcp/ks.yaml
+  - ./hermes/ks.yaml
   - ./jeff-readonly/ks.yaml
+  - ./kubectl-mcp/ks.yaml
+  - ./kubesearch-mcp/ks.yaml
   - ./litellm/ks.yaml
   - ./litellm-operator/ks.yaml
   - ./llmkube/ks.yaml
@@ -26,3 +29,4 @@ resources:
   - ./paperless-mcp/ks.yaml
   - ./searxng-mcp/ks.yaml
   - ./victorialogs-mcp/ks.yaml
+  - ./unifi-network-mcp/ks.yaml

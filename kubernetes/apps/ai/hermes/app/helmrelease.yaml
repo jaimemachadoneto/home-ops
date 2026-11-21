@@ -1,0 +1,188 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: hermes
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: hermes
+  interval: 30m
+  values:
+    controllers:
+      hermes:
+        annotations:
+          reloader.stakater.com/auto: "true"
+        pod:
+          securityContext:
+            fsGroup: 10000
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 10000
+            runAsNonRoot: true
+            runAsUser: 10000
+            seccompProfile:
+              type: RuntimeDefault
+          terminationGracePeriodSeconds: 60
+        strategy: Recreate
+        initContainers:
+          # Run the image's config migration before s6 starts. Its own boot hook calls it through
+          # `s6-setuidgid hermes`, which needs CAP_SETGID and fails as non-root. Skipped on first
+          # boot only when no profile config exists yet.
+          config-migrate:
+            image: &image
+              repository: docker.io/nousresearch/hermes-agent
+              tag: v0.23.3@sha256:3e9fe4c6ef36490f43aa0d0d80f9df64e9c92a576eee3042f1a97c8813c05355
+            command:
+              - /bin/sh
+              - -c
+              - >-
+                [ ! -f /opt/data/config.yaml ] ||
+                exec /opt/hermes/.venv/bin/python /opt/hermes/scripts/docker_config_migrate.py
+            env:
+              HOME: /opt/data
+            resources:
+              requests:
+                cpu: 10m
+              limits:
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+        containers:
+          app:
+            image: *image
+            # Explicitly start the gateway under s6; sleep alone only restores saved run intent.
+            args:
+              - gateway
+              - run
+            env:
+              S6_YES_I_WANT_A_WORLD_WRITABLE_RUN_BECAUSE_KUBERNETES: "1"
+              HERMES_DASHBOARD: "true"
+              HERMES_DASHBOARD_HOST: 0.0.0.0
+              HERMES_DASHBOARD_PORT: "9119"
+              HERMES_DISABLE_LAZY_INSTALLS: "true"
+              HERMES_HOME: /opt/data
+              HERMES_WRITE_SAFE_ROOT: /opt/data
+              HOME: /opt/data
+              PATH: /opt/data/.local/bin:/opt/hermes/.venv/bin:/opt/hermes/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              SEARXNG_URL: http://searxng.selfhosted.svc.cluster.local:8080
+            envFrom:
+              - secretRef:
+                  name: hermes-secret
+            probes:
+              # A fresh cron ticker heartbeat (written every 60s by the gateway) is required.
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: &healthcheck
+                      - /bin/sh
+                      - -c
+                      - >-
+                        hb=$(cut -d. -f1 /opt/data/cron/ticker_heartbeat) &&
+                        [ $(( $(date +%s) - hb )) -lt 300 ]
+                  failureThreshold: 3
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: *healthcheck
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command: *healthcheck
+                  failureThreshold: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+            resources:
+              requests:
+                cpu: 110m
+                memory: 1536Mi
+              limits:
+                memory: 6Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+    persistence:
+      data:
+        existingClaim: hermes
+        advancedMounts:
+          hermes:
+            app:
+              - path: /opt/data
+            config-migrate:
+              - path: /opt/data
+      config:
+        type: configMap
+        name: hermes-config
+        advancedMounts:
+          hermes:
+            app:
+              - path: /etc/hermes
+                readOnly: true
+      litellm-key:
+        type: secret
+        name: hermes-litellm
+        advancedMounts:
+          hermes:
+            app:
+              - path: /mnt/secrets/litellm
+                readOnly: true
+      run:
+        type: emptyDir
+        globalMounts:
+          - path: /run
+      tmp:
+        type: emptyDir
+        globalMounts:
+          - path: /tmp
+    route:
+      webapp:
+        hostnames:
+          - hermes.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 9120
+            timeouts:
+              request: 0s
+      dashboard:
+        hostnames:
+          - hermes-dash.${SECRET_DOMAIN}
+        parentRefs:
+          - name: envoy-internal
+            namespace: network
+            sectionName: https
+        rules:
+          - backendRefs:
+              - identifier: app
+                port: 9119
+    service:
+      app:
+        ports:
+          webapp:
+            appProtocol: kubernetes.io/wss
+            port: 9120
+          dashboard:
+            appProtocol: kubernetes.io/wss
+            port: 9119

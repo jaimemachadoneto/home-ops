@@ -1,0 +1,64 @@
+---
+# The kubectl MCP server (kubectl-mcp-server) through the LiteLLM MCP gateway.
+# It gives agents a read-only view of the cluster. The server has no login of
+# its own: the only gate is the MCP permission of the LiteLLM key.
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: kubectl-mcp
+spec:
+  alias: kubectl
+  workload:
+    # renovate: datasource=docker depName=docker.io/rohitghumare64/kubectl-mcp-server
+    image: docker.io/rohitghumare64/kubectl-mcp-server:2.0.0@sha256:f1f57aa5d4952f3c49e4d9bb8071a143d0812bdc8253922d51eeca8a2615ea29
+    port: 8000
+    args:
+      - --transport
+      - streamable-http
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      # No tool that changes the cluster.
+      - --read-only
+    serviceAccountName: kubectl-mcp
+    env:
+      # The Host header from LiteLLM. The two forms cover a check with and
+      # without the port.
+      - name: MCP_ALLOWED_HOSTS
+        value: kubectl-mcp.ai.svc.cluster.local,kubectl-mcp.ai.svc.cluster.local:8000
+      # Only the LiteLLM gateway can call the server (see the network policy).
+      - name: MCP_ALLOW_UNAUTHENTICATED
+        value: "true"
+      - name: MCP_K8S_PROVIDER
+        value: in-cluster
+      # The root file system is read-only, so $HOME is an emptyDir.
+      - name: HOME
+        value: /tmp
+      - name: PYTHONUNBUFFERED
+        value: "1"
+    volumes:
+      - name: tmp
+        emptyDir: {}
+    volumeMounts:
+      - name: tmp
+        mountPath: /tmp
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 10001
+      runAsGroup: 10001
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+    resources:
+      requests:
+        cpu: 10m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
