@@ -1,0 +1,49 @@
+---
+# The UniFi Network MCP server has no login of its own, and it can read the
+# network. Only the LiteLLM MCP gateway can call it. The server can call only
+# the UniFi controller (and DNS).
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: unifi-network-mcp
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: unifi-network-mcp
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: ai
+            app.kubernetes.io/name: litellm
+            app.kubernetes.io/instance: litellm
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+    # The kubelet probes come from the node.
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+  egress:
+    # The UniFi controller. Keep in sync with UNIFI_NETWORK_HOST.
+    - toCIDR:
+        - 10.30.50.1/32
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"
