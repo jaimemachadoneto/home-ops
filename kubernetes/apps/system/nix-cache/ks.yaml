@@ -8,7 +8,8 @@ spec:
   commonMetadata:
     labels:
       app.kubernetes.io/name: nix-cache
-  # volsync holds the SQLite database. The NAS holds the cached NAR files.
+  # volsync backs up the SQLite database on the ceph volume. The NAS holds
+  # the cached NAR files.
   components:
     - ../../../../components/volsync
     - ../../../../components/keda/nas-nfs-scaler
@@ -20,10 +21,10 @@ spec:
   postBuild:
     substitute:
       APP: nix-cache
-      APP_UID: "1000"
       APP_GID: "1000"
-      VOLSYNC_CLAIM: nix-cache
+      APP_UID: "1000"
       VOLSYNC_CAPACITY: 1Gi
+      VOLSYNC_CLAIM: nix-cache
     substituteFrom:
       - name: cluster-secrets
         kind: Secret

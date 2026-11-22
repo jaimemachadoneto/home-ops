@@ -34,12 +34,13 @@ spec:
         - ports:
             - port: "8080"
               protocol: TCP
-    # The Nix cache (ncps, namespace system). The pod network is excluded below,
-    # so the cache needs its own rule. The cache has the matching ingress rule.
+    # The Nix cache (ncps, namespace system). The rule below excludes the pod
+    # network. The cache therefore needs its own rule. The cache has the
+    # matching ingress rule.
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: system
             app.kubernetes.io/name: nix-cache
+            k8s:io.kubernetes.pod.namespace: system
       toPorts:
         - ports:
             - port: "8501"

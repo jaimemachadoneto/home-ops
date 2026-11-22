@@ -1,6 +1,6 @@
 ---
-# Only the sandboxes of Hermes call the Nix cache. The policy has no egress
-# rule, so the cache reaches the upstream caches and the NAS as before.
+# Only pods of the namespace hermes-sandbox call the Nix cache. The policy has
+# no egress rule. The cache can then reach the upstream caches and the NAS.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy

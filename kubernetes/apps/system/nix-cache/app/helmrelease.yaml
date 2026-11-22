@@ -15,14 +15,16 @@ spec:
         pod:
           securityContext:
             # ncps runs as uid 1000 in its image. fsGroup does not apply to
-            # the NFS volume: the export must let uid 1000 write.
+            # the NFS volume. The export must let uid 1000 write.
             fsGroup: 1000
             fsGroupChangePolicy: OnRootMismatch
             runAsGroup: 1000
             runAsNonRoot: true
             runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
         initContainers:
-          # ncps does not migrate the database when it starts.
+          # ncps needs a migration of the database before it starts.
           migrate:
             image: &image
               repository: ghcr.io/kalbasit/ncps
@@ -46,8 +48,8 @@ spec:
               - serve
             env:
               CACHE_HOSTNAME: nix-cache.system.svc.cluster.local
-              # The NAR files are on the NAS. The database is on the ceph volume
-              # because SQLite does not work well on NFS.
+              # The NAR files are on the NAS. The database is on the ceph volume.
+              # SQLite is not safe on NFS.
               CACHE_STORAGE_LOCAL: /storage
               CACHE_DATABASE_URL: sqlite:/db/db.sqlite
               # The three upstream caches, in this order.
@@ -56,7 +58,10 @@ spec:
               # No key of its own: ncps passes the upstream signatures through,
               # and the sandboxes trust the upstream public keys.
               CACHE_SIGN_NARINFO: "false"
-              # The cache is about 100 GiB. The LRU removes the oldest NAR files.
+              # A sandbox can only read. Both verbs are off by default in ncps.
+              CACHE_ALLOW_PUT_VERB: "false"
+              CACHE_ALLOW_DELETE_VERB: "false"
+              # The cache limit is 100 GiB. The LRU removes the oldest NAR files.
               CACHE_MAX_SIZE: 100G
               CACHE_LRU_SCHEDULE: "0 3 * * *"
               CACHE_LRU_SCHEDULE_TZ: ${TIMEZONE}
@@ -67,13 +72,13 @@ spec:
                 enabled: true
                 custom: true
                 spec:
+                  failureThreshold: 3
                   httpGet:
                     path: /healthz
                     port: 8501
                   initialDelaySeconds: 0
                   periodSeconds: 10
                   timeoutSeconds: 1
-                  failureThreshold: 3
               readiness: *probes
             resources:
               requests:
@@ -82,11 +87,6 @@ spec:
               limits:
                 memory: 512Mi
             securityContext: *securityContext
-    service:
-      app:
-        ports:
-          http:
-            port: 8501
     persistence:
       db:
         existingClaim: nix-cache
@@ -99,8 +99,8 @@ spec:
       # The export /mnt/Data1/nix-cache must exist on the NAS (user step).
       storage:
         type: nfs
-        server: nas.jaimenet.com
         path: /mnt/Data1/nix-cache
+        server: nas.jaimenet.com
         advancedMounts:
           nix-cache:
             app:
@@ -111,3 +111,8 @@ spec:
           nix-cache:
             app:
               - path: /tmp
+    service:
+      app:
+        ports:
+          http:
+            port: 8501
