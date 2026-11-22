@@ -160,6 +160,7 @@ m_image="runs the image"
 m_pull="only with the Secret ghcr-pull"
 m_affinity="excludes the node"
 m_fields="sets no scheduling field"
+m_labels="has only the labels"
 
 expect "good sandbox" accepted "${good}"
 
@@ -224,6 +225,13 @@ bad "priorityClassName" "${pod}.priorityClassName = \"system-node-critical\"" "$
 bad "runtimeClassName" "${pod}.runtimeClassName = \"x\"" "${m_fields}"
 bad "schedulerName" "${pod}.schedulerName = \"x\"" "${m_fields}"
 bad "shareProcessNamespace" "${pod}.shareProcessNamespace = true" "${m_fields}"
+
+ok "no pod labels" "del(${pod%.spec}.metadata)"
+ok "the task label" "${pod%.spec}.metadata.labels = {\"hermes-task\": \"hermes-abc\"}"
+bad "label of another workload" "${pod%.spec}.metadata.labels = {\"app.kubernetes.io/name\": \"litellm\"}" "${m_labels}"
+bad "allowance of an unknown service" "${pod%.spec}.metadata.labels = {\"hermes-k8s/allow-other\": \"true\"}" "${m_labels}"
+bad "label of another workload on the Sandbox" ".metadata.labels = {\"k8s-app\": \"kube-dns\"}" "${m_labels}"
+bad "known allowance and another label" "${pod%.spec}.metadata.labels += {\"k8s-app\": \"kube-dns\"}" "${m_labels}"
 
 bad "init container with another name" "${pod}.initContainers[0].name = \"setup\"" "${m_init}"
 bad "second init container" "${pod}.initContainers += [${pod}.initContainers[0] | .name = \"second\"]" "${m_init}"
