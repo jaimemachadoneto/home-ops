@@ -206,7 +206,7 @@ spec:
         forceRename: syncthing
         annotations:
           gethomepage.dev/enabled: "true"
-          gethomepage.dev/group: Infrastructure
+          gethomepage.dev/group: Apps
           gethomepage.dev/name: Syncthing
           gethomepage.dev/app: syncthing
           gethomepage.dev/icon: syncthing.svg

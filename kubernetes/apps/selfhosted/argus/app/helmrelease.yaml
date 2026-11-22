@@ -80,7 +80,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Version Monitoring
-          gethomepage.dev/group: Infrastructure
+          gethomepage.dev/group: Monitoring
           gethomepage.dev/icon: si-argos.svg
           gethomepage.dev/name: Argos
           gethomepage.dev/app: argos

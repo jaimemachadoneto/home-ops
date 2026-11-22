@@ -31,35 +31,42 @@ data:
       hideVisitURL: true
     layout:
       style: column
-      G1:
+      # Daily use first, cluster admin second, the long Downloads list last.
+      Daily:
         style: row
         header: false
-        columns: 7
+        columns: 4
         Home Automation:
           style: column
           icon: home-assistant
-        Apps:
-          style: column
-          icon: immich
-        Development:
-          style: column
-          icon: code-server
-        Kubernetes:
-          style: column
-          icon: kubernetes
-        Documents:
-          style: column
-        Infrastructure:
-          style: column
         AI:
           style: column
           icon: mdi-robot
-      G2:
-        style: column
-        header: false
+        Apps:
+          style: column
+          icon: mdi-apps
         Media:
           style: column
           icon: jellyfin
+      Admin:
+        style: row
+        header: false
+        columns: 4
+        Infrastructure:
+          style: column
+          icon: proxmox
+        Monitoring:
+          style: column
+          icon: grafana
+        Network:
+          style: column
+          icon: wireguard
+        Tools:
+          style: column
+          icon: it-tools
+      Library:
+        style: column
+        header: false
         Downloads:
           style: row
           columns: 6
@@ -82,9 +89,27 @@ data:
 
   bookmarks.yaml: ""
 
-  # Only for apps whose route cannot carry gethomepage.dev annotations (the
-  # LiteLLM operator's HTTPRoute has no annotations field).
+  # Only for entries that no route can carry: the LiteLLM operator's HTTPRoute
+  # has no annotations field, and a widget with a list of metrics does not fit
+  # in an annotation.
   services.yaml: |
+    - Monitoring:
+        - Cluster Health:
+            icon: mdi-heart-pulse
+            description: Problems that need a look (0 is good)
+            widget:
+              type: prometheusmetric
+              url: http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
+              refreshInterval: 60000
+              metrics:
+                - label: Alerts firing
+                  query: count(ALERTS{alertstate="firing",severity!="none"}) or vector(0)
+                - label: Nodes not ready
+                  query: count(kube_node_status_condition{condition="Ready",status="true"} == 0) or vector(0)
+                - label: Pods failing
+                  query: count(kube_pod_container_status_waiting_reason{reason=~"CrashLoopBackOff|ImagePullBackOff|ErrImagePull"}) or vector(0)
+                - label: Targets down
+                  query: count(up == 0) or vector(0)
     - AI:
         - LiteLLM:
             href: https://litellm.${SECRET_DOMAIN}/ui

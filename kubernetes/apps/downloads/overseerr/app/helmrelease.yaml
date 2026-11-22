@@ -79,7 +79,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Request Management
-          gethomepage.dev/group: Downloads
+          gethomepage.dev/group: Media
           gethomepage.dev/icon: overseerr.png
           gethomepage.dev/name: Overseerr
           gethomepage.dev/app: overseerr
