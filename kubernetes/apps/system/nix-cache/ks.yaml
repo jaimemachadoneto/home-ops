@@ -1,0 +1,35 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: nix-cache
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: nix-cache
+  # volsync holds the SQLite database. The NAS holds the cached NAR files.
+  components:
+    - ../../../../components/volsync
+    - ../../../../components/keda/nas-nfs-scaler
+  dependsOn:
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+  interval: 1h
+  path: "./kubernetes/apps/system/nix-cache/app"
+  postBuild:
+    substitute:
+      APP: nix-cache
+      VOLSYNC_CLAIM: nix-cache
+      VOLSYNC_CAPACITY: 1Gi
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: system
+  timeout: 5m
+  wait: false

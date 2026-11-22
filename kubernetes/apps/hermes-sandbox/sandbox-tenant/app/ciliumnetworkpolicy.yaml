@@ -1,6 +1,7 @@
 ---
-# The base egress of each sandbox: DNS, SearXNG and the internet without the
-# private ranges. A sandbox needs its own policy to reach another service.
+# The base egress of each sandbox: DNS, SearXNG, the Nix cache and the
+# internet without the private ranges. A sandbox needs its own policy to
+# reach another service.
 # That policy selects the label hermes-k8s/allow-<service>=true. There is no
 # ingress rule.
 # The Hermes plugin sets that label in the Sandbox, and the admission policy
@@ -32,6 +33,16 @@ spec:
       toPorts:
         - ports:
             - port: "8080"
+              protocol: TCP
+    # The Nix cache (ncps, namespace system). The pod network is excluded below,
+    # so the cache needs its own rule. The cache has the matching ingress rule.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: system
+            app.kubernetes.io/name: nix-cache
+      toPorts:
+        - ports:
+            - port: "8501"
               protocol: TCP
     # The excluded ranges include the pod network (10.244.0.0/16) and the
     # service network (10.96.0.0/12). The ranges also include the home
