@@ -44,10 +44,17 @@ spec:
               subPath: workspace
             - name: tmp
               mountPath: /tmp
+            - name: github
+              mountPath: /run/secrets/github
+              readOnly: true
       volumes:
         - name: tmp
           emptyDir:
             sizeLimit: 2Gi
+        - name: github
+          secret:
+            secretName: hermes-sandbox-default
+            optional: true
   volumeClaimTemplates:
     - metadata:
         name: data
