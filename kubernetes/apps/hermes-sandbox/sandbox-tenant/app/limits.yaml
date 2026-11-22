@@ -1,6 +1,8 @@
 ---
 # Room for six sandboxes. The requests are small, because most sandboxes are
-# idle. The limits allow six pods at the maximum of one container.
+# idle. The limits allow six pods. Each pod has one container at the maximum
+# size. The count of Sandbox objects is limited, because the pod quota does
+# not limit the objects that the controller reads.
 apiVersion: v1
 kind: ResourceQuota
 metadata:
@@ -16,10 +18,11 @@ spec:
     ceph-block.storageclass.storage.k8s.io/requests.storage: 400Gi
     count/volumesnapshots.snapshot.storage.k8s.io: "30"
     requests.ephemeral-storage: 12Gi
+    count/sandboxes.agents.x-k8s.io: "20"
 ---
-# The quota on requests.ephemeral-storage refuses a container with no request,
-# so this range gives each container a default. The CPU and memory values
-# are the same as the ones of the Paperclip tenant, with a higher limit.
+# The quota on requests.ephemeral-storage refuses a container with no request.
+# This range gives each container a default request. The maximum CPU and
+# memory are the same as in the Paperclip tenant. The defaults are higher.
 apiVersion: v1
 kind: LimitRange
 metadata:

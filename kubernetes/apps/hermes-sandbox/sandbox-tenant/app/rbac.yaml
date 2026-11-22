@@ -7,10 +7,10 @@ metadata:
   name: hermes-sandbox
 automountServiceAccountToken: false
 ---
-# The Hermes pod manages the sandboxes with this access. It has no
-# ClusterRole. It cannot create a pod, a Secret or a network policy, so the
-# Sandbox object, which the admission policy limits, is the only way to start
-# a pod. It cannot read a Secret.
+# This Role gives the Hermes pod access to the sandboxes. The pod has no
+# ClusterRole. It cannot create a pod, a Secret or a network policy, and it
+# cannot read a Secret. It can only create a Sandbox, and the admission
+# policy limits each Sandbox.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -31,7 +31,7 @@ rules:
     resources: [pods]
     verbs: [get, list, watch]
   # A command runs in a sandbox with pods/exec. The client reads the stream
-  # with a GET request that upgrades to a websocket, so it needs get also.
+  # with a GET request that upgrades to a websocket. The client also needs get.
   - apiGroups: [""]
     resources: [pods/exec]
     verbs: [create, get]
@@ -46,8 +46,8 @@ rules:
     verbs: [create, delete, get, list]
 ---
 # The Hermes pod runs as the account hermes-sandbox-client in the namespace
-# ai. The account is not in this namespace: a Sandbox selects the account of
-# its pod, so an account here could give its token to a sandbox pod. The
+# ai. The account is not in this namespace. A Sandbox selects the account of
+# its pod, so an account here can give its token to a sandbox pod. The
 # Hermes HelmRelease starts to use this account in a later change.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

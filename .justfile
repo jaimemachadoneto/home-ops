@@ -198,3 +198,7 @@ setup-dev:
   echo "Usage:"
   echo "  • Talos: talosctl -n $FIRST_NODE version"
   echo "  • Kubernetes: export KUBECONFIG=$(pwd)/kubeconfig && kubectl get nodes"
+
+[doc('Test the admission policy of the namespace hermes-sandbox with a temporary API server')]
+test-hermes-sandbox-vap:
+  scripts/test-hermes-sandbox-vap.sh

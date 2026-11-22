@@ -1,9 +1,10 @@
 ---
 # The Hermes pod can create Sandboxes, and a Sandbox selects the image, the
 # account, the volumes and the node of its pod. Without this policy, a
-# compromised Hermes could start a pod with a hostPath volume, a service
-# account token, or an image of its own. The policy accepts only the pod that
-# the Hermes plugin builds. A later change adds the Secrets of the profiles.
+# compromised Hermes can start a pod with a hostPath volume, a service
+# account token or an image of its own. The policy accepts only the pod that
+# the Hermes plugin builds.
+# TODO: Allow the Secrets of the profiles (ticket 12).
 # The test of each rule is scripts/test-hermes-sandbox-vap.sh.
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
@@ -45,6 +46,19 @@ spec:
     # The controller adds the volumes of volumeClaimTemplates to the pod, so
     # the template lists only emptyDir volumes. A volume of a Secret, a
     # projected token or a hostPath is not allowed.
+    # Each field here lets a pod run on another node, preempt another
+    # workload or change the runtime. The plugin needs none of them.
+    - expression: >-
+        !has(variables.pod.tolerations) &&
+        !has(variables.pod.nodeSelector) &&
+        !has(variables.pod.priorityClassName) &&
+        !has(variables.pod.runtimeClassName) &&
+        !has(variables.pod.schedulerName) &&
+        !has(variables.pod.shareProcessNamespace)
+      message: >-
+        A sandbox pod sets no scheduling field: no tolerations, nodeSelector,
+        priorityClassName, runtimeClassName, schedulerName or
+        shareProcessNamespace.
     - expression: >-
         !has(variables.pod.volumes) ||
         variables.pod.volumes.all(v, has(v.emptyDir) &&
@@ -69,10 +83,15 @@ spec:
              t.spec.dataSourceRef.apiGroup == 'snapshot.storage.k8s.io' &&
              t.spec.dataSourceRef.kind == 'VolumeSnapshot' &&
              !has(t.spec.dataSourceRef.namespace))) &&
+          (!has(t.spec.volumeMode) || t.spec.volumeMode == 'Filesystem') &&
+          has(t.spec.accessModes) && t.spec.accessModes == ['ReadWriteOnce'] &&
+          has(t.spec.resources) && has(t.spec.resources.requests) &&
+          has(t.spec.resources.requests.storage) &&
           quantity(t.spec.resources.requests.storage).compareTo(quantity('20Gi')) <= 0)
       message: >-
         A volume template uses the class ceph-block, no volumeName or
-        selector, at most 20Gi, and a VolumeSnapshot as its data source.
+        selector, the mode Filesystem, ReadWriteOnce, and at most 20Gi. If it
+        has a data source, the source is a VolumeSnapshot.
     - expression: >-
         !has(variables.pod.ephemeralContainers) &&
         (!has(variables.pod.initContainers) ||
@@ -96,7 +115,8 @@ spec:
         variables.pod.imagePullSecrets.all(s, s.name == 'ghcr-pull')
       message: A sandbox pod pulls its image only with the Secret ghcr-pull.
     # The terms of nodeSelectorTerms are alternatives. Each term must exclude
-    # the node, or the scheduler can use a term that allows it.
+    # the node. If it does not, the scheduler can use a term that allows the
+    # node.
     - expression: >-
         has(variables.pod.affinity) &&
         has(variables.pod.affinity.nodeAffinity) &&

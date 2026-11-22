@@ -1,9 +1,9 @@
 ---
-# The shell of each Hermes session. Each session is a Sandbox pod that the
+# Each Hermes session runs in this namespace. Each session is a Sandbox pod that the
 # Hermes pod (namespace ai) creates through the agent-sandbox controller. The
 # pods run untrusted agent commands, so the restricted profile is enforced.
-# k8tz does not inject: the pods need no local time zone, and an init
-# container would slow the start of a session.
+# k8tz does not inject an init container. The pods need no local time zone,
+# and an init container slows the start of a session.
 apiVersion: v1
 kind: Namespace
 metadata:
