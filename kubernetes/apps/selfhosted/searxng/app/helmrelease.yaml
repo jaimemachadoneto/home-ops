@@ -73,7 +73,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Searxng
-          gethomepage.dev/group: Infrastructure
+          gethomepage.dev/group: Tools
           gethomepage.dev/icon: si-searxng.svg
           gethomepage.dev/name: Searxng
           gethomepage.dev/app: searxng

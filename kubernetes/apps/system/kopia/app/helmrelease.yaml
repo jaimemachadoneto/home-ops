@@ -145,7 +145,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Kopia Backup Restore
-          gethomepage.dev/group: Kubernetes
+          gethomepage.dev/group: Infrastructure
           gethomepage.dev/icon: si-googlecloudstorage.svg
           gethomepage.dev/name: Kopia
           gethomepage.dev/app: kopia

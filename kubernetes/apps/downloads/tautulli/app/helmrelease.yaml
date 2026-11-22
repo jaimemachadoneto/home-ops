@@ -77,7 +77,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Plex Analytics
-          gethomepage.dev/group: Downloads
+          gethomepage.dev/group: Media
           gethomepage.dev/icon: tautulli.png
           gethomepage.dev/name: Tautulli
           gethomepage.dev/app: tautulli
