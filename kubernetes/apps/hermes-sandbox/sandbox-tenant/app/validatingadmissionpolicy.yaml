@@ -43,10 +43,13 @@ spec:
     # one that copies the label of another workload, is not allowed. Add a
     # key here with the CiliumNetworkPolicy of its service.
     - expression: >-
-        !has(object.spec.podTemplate.metadata) ||
-        !has(object.spec.podTemplate.metadata.labels) ||
-        object.spec.podTemplate.metadata.labels.all(k,
-          k in ['hermes-task', 'hermes-k8s/allow-litellm'])
+        (!has(object.spec.podTemplate.metadata) ||
+          !has(object.spec.podTemplate.metadata.labels) ||
+          object.spec.podTemplate.metadata.labels.all(k,
+            k in ['hermes-task', 'hermes-k8s/allow-litellm'])) &&
+        (!has(object.metadata.labels) ||
+          object.metadata.labels.all(k,
+            k in ['hermes-task', 'hermes-k8s/allow-litellm']))
       message: >-
         A sandbox pod has only the labels hermes-task and
         hermes-k8s/allow-litellm.

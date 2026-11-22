@@ -226,6 +226,7 @@ ok "no pod labels" "del(${pod%.spec}.metadata)"
 ok "the task label" "${pod%.spec}.metadata.labels = {\"hermes-task\": \"hermes-abc\"}"
 bad "label of another workload" "${pod%.spec}.metadata.labels = {\"app.kubernetes.io/name\": \"litellm\"}" "${m_labels}"
 bad "allowance of an unknown service" "${pod%.spec}.metadata.labels = {\"hermes-k8s/allow-other\": \"true\"}" "${m_labels}"
+bad "label of another workload on the Sandbox" ".metadata.labels = {\"k8s-app\": \"kube-dns\"}" "${m_labels}"
 bad "known allowance and another label" "${pod%.spec}.metadata.labels += {\"k8s-app\": \"kube-dns\"}" "${m_labels}"
 
 bad "init container with another name" "${pod}.initContainers[0].name = \"setup\"" "${m_init}"
