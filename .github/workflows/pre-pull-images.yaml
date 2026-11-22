@@ -104,6 +104,11 @@ jobs:
     #   - arc-bjw-s-labs-home-ops
     needs:
       - compare-images
+    # packages: read lets the job pull a private package that gives this
+    # repository read access (see the package settings, Manage Actions access).
+    permissions:
+      contents: read
+      packages: read
     strategy:
       matrix:
         image: ${{ fromJSON(needs.compare-images.outputs.images) }}
@@ -130,6 +135,18 @@ jobs:
 
       # - name: Pre-pull Image
       #   run: talosctl -n "$NODE_IP" image pull "${MATRIX_IMAGE}"
+
+      # Some images are private on ghcr.io. The login is for all images and
+      # it does no harm for a public one. If the login fails (for example on
+      # a PR from a fork), the job goes on with a warning. A public image
+      # still pulls, and a private image fails at the pull step.
+      - name: Log in to ghcr.io
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REGISTRY_USER: ${{ github.repository_owner }}
+        run: |
+          echo "${GITHUB_TOKEN}" | docker login ghcr.io --username "${REGISTRY_USER}" --password-stdin ||
+            echo "::warning::The login to ghcr.io failed."
 
       - name: Try to pull Image
         run: docker pull "${MATRIX_IMAGE}"

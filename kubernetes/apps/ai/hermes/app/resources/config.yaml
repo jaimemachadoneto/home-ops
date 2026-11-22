@@ -16,15 +16,14 @@ gateway:
 security:
   redact_secrets: true
 
+# See ADR 0001 and ADR 0008 in hermes-k8s. Each session runs its shell in its
+# own sandbox. The Hermes image includes the plugin k8s_sandbox. The sandbox
+# gets no environment variable of Hermes, so env_passthrough is empty.
 terminal:
-  backend: local
-  cwd: /opt/data/workspace
-  env_passthrough:
-    - SEARXNG_URL
-    - GH_TOKEN
-    - GITHUB_TOKEN
-    - GITHUB_TOKEN_PERSONAL
-    - GIT_CONFIG_SYSTEM
+  backend: k8s_sandbox
+  cwd: /workspace
+  env_passthrough: []
+  lifetime_seconds: 1800
 
 telemetry:
   shared_metrics:

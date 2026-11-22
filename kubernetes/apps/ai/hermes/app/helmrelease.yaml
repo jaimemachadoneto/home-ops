@@ -14,7 +14,17 @@ spec:
       hermes:
         annotations:
           reloader.stakater.com/auto: "true"
+        # The Role of this account is in the namespace hermes-sandbox. When
+        # KUBECONFIG is not set, the plugin reads the mounted token.
+        serviceAccount:
+          name: hermes-sandbox-client
         pod:
+          # The token goes only to the container app, as a projected volume
+          # (persistence.sa-token). The Dashboard has no token.
+          automountServiceAccountToken: false
+          # The package of the Hermes image is private on ghcr.io.
+          imagePullSecrets:
+            - name: ghcr-pull
           securityContext:
             fsGroup: 10000
             fsGroupChangePolicy: OnRootMismatch
@@ -25,50 +35,19 @@ spec:
               type: RuntimeDefault
           terminationGracePeriodSeconds: 60
         strategy: Recreate
-        initContainers:
-          # Run the image's config migration before s6 starts. Its own boot hook calls it through
-          # `s6-setuidgid hermes`, which needs CAP_SETGID and fails as non-root. Skipped on first
-          # boot only when no profile config exists yet.
-          config-migrate:
-            image: &image
-              repository: docker.io/nousresearch/hermes-agent
-              tag: v0.23.3@sha256:3e9fe4c6ef36490f43aa0d0d80f9df64e9c92a576eee3042f1a97c8813c05355
-            command:
-              - /bin/sh
-              - -c
-              - >-
-                [ ! -f /opt/data/config.yaml ] ||
-                exec /opt/hermes/.venv/bin/python /opt/hermes/scripts/docker_config_migrate.py
-            env:
-              HOME: /opt/data
-            resources:
-              requests:
-                cpu: 10m
-              limits:
-                memory: 512Mi
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
-              capabilities:
-                drop:
-                  - ALL
         containers:
           app:
-            image: *image
-            # Explicitly start the gateway under s6; sleep alone only restores saved run intent.
-            args:
-              - gateway
-              - run
-            env:
-              S6_YES_I_WANT_A_WORLD_WRITABLE_RUN_BECAUSE_KUBERNETES: "1"
-              HERMES_DASHBOARD: "true"
-              HERMES_DASHBOARD_HOST: 0.0.0.0
-              HERMES_DASHBOARD_PORT: "9119"
+            image: &image
+              repository: ghcr.io/jaimemachadoneto/hermes
+              tag: h3ci28bajyp5@sha256:52bf673856ea3d92dcc49a61819f8259b58643634412a25c9f563c19b25fc213
+            env: &env
               HERMES_DISABLE_LAZY_INSTALLS: "true"
               HERMES_HOME: /opt/data
               HERMES_WRITE_SAFE_ROOT: /opt/data
               HOME: /opt/data
-              PATH: /opt/data/.local/bin:/opt/hermes/.venv/bin:/opt/hermes/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              # The sandbox image, pinned by digest. The admission policy of
+              # hermes-sandbox refuses an image with no digest.
+              HERMES_K8S_SANDBOX_IMAGE: ghcr.io/jaimemachadoneto/hermes-sandbox:y2iwr4mjg4pn@sha256:bc56a0949f68efd3ba28e63a83a9e1b00e73a4ea0b8fef9816b228e038912f73
               SEARXNG_URL: http://searxng.selfhosted.svc.cluster.local:8080
               # git picks the GitHub token by the owner of the repository (see
               # resources/gitconfig). A system file, so `git config --global` still works.
@@ -122,6 +101,63 @@ spec:
               capabilities:
                 drop:
                   - ALL
+          # The Nix image has no s6, so the gateway does not start the Dashboard.
+          # A second container starts the Dashboard from the same image and the same volume.
+          dashboard:
+            image: *image
+            # args replaces the command of the image, not its entrypoint (tini).
+            args:
+              - hermes
+              - dashboard
+              - --host
+              - 0.0.0.0
+              - --port
+              - "9119"
+              - --no-open
+            env: *env
+            envFrom:
+              - secretRef:
+                  name: hermes-secret
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 9119
+                  failureThreshold: 3
+                  periodSeconds: 30
+                  timeoutSeconds: 5
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 9119
+                  failureThreshold: 3
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 9119
+                  failureThreshold: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+            resources:
+              requests:
+                cpu: 10m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
     persistence:
       data:
         existingClaim: hermes
@@ -129,7 +165,7 @@ spec:
           hermes:
             app:
               - path: /opt/data
-            config-migrate:
+            dashboard:
               - path: /opt/data
       config:
         type: configMap
@@ -137,6 +173,9 @@ spec:
         advancedMounts:
           hermes:
             app:
+              - path: /etc/hermes
+                readOnly: true
+            dashboard:
               - path: /etc/hermes
                 readOnly: true
       litellm-key:
@@ -147,10 +186,32 @@ spec:
             app:
               - path: /mnt/secrets/litellm
                 readOnly: true
-      run:
-        type: emptyDir
-        globalMounts:
-          - path: /run
+            dashboard:
+              - path: /mnt/secrets/litellm
+                readOnly: true
+      sa-token:
+        type: custom
+        volumeSpec:
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  expirationSeconds: 3600
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        fieldPath: metadata.namespace
+        advancedMounts:
+          hermes:
+            app:
+              - path: /var/run/secrets/kubernetes.io/serviceaccount
+                readOnly: true
       tmp:
         type: emptyDir
         globalMounts:

@@ -78,8 +78,27 @@ Restart the gateway after the change. To give Hermes the MCP servers, add
 `http://litellm.ai.svc.cluster.local:4000/mcp` as an MCP server in the
 Dashboard with the same key.
 
+## Sandboxes
+
+The pod runs the Hermes image of the repository `hermes-k8s`. The image is
+private on ghcr.io. The pod pulls it with the Secret `ghcr-pull`. The field
+`pat_ghcr_pull` of the 1Password item `Github` gives the token.
+
+The image has no s6. The HelmRelease therefore has two containers. The
+container `app` runs `hermes gateway run` with the Webapp. The container
+`dashboard` runs `hermes dashboard` on port 9119.
+
+`terminal.backend` is `k8s_sandbox`. Each session runs its shell in a Sandbox
+in the namespace `hermes-sandbox`. The pod uses the account
+`hermes-sandbox-client` and its mounted token. The Role is in
+`kubernetes/apps/hermes-sandbox/sandbox-tenant`. `HERMES_K8S_SANDBOX_IMAGE`
+gives the sandbox image, pinned by digest. To use a new sandbox image, change
+the digest in `HERMES_K8S_SANDBOX_IMAGE` in `helmrelease.yaml`.
+
 ## Rollback
 
 Revert the PR. Flux then removes the app. A revert does not undo a database
 migration on the PVC. To go back to an older image, restore the volsync
-backup of the PVC first.
+backup of the PVC first. To roll back to the upstream image, also restore the old
+`config.yaml` overlay: `terminal.backend: local`, `cwd: /opt/data/workspace`
+and the old `env_passthrough` list.
