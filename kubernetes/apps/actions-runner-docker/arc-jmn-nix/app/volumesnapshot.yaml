@@ -1,0 +1,17 @@
+---
+# The Nix base of the runners. Each runner pod gets a copy-on-write clone of
+# this snapshot as its /nix, and Kubernetes deletes the clone when the pod
+# ends. So the runners do not share a store, and more than one can run.
+# shortcut: the base is the store of 2026-11-22 and does not get new
+# packages. When the jobs build too much again, add a weekly Job that warms
+# the store and takes a new snapshot, as the hermes-nix-base CronJob does.
+# To take a new snapshot of the seed volume now, delete this object. Flux
+# makes it again within the hour.
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: arc-jmn-nix-base
+spec:
+  volumeSnapshotClassName: csi-ceph-blockpool
+  source:
+    persistentVolumeClaimName: arc-jmn-nix-store
