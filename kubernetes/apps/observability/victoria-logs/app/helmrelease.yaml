@@ -21,7 +21,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Logs
-          gethomepage.dev/group: Kubernetes
+          gethomepage.dev/group: Monitoring
           gethomepage.dev/icon: si-victoriametrics.svg
           gethomepage.dev/name: Logs
           gethomepage.dev/app: logs

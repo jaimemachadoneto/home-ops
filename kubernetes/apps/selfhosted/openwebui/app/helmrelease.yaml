@@ -120,7 +120,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: OpenWebUI
-          gethomepage.dev/group: Apps
+          gethomepage.dev/group: AI
           gethomepage.dev/icon: si-openaigym.svg
           gethomepage.dev/name: OpenWebUI
           gethomepage.dev/app: openwebui

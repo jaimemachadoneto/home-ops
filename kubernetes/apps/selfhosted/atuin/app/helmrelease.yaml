@@ -71,7 +71,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Atuin
-          gethomepage.dev/group: Infrastructure
+          gethomepage.dev/group: Tools
           gethomepage.dev/icon: si-gnometerminal.svg
           gethomepage.dev/name: Atuin
           gethomepage.dev/app: atuin

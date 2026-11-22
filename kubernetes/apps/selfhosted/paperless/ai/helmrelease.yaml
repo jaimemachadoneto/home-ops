@@ -110,7 +110,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Paperless AI
-          gethomepage.dev/group: Documents
+          gethomepage.dev/group: Apps
           gethomepage.dev/icon: si-paperlessngx.svg
           gethomepage.dev/name: PaperlessAI
           gethomepage.dev/app: paperless-ai

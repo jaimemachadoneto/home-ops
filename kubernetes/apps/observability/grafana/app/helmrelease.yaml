@@ -259,7 +259,7 @@ spec:
           external-dns.alpha.kubernetes.io/target: envoy-int.${SECRET_DOMAIN}
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Grafana
-          gethomepage.dev/group: Kubernetes
+          gethomepage.dev/group: Monitoring
           gethomepage.dev/icon: si-grafana.svg
           gethomepage.dev/name: Grafana
           gethomepage.dev/app: grafana
