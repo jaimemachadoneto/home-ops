@@ -26,7 +26,7 @@ Each user that signs in gets full agent access, which includes a shell.
 | `GITHUB_TOKEN` | The fine-grained token of the organization `jaimeagents`, given to the agent as `GH_TOKEN` and `GITHUB_TOKEN` |
 | `GITHUB_TOKEN_PERSONAL` | The fine-grained token of the account `jaimemachadoneto` (selected repositories only) |
 | `CLAUDE_CODE_OAUTH_TOKEN` | The token of `claude setup-token` for the Claude Pro subscription, mounted at `/mnt/secrets/claude/token` |
-| `CLAUDE_CODE_OAUTH_TOKEN valid until` | The end date of the token. A Google Calendar event warns 2 weeks before. |
+| `CLAUDE_CODE_OAUTH_TOKEN valid until` | The end date of the token. A Google Calendar event gives a warning 2 weeks before this date. |
 
 Make the item before the merge. The Authentik ExternalSecret also reads it,
 and fails when the item does not exist.
@@ -93,11 +93,12 @@ tool calls in the sandbox. The sandbox has no token.
 
 The token is a file, not an environment variable. The gateway serves each
 profile through `gateway.multiplex_profiles`. In that mode the plugin does not
-read the token of the process environment. It reads the token from the secrets
-of the profile. The secret command above gives the token to the profile from
-`/mnt/secrets/claude/token`. The Secret `hermes-claude` holds that file, and
-only the container `app` mounts it. `CLAUDE_CONFIG_DIR` is `/opt/data/.claude`
-on the volume.
+read the token from the process environment. The plugin reads the token from
+the secrets of the profile. The secret command above gives the token to the profile from
+`/mnt/secrets/claude/token`. The Secret `hermes-claude` holds that file.
+Only the container `app` mounts it.
+
+`CLAUDE_CONFIG_DIR` is `/opt/data/.claude` on the volume.
 
 ### Steps for the user
 
@@ -105,32 +106,38 @@ on the volume.
    `claude auth login` in the pod.
 2. In the 1Password item `hermes`, add the field `CLAUDE_CODE_OAUTH_TOKEN` with
    the token. Add the field `CLAUDE_CODE_OAUTH_TOKEN valid until` with the end
-   date. Do this before the merge: the ExternalSecret `hermes-claude` fails
-   until the field exists.
+   date. Do this before the merge. The ExternalSecret `hermes-claude` fails
+   until the field exists, and the pod then does not start.
 3. In the Anthropic account, turn extra usage off. This account setting stops
    overage. The plugin cannot stop it (ADR 0010).
 4. Add a Google Calendar event 2 weeks before the end date. Make a new token
    in that week.
 5. After the merge, change the profile configuration on the volume. The
-   commands are below.
-6. Restart the gateway: `kubectl -n ai rollout restart deploy/hermes`.
+   commands follow in the next section.
+6. Restart the gateway: `kubectl -n ai rollout restart deploy/hermes`. Restart
+   it also after each new token, because the gateway reads the token once.
 
 ### Profile configuration on the volume
 
-The model provider, the default model, the fallback and the secret command are
-in `/opt/data/config.yaml`, not in the overlay. Hermes reads them from the
-profile only. The secret command is only in `/opt/data/config.yaml`. The
-container `dashboard` has no token file, so the command skips it there. The setting `extra_usage` is in the overlay
-(`app/resources/config.yaml`): it is a rule of the cluster, not a preference.
-`notify` is also the default of the plugin. The overlay pins the value, so
-`hermes config set` refuses to change it.
+`/opt/data/config.yaml` holds the model provider, the default model, the
+fallback and the secret command. The overlay does not hold them, because
+Hermes reads them from the profile only. This section replaces the provider and
+the secret command of the section "Configuration".
+
+The container `dashboard` has no token file, so the secret command skips the
+token there.
+
+The setting `extra_usage` is in the overlay (`app/resources/config.yaml`). It
+is a rule of the cluster, not a preference. `notify` is also the default value
+of the plugin. The overlay pins the value, so a save in the Dashboard cannot
+change it.
 
 Run each command in the pod:
 
 ```sh
 h() { kubectl -n ai exec -i deploy/hermes -c app -- "$@"; }
 
-# 1. The secret command reads the token file. This replaces the old command.
+# 1. This command replaces the old secret command.
 h sh -c 'hermes config set secrets.command.command "$(cat)"' <<'EOF'
 set -eu
 printf 'LITELLM_API_KEY='
@@ -142,12 +149,12 @@ fi
 printf '\n'
 EOF
 
-# 2. The subscription is the provider. Remove the old LiteLLM base_url.
+# 2. Set the subscription as the provider. Remove the old LiteLLM base_url.
 h hermes config set model.provider claude-subscription-directsdk-experimental
 h hermes config set model.default sonnet
 h hermes config set model.base_url ""
 
-# 3. LiteLLM is the fallback model. The block providers.litellm stays.
+# 3. Set LiteLLM as the fallback. Keep the block providers.litellm.
 h hermes config set fallback_model.provider litellm
 h hermes config set fallback_model.model opr/deepseek-v4.1-flash
 h hermes config set fallback_model.base_url http://litellm.ai.svc.cluster.local:4000/v1
@@ -179,8 +186,8 @@ gives the sandbox image, pinned by digest. To use a new sandbox image, change
 the digest in `HERMES_K8S_SANDBOX_IMAGE` in `helmrelease.yaml`.
 
 The sandbox working directory is `/workspace`. The gateway checks that this
-path exists in its own pod, so the container `app` mounts an empty directory
-there. No command runs in that directory.
+path exists in the pod of the gateway. The container `app` mounts an empty
+directory there. No command runs in that directory.
 
 ## Rollback
 
