@@ -18,10 +18,10 @@ spec:
     githubConfigUrl: https://github.com/jaimemachadoneto
     githubConfigSecret: arc-jmn-nix-secret
 
-    # One runner at a time: the Nix store volume is ReadWriteOnce, and
-    # single-user Nix has no daemon to share the store between two pods.
+    # Each runner has its own clone of the Nix base (volumesnapshot.yaml), so
+    # the runners do not share a store.
     minRunners: 0
-    maxRunners: 1
+    maxRunners: 3
 
     # No dind and no privilege. The steps run in the runner container.
     containerMode:
@@ -43,8 +43,8 @@ spec:
         labels:
           app.kubernetes.io/name: arc-jmn-nix-runner
       spec:
-        # The runner user (uid 1001) owns the Nix store. OnRootMismatch
-        # changes the owner only once, not for each file at each start.
+        # The runner user (uid 1001) owns the Nix store. The clone keeps the
+        # owner, so OnRootMismatch changes no file.
         securityContext:
           fsGroup: 1001
           fsGroupChangePolicy: OnRootMismatch
@@ -69,7 +69,7 @@ spec:
               # No build sandbox: the pod has no privilege for the user
               # namespaces of Nix. The build directory is on the volume, so
               # a large build does not fill the disk of the node.
-              # Each build adds to the store on the 20Gi volume. When less
+              # Each build adds to the store on the 20Gi clone. When less
               # than 3 GiB is free, Nix collects garbage until 8 GiB is free.
               # The system profile keeps Nix itself.
               - name: NIX_CONFIG
@@ -92,6 +92,18 @@ spec:
                 memory: "2Gi"
                 ephemeral-storage: "2Gi"
         volumes:
+          # A copy-on-write clone of the Nix base for each pod. Ceph makes it
+          # in seconds, and the job changes only its own clone.
           - name: nix
-            persistentVolumeClaim:
-              claimName: arc-jmn-nix-store
+            ephemeral:
+              volumeClaimTemplate:
+                spec:
+                  accessModes: ["ReadWriteOnce"]
+                  storageClassName: ceph-block
+                  dataSourceRef:
+                    apiGroup: snapshot.storage.k8s.io
+                    kind: VolumeSnapshot
+                    name: arc-jmn-nix-base
+                  resources:
+                    requests:
+                      storage: 20Gi

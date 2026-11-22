@@ -1,7 +1,7 @@
 ---
-# The persistent Nix store of the runner. It is a cache: a new empty volume
-# only makes the next run install Nix and download the packages again, so
-# it has no volsync backup. maxRunners is 1, so one pod uses it at a time.
+# The seed of the Nix base: volumesnapshot.yaml takes its snapshot. No pod
+# mounts it. It is a cache: a new empty volume only makes each run install
+# Nix and download the packages again, so it has no volsync backup.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
