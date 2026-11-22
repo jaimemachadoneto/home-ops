@@ -1,7 +1,8 @@
 ---
-# Hermes gives each user a shell. The policy keeps that shell off the home
-# network: it can call LiteLLM, SearXNG, Authentik (through envoy-internal),
-# DNS and the internet, but no other private address.
+# Hermes gives each session a shell in a sandbox pod, through the API server.
+# The policy keeps the Hermes pod off the home network: it can call the API
+# server, LiteLLM, SearXNG, Authentik (through envoy-internal), DNS and the
+# internet, but no other private address.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -27,7 +28,18 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: selfhosted
             app.kubernetes.io/name: searxng
+    # Replies of the Kubernetes API. Cilium can drop a same-node reply as a
+    # new ingress flow. No toPorts: the reply goes to an ephemeral port.
+    - fromEntities:
+        - kube-apiserver
   egress:
+    # The plugin k8s_sandbox makes Sandboxes and runs commands with pods/exec.
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: ai
