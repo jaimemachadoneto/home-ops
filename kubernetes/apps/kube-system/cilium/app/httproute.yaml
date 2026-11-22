@@ -10,7 +10,7 @@ metadata:
   annotations:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/description: Network flows
-    gethomepage.dev/group: Kubernetes
+    gethomepage.dev/group: Network
     gethomepage.dev/icon: cilium.svg
     gethomepage.dev/name: Hubble
 spec:

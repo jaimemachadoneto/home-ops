@@ -97,7 +97,7 @@ spec:
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/description: Gatus
-          gethomepage.dev/group: Kubernetes
+          gethomepage.dev/group: Monitoring
           gethomepage.dev/icon: si-statuspage.svg
           gethomepage.dev/name: Gatus
           gethomepage.dev/app: gatus

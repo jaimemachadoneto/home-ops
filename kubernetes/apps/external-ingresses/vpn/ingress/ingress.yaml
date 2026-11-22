@@ -45,7 +45,7 @@ metadata:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "Wireguard"
     gethomepage.dev/description: "Wireguard VPN UI"
-    gethomepage.dev/group: "Infrastructure"
+    gethomepage.dev/group: Network
     gethomepage.dev/icon: "si-wireguard.svg"
     gethomepage.dev/href: "https://vpn-ui.${SECRET_DOMAIN}"
 spec:

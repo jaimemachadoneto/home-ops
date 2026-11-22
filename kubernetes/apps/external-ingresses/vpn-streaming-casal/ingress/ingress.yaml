@@ -45,7 +45,7 @@ metadata:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "VPN Streaming Casal"
     gethomepage.dev/description: "NordVPN / Tailscale Streaming Gateway"
-    gethomepage.dev/group: "Infrastructure"
+    gethomepage.dev/group: Network
     gethomepage.dev/icon: "si-nordvpn.svg"
     gethomepage.dev/href: "https://vpn-streaming-casal.${SECRET_DOMAIN}"
 spec:
