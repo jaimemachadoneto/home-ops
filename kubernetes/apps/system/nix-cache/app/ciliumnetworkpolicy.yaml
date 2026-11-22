@@ -1,0 +1,20 @@
+---
+# Only pods of the namespace hermes-sandbox call the Nix cache. The policy has
+# no egress rule. The cache can then reach the upstream caches and the NAS.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: nix-cache
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: nix-cache
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: hermes-sandbox
+      toPorts:
+        - ports:
+            - port: "8501"
+              protocol: TCP
