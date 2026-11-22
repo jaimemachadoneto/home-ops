@@ -14,12 +14,14 @@ spec:
       hermes:
         annotations:
           reloader.stakater.com/auto: "true"
-        # The account of ticket 07. Its Role is in the namespace hermes-sandbox.
-        # The plugin reads the mounted token when KUBECONFIG is not set.
+        # The Role of this account is in the namespace hermes-sandbox. When
+        # KUBECONFIG is not set, the plugin reads the mounted token.
         serviceAccount:
           name: hermes-sandbox-client
         pod:
-          automountServiceAccountToken: true
+          # The token goes only to the container app, as a projected volume
+          # (persistence.sa-token). The Dashboard has no token.
+          automountServiceAccountToken: false
           # The package of the Hermes image is private on ghcr.io.
           imagePullSecrets:
             - name: ghcr-pull
@@ -100,10 +102,12 @@ spec:
                 drop:
                   - ALL
           # The Nix image has no s6, so the gateway does not start the Dashboard.
-          # A second container runs it from the same image and the same volume.
+          # A second container starts the Dashboard from the same image and the same volume.
           dashboard:
             image: *image
+            # args replaces the command of the image, not its entrypoint (tini).
             args:
+              - hermes
               - dashboard
               - --host
               - 0.0.0.0
@@ -184,6 +188,29 @@ spec:
                 readOnly: true
             dashboard:
               - path: /mnt/secrets/litellm
+                readOnly: true
+      sa-token:
+        type: custom
+        volumeSpec:
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  expirationSeconds: 3600
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        fieldPath: metadata.namespace
+        advancedMounts:
+          hermes:
+            app:
+              - path: /var/run/secrets/kubernetes.io/serviceaccount
                 readOnly: true
       tmp:
         type: emptyDir

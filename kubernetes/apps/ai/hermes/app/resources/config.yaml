@@ -16,9 +16,9 @@ gateway:
 security:
   redact_secrets: true
 
-# ADR 0001 and ADR 0008 (hermes-k8s): each session runs its shell in its own
-# sandbox. The plugin k8s_sandbox is in the Hermes image. The sandbox gets no
-# environment variable of Hermes, so the list is empty.
+# See ADR 0001 and ADR 0008 in hermes-k8s. Each session runs its shell in its
+# own sandbox. The Hermes image includes the plugin k8s_sandbox. The sandbox
+# gets no environment variable of Hermes, so env_passthrough is empty.
 terminal:
   backend: k8s_sandbox
   cwd: /workspace
