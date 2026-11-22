@@ -16,6 +16,16 @@ gateway:
 security:
   redact_secrets: true
 
+# See ADR 0010 in hermes-k8s. A token of `claude setup-token` cannot read the
+# plan limits, so the setting `stop` refuses every turn. With `notify`, the
+# plan limit does not stop a turn. The setting of the Anthropic account (extra
+# usage off) stops the overage. The overlay pins this value.
+plugins:
+  entries:
+    claude-subscription-directsdk-experimental:
+      settings:
+        extra_usage: notify
+
 # See ADR 0001 and ADR 0008 in hermes-k8s. Each session runs its shell in its
 # own sandbox. The Hermes image includes the plugin k8s_sandbox. The sandbox
 # gets no environment variable of Hermes, so env_passthrough is empty.
