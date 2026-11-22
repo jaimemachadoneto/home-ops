@@ -12,6 +12,5 @@ configMapGenerator:
   - name: hermes-config
     files:
       - ./resources/config.yaml
-      - ./resources/gitconfig
 generatorOptions:
   disableNameSuffixHash: true

@@ -4,7 +4,6 @@
 # compromised Hermes can start a pod with a hostPath volume, a service
 # account token or an image of its own. The policy accepts only the pod that
 # the Hermes plugin builds.
-# TODO: Allow the Secrets of the profiles (ticket 12).
 # The test of each rule is scripts/test-hermes-sandbox-vap.sh.
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
@@ -27,6 +26,11 @@ spec:
       expression: >-
         '^ghcr\\.io/jaimemachadoneto/hermes-sandbox(:[A-Za-z0-9_][A-Za-z0-9_.-]{0,127})?@sha256:[a-f0-9]{64}$'
     # The init containers have the same rules as the containers.
+    # The Secret of a profile (ADR 0008 of hermes-k8s): the only Secret that a
+    # sandbox pod may mount. The name is hermes-sandbox-<profile>.
+    - name: secretPattern
+      expression: >-
+        '^hermes-sandbox-[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
     - name: allContainers
       expression: >-
         variables.pod.containers +
@@ -47,8 +51,8 @@ spec:
         A sandbox pod sets no nodeName and uses no host network, PID or IPC
         namespace.
     # The controller adds the volumes of volumeClaimTemplates to the pod, so
-    # the template lists only emptyDir volumes. A volume of a Secret, a
-    # projected token or a hostPath is not allowed.
+    # the template lists only emptyDir volumes and the Secret of the profile.
+    # A volume of another Secret, a projected token or a hostPath is not allowed.
     # Each field here lets a pod run on another node, preempt another
     # workload or change the runtime. The plugin needs none of them.
     - expression: >-
@@ -64,12 +68,15 @@ spec:
         shareProcessNamespace.
     - expression: >-
         !has(variables.pod.volumes) ||
-        variables.pod.volumes.all(v, has(v.emptyDir) &&
-          has(v.emptyDir.sizeLimit) &&
-          (!has(v.emptyDir.medium) || v.emptyDir.medium == ''))
+        variables.pod.volumes.all(v,
+          (has(v.emptyDir) &&
+           has(v.emptyDir.sizeLimit) &&
+           (!has(v.emptyDir.medium) || v.emptyDir.medium == '')) ||
+          (has(v.secret) && has(v.secret.secretName) &&
+           v.secret.secretName.matches(variables.secretPattern)))
       message: >-
         A sandbox pod has only emptyDir volumes, each with a sizeLimit and
-        not in memory.
+        not in memory, and the Secret of a profile (hermes-sandbox-name).
     - expression: >-
         !has(object.spec.volumeClaimTemplates) ||
         object.spec.volumeClaimTemplates.all(t, has(t.spec) &&

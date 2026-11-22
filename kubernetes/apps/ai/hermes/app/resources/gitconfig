@@ -1,8 +1,0 @@
-# The GitHub token for git, by the owner of the repository. The helpers read
-# the tokens from the environment, so no token is in a file. The empty
-# "helper =" removes the general helper for jaimemachadoneto.
-[credential "https://github.com"]
-	helper = "!f() { test \"$1\" = get && printf 'username=x-access-token\\npassword=%s\\n' \"$GITHUB_TOKEN\"; }; f"
-[credential "https://github.com/jaimemachadoneto"]
-	helper =
-	helper = "!f() { test \"$1\" = get && printf 'username=x-access-token\\npassword=%s\\n' \"$GITHUB_TOKEN_PERSONAL\"; }; f"

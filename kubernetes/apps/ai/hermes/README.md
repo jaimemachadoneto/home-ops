@@ -24,19 +24,25 @@ Each user that signs in gets full agent access, which includes a shell.
 | `OIDC_CLIENT_SECRET` | The secret of the Authentik client. Authentik reads the same field. |
 | `LITELLM_API_KEY` | A LiteLLM virtual key for Hermes, mounted at `/mnt/secrets/litellm/key` |
 | `GITHUB_TOKEN` | The fine-grained token of the organization `jaimeagents`, given to the agent as `GH_TOKEN` and `GITHUB_TOKEN` |
-| `GITHUB_TOKEN_PERSONAL` | The fine-grained token of the account `jaimemachadoneto` (selected repositories only) |
+| `GITHUB_TOKEN_PERSONAL` | The fine-grained token of the account `jaimemachadoneto` (selected repositories only). Only the sandboxes read it (see GitHub) |
 
 Make the item before the merge. The Authentik ExternalSecret also reads it,
 and fails when the item does not exist.
 
 ## GitHub
 
-`app/resources/gitconfig` is the git system configuration
-(`GIT_CONFIG_SYSTEM`). git uses `GITHUB_TOKEN_PERSONAL` for
+The Hermes pod has `GH_TOKEN` and `GITHUB_TOKEN` (the `jaimeagents`
+token) for its own features: the Skills Hub, its own git clones, the Kanban
+PR check and the MCP servers that it starts. It does not have
+`GITHUB_TOKEN_PERSONAL`.
+
+A sandbox gets the three tokens from its own Secret. The ExternalSecret
+`hermes-sandbox-default` in `hermes-sandbox` writes them from this item.
+The plugin mounts the Secret of the Hermes profile at
+`/run/secrets/github/`. git uses `GITHUB_TOKEN_PERSONAL` for
 `https://github.com/jaimemachadoneto/...` and `GITHUB_TOKEN` for each other
-repository on GitHub. `gh` reads `GH_TOKEN` only, so it works on the
-`jaimeagents` repositories. For a repository of `jaimemachadoneto`, run
-`GH_TOKEN=$GITHUB_TOKEN_PERSONAL gh ...`.
+repository. `gh` reads `GH_TOKEN`. For a repository of `jaimemachadoneto`,
+run `GH_TOKEN=$GITHUB_TOKEN_PERSONAL gh ...`.
 
 ## Configuration
 
