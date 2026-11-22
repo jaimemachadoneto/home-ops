@@ -93,26 +93,29 @@ data:
   # has no annotations field, and a widget with a list of metrics does not fit
   # in an annotation.
   services.yaml: |
-    - Monitoring:
-        - Cluster Health:
-            icon: mdi-heart-pulse
-            description: Problems that need a look (0 is good)
-            widget:
-              type: prometheusmetric
-              url: http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
-              refreshInterval: 60000
-              metrics:
-                - label: Alerts firing
-                  query: count(ALERTS{alertstate="firing",severity!="none"}) or vector(0)
-                - label: Nodes not ready
-                  query: count(kube_node_status_condition{condition="Ready",status="true"} == 0) or vector(0)
-                - label: Pods failing
-                  query: count(kube_pod_container_status_waiting_reason{reason=~"CrashLoopBackOff|ImagePullBackOff|ErrImagePull"}) or vector(0)
-                - label: Targets down
-                  query: count(up == 0) or vector(0)
-    - AI:
-        - LiteLLM:
-            href: https://litellm.${SECRET_DOMAIN}/ui
-            icon: sh-litellm.png
-            description: Model gateway and MCP servers (one URL)
-            siteMonitor: http://litellm.ai.svc.cluster.local:4000/health/liveliness
+    # Each group sits under its layout row, or Homepage shows it outside the rows.
+    - Daily:
+        - AI:
+            - LiteLLM:
+                href: https://litellm.${SECRET_DOMAIN}/ui
+                icon: sh-litellm.png
+                description: Model gateway and MCP servers (one URL)
+                siteMonitor: http://litellm.ai.svc.cluster.local:4000/health/liveliness
+    - Admin:
+        - Monitoring:
+            - Cluster Health:
+                icon: mdi-heart-pulse
+                description: Problems that need a look (0 is good)
+                widget:
+                  type: prometheusmetric
+                  url: http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
+                  refreshInterval: 60000
+                  metrics:
+                    - label: Alerts firing
+                      query: count(ALERTS{alertstate="firing",severity!="none"}) or vector(0)
+                    - label: Nodes not ready
+                      query: count(kube_node_status_condition{condition="Ready",status="true"} == 0) or vector(0)
+                    - label: Pods failing
+                      query: count(kube_pod_container_status_waiting_reason{reason=~"CrashLoopBackOff|ImagePullBackOff|ErrImagePull"}) or vector(0)
+                    - label: Targets down
+                      query: count(up == 0) or vector(0)
