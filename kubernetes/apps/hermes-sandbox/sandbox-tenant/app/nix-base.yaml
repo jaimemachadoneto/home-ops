@@ -5,9 +5,8 @@
 # digest, and deletes the old ones. The Job is not a Sandbox, so the admission policy
 # hermes-sandbox-pod does not apply to it. The pod follows the same rules as a sandbox pod.
 #
-# TODO: Replace the digest in the Job and the CronJob with the digest of an image that has
-# /bin/nix-base-build. Then remove `suspend: true` from both. The digest of the Job must be the digest
-# in the HelmRelease of Hermes (HERMES_K8S_SANDBOX_IMAGE), or the plugin finds no Nix base.
+# The digest of the Job must be the digest in the HelmRelease of Hermes
+# (HERMES_K8S_SANDBOX_IMAGE), or the plugin finds no Nix base.
 # Renovate changes `image:` of the Job. A change of the image makes Flux replace the Job, and
 # the new Job makes the Nix base of the new image.
 apiVersion: v1
@@ -100,8 +99,6 @@ kind: CronJob
 metadata:
   name: hermes-nix-base
 spec:
-  # TODO: Remove `suspend` when the image has the builder.
-  suspend: true
   schedule: "0 3 * * 0"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
@@ -145,7 +142,7 @@ spec:
             # The volume at /nix must hold the store before Nix runs, so the copy has its own
             # step with the volume at /data.
             - name: copy-closure
-              image: ghcr.io/jaimemachadoneto/hermes-sandbox:y2iwr4mjg4pn@sha256:bc56a0949f68efd3ba28e63a83a9e1b00e73a4ea0b8fef9816b228e038912f73
+              image: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-34c840a327234e8b30d8bbad32341318ca6c0e6f@sha256:4d795ba797a1212b7d3e510856d8bed6b8fcbb7ad7aad6b262e3ca04778f3d9b
               command: [/bin/nix-base-build, copy]
               env:
                 - name: NIX_BASE_TARGET
@@ -170,7 +167,7 @@ spec:
             # Only this step has the GitHub token. It clones into the volume `work`. The next
             # step runs code of these repositories, so it must not have the token.
             - name: clone
-              image: ghcr.io/jaimemachadoneto/hermes-sandbox:y2iwr4mjg4pn@sha256:bc56a0949f68efd3ba28e63a83a9e1b00e73a4ea0b8fef9816b228e038912f73
+              image: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-34c840a327234e8b30d8bbad32341318ca6c0e6f@sha256:4d795ba797a1212b7d3e510856d8bed6b8fcbb7ad7aad6b262e3ca04778f3d9b
               command: [/bin/nix-base-build, clone]
               env:
                 # Owner and name, in this order. Add a repository here to put its shell in
@@ -203,7 +200,7 @@ spec:
             # mounts are the same as in a sandbox, so the paths in the store are real. This
             # step has no token, so the flake inputs of the shells must be public.
             - name: warm
-              image: ghcr.io/jaimemachadoneto/hermes-sandbox:y2iwr4mjg4pn@sha256:bc56a0949f68efd3ba28e63a83a9e1b00e73a4ea0b8fef9816b228e038912f73
+              image: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-34c840a327234e8b30d8bbad32341318ca6c0e6f@sha256:4d795ba797a1212b7d3e510856d8bed6b8fcbb7ad7aad6b262e3ca04778f3d9b
               command: [/bin/nix-base-build, warm]
               env:
                 - name: NIX_BASE_REPOS
@@ -350,8 +347,6 @@ metadata:
   annotations:
     kustomize.toolkit.fluxcd.io/force: enabled
 spec:
-  # TODO: Remove `suspend` when the image has the builder.
-  suspend: true
   backoffLimit: 0
   activeDeadlineSeconds: 3600
   template: {}
