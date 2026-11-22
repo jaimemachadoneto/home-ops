@@ -41,6 +41,9 @@ spec:
               repository: ghcr.io/jaimemachadoneto/hermes
               tag: h3ci28bajyp5@sha256:52bf673856ea3d92dcc49a61819f8259b58643634412a25c9f563c19b25fc213
             env: &env
+              # The login directory of `claude`, on the volume. It is the same
+              # directory as the default under HOME.
+              CLAUDE_CONFIG_DIR: /opt/data/.claude
               HERMES_DISABLE_LAZY_INSTALLS: "true"
               HERMES_HOME: /opt/data
               HERMES_WRITE_SAFE_ROOT: /opt/data
@@ -189,6 +192,14 @@ spec:
             dashboard:
               - path: /mnt/secrets/litellm
                 readOnly: true
+      claude-token:
+        type: secret
+        name: hermes-claude
+        advancedMounts:
+          hermes:
+            app:
+              - path: /mnt/secrets/claude
+                readOnly: true
       sa-token:
         type: custom
         volumeSpec:
@@ -216,6 +227,15 @@ spec:
         type: emptyDir
         globalMounts:
           - path: /tmp
+      # The gateway checks that TERMINAL_CWD (/workspace) exists. The path
+      # exists only in the sandbox, so the gateway logged an error every 2 s.
+      # This empty directory is for that check only: no command runs here.
+      workspace:
+        type: emptyDir
+        advancedMounts:
+          hermes:
+            app:
+              - path: /workspace
     route:
       webapp:
         annotations:

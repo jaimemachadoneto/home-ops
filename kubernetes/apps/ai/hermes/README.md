@@ -25,6 +25,8 @@ Each user that signs in gets full agent access, which includes a shell.
 | `LITELLM_API_KEY` | A LiteLLM virtual key for Hermes, mounted at `/mnt/secrets/litellm/key` |
 | `GITHUB_TOKEN` | The fine-grained token of the organization `jaimeagents`, given to the agent as `GH_TOKEN` and `GITHUB_TOKEN` |
 | `GITHUB_TOKEN_PERSONAL` | The fine-grained token of the account `jaimemachadoneto` (selected repositories only) |
+| `CLAUDE_CODE_OAUTH_TOKEN` | The token of `claude setup-token` for the Claude Pro subscription, mounted at `/mnt/secrets/claude/token` |
+| `CLAUDE_CODE_OAUTH_TOKEN valid until` | The end date of the token. A Google Calendar event warns 2 weeks before. |
 
 Make the item before the merge. The Authentik ExternalSecret also reads it,
 and fails when the item does not exist.
@@ -69,6 +71,8 @@ secrets:
       set -eu
       printf 'LITELLM_API_KEY='
       /bin/cat /mnt/secrets/litellm/key
+      printf '\nCLAUDE_CODE_OAUTH_TOKEN='
+      /bin/cat /mnt/secrets/claude/token
       printf '\n'
     helper_timeout_seconds: 3
     override_existing: true
@@ -77,6 +81,80 @@ secrets:
 Restart the gateway after the change. To give Hermes the MCP servers, add
 `http://litellm.ai.svc.cluster.local:4000/mcp` as an MCP server in the
 Dashboard with the same key.
+
+## Claude Pro subscription
+
+Hermes uses the Claude Pro subscription through the plugin
+`claude-subscription-directsdk` (ADR 0005 and ADR 0010 in `hermes-k8s`). For
+each turn, the plugin starts the `claude` CLI in the Hermes pod. Hermes runs the
+tool calls in the sandbox. The sandbox has no token.
+
+The token is a file, not an environment variable. The gateway serves each
+profile through `gateway.multiplex_profiles`. In that mode the plugin does not
+read the token of the process environment. It reads the token from the secrets
+of the profile. The secret command above gives the token to the profile from
+`/mnt/secrets/claude/token`. The Secret `hermes-claude` holds that file, and
+only the container `app` mounts it. `CLAUDE_CONFIG_DIR` is `/opt/data/.claude`
+on the volume.
+
+### Steps for the user
+
+1. On a machine with `claude`, run `claude setup-token`. Do not run
+   `claude auth login` in the pod.
+2. In the 1Password item `hermes`, add the field `CLAUDE_CODE_OAUTH_TOKEN` with
+   the token. Add the field `CLAUDE_CODE_OAUTH_TOKEN valid until` with the end
+   date. Do this before the merge: the ExternalSecret `hermes-claude` fails
+   until the field exists.
+3. In the Anthropic account, turn extra usage off. This account setting stops
+   overage. The plugin cannot stop it (ADR 0010).
+4. Add a Google Calendar event 2 weeks before the end date. Make a new token
+   in that week.
+5. After the merge, change the profile configuration on the volume. The
+   commands are below.
+6. Restart the gateway: `kubectl -n ai rollout restart deploy/hermes`.
+
+### Profile configuration on the volume
+
+The model provider, the default model, the fallback and the secret command are
+in `/opt/data/config.yaml`, not in the overlay. Hermes reads them from the
+profile only. The setting `extra_usage` is in the overlay
+(`app/resources/config.yaml`): it is a rule of the cluster, not a preference.
+`notify` is also the default of the plugin. The overlay pins the value, so
+`hermes config set` refuses to change it.
+
+Run each command in the pod:
+
+```sh
+H="kubectl -n ai exec -i deploy/hermes -c app --"
+
+# 1. The secret command reads the token file. This replaces the old command.
+$H sh -c 'hermes config set secrets.command.command "$(cat)"' <<'EOF'
+set -eu
+printf 'LITELLM_API_KEY='
+/bin/cat /mnt/secrets/litellm/key
+printf '\nCLAUDE_CODE_OAUTH_TOKEN='
+/bin/cat /mnt/secrets/claude/token
+printf '\n'
+EOF
+
+# 2. The subscription is the provider. Remove the old LiteLLM base_url.
+$H hermes config set model.provider claude-subscription-directsdk-experimental
+$H hermes config set model.default sonnet
+$H hermes config set model.base_url ""
+
+# 3. LiteLLM is the fallback model. The block providers.litellm stays.
+$H hermes config set fallback_model.provider litellm
+$H hermes config set fallback_model.model opr/deepseek-v4.1-flash
+$H hermes config set fallback_model.base_url http://litellm.ai.svc.cluster.local:4000/v1
+$H hermes config set fallback_model.key_env LITELLM_API_KEY
+
+# 4. Check.
+$H hermes fallback list
+```
+
+To go back to LiteLLM as the primary provider, set `model.provider` to
+`litellm`, `model.default` to `opr/deepseek-v4.1-flash`, and `model.base_url`
+to the LiteLLM URL.
 
 ## Sandboxes
 
@@ -94,6 +172,10 @@ in the namespace `hermes-sandbox`. The pod uses the account
 `kubernetes/apps/hermes-sandbox/sandbox-tenant`. `HERMES_K8S_SANDBOX_IMAGE`
 gives the sandbox image, pinned by digest. To use a new sandbox image, change
 the digest in `HERMES_K8S_SANDBOX_IMAGE` in `helmrelease.yaml`.
+
+The sandbox working directory is `/workspace`. The gateway checks that this
+path exists in its own pod, so the container `app` mounts an empty directory
+there. No command runs in that directory.
 
 ## Rollback
 
