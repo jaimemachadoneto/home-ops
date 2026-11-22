@@ -8,5 +8,18 @@ resources:
   - ./externalsecret.yaml
   - ./limits.yaml
   - ./networkpolicy.yaml
+  - ./nix-base.yaml
   - ./rbac.yaml
   - ./validatingadmissionpolicy.yaml
+# One pod template serves the CronJob and the Job.
+replacements:
+  - source:
+      kind: CronJob
+      name: hermes-nix-base
+      fieldPath: spec.jobTemplate.spec.template
+    targets:
+      - select:
+          kind: Job
+          name: hermes-nix-base
+        fieldPaths:
+          - spec.template

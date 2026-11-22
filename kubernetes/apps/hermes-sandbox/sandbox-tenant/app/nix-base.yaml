@@ -1,0 +1,357 @@
+# The Nix base: a VolumeSnapshot that each new sandbox clones as its volume (ADR 0003 of
+# hermes-k8s). A Job builds it on an empty volume with `nix-base-build` of the sandbox
+# image, and takes the snapshot. The Job runs when the image changes, and a CronJob runs it
+# each week. The Hermes plugin selects the newest ready Nix base with the label of the image
+# digest, and deletes the old ones. The Job is not a Sandbox, so the admission policy
+# hermes-sandbox-pod does not apply to it. The pod follows the same rules as a sandbox pod.
+#
+# TODO: Replace the digest in the Job and the CronJob with the digest of an image that has
+# /bin/nix-base-build. Then remove `suspend: true` from both. The digest of the Job must be the digest
+# in the HelmRelease of Hermes (HERMES_K8S_SANDBOX_IMAGE), or the plugin finds no Nix base.
+# Renovate changes `image:` of the Job. A change of the image makes Flux replace the Job, and
+# the new Job makes the Nix base of the new image.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hermes-nix-base
+automountServiceAccountToken: false
+---
+# The snapshot step makes the VolumeSnapshot, waits for it, and deletes its own volume to free
+# the quota. It reads its own pod for the digest of the image.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hermes-nix-base
+rules:
+  - apiGroups: [snapshot.storage.k8s.io]
+    resources: [volumesnapshots]
+    verbs: [create, get, list, watch]
+  - apiGroups: [""]
+    resources: [persistentvolumeclaims]
+    verbs: [delete, get]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hermes-nix-base
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hermes-nix-base
+subjects:
+  - kind: ServiceAccount
+    name: hermes-nix-base
+---
+# The token that the builder uses to clone the private repositories. The Job has its own
+# Secret, not the Secret of a profile (hermes-sandbox-<profile>): the Job does not belong to
+# a profile, and a sandbox cannot mount this Secret. Only the `clone` step mounts it. The
+# builder reads the file /run/secrets/github/GITHUB_TOKEN. It is the token of the owner jaimemachadoneto, because
+# the repositories are of that owner.
+# TODO: Use a token that can only read the repositories of the list (a new field in the
+# 1Password item hermes), and change `property` here.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/external-secrets.io/externalsecret_v1.json
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: hermes-nix-base-github
+spec:
+  refreshInterval: 12h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: onepassword
+  target:
+    name: hermes-nix-base-github
+    creationPolicy: Owner
+  data:
+    - secretKey: GITHUB_TOKEN
+      remoteRef:
+        key: hermes
+        property: GITHUB_TOKEN_PERSONAL
+---
+# The pod of the Job needs the API server for the snapshot step, and the base policy blocks
+# it. Only the snapshot container has an API token, and it has its own /tmp. The step `clone`
+# has the GitHub token, and the step `warm` has neither token.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hermes-nix-base-api
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: hermes-nix-base
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+---
+# This CronJob holds the pod template of the Job too: kustomization.yaml copies it into the
+# Job. The weekly run brings new packages into the Nix base, so a sandbox downloads less.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hermes-nix-base
+spec:
+  # TODO: Remove `suspend` when the image has the builder.
+  suspend: true
+  schedule: "0 3 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 3600
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: hermes-nix-base
+            # TODO: Add the policy for the Nix cache that selects this label (ticket 15 of hermes-k8s).
+            hermes-k8s/allow-nix-cache: "true"
+        spec:
+          restartPolicy: Never
+          serviceAccountName: hermes-nix-base
+          # Only the snapshot container gets a token, with the volume kube-api-access.
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          imagePullSecrets:
+            - name: ghcr-pull
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
+            fsGroup: 10000
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: NotIn
+                        values: [home-ops-03]
+          initContainers:
+            # The volume at /nix must hold the store before Nix runs, so the copy has its own
+            # step with the volume at /data.
+            - name: copy-closure
+              image: ghcr.io/jaimemachadoneto/hermes-sandbox:y2iwr4mjg4pn@sha256:bc56a0949f68efd3ba28e63a83a9e1b00e73a4ea0b8fef9816b228e038912f73
+              command: [/bin/nix-base-build, copy]
+              env:
+                - name: NIX_BASE_TARGET
+                  value: /data
+              securityContext: &securityContext
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 512Mi
+                  ephemeral-storage: 1Gi
+                limits:
+                  cpu: "2"
+                  memory: 2Gi
+                  ephemeral-storage: 2Gi
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+            # Only this step has the GitHub token. It clones into the volume `work`. The next
+            # step runs code of these repositories, so it must not have the token.
+            - name: clone
+              image: ghcr.io/jaimemachadoneto/hermes-sandbox:y2iwr4mjg4pn@sha256:bc56a0949f68efd3ba28e63a83a9e1b00e73a4ea0b8fef9816b228e038912f73
+              command: [/bin/nix-base-build, clone]
+              env:
+                # Owner and name, in this order. Add a repository here to put its shell in
+                # the Nix base. The `warm` step reads the same list.
+                - name: NIX_BASE_REPOS
+                  value: &repos jaimemachadoneto/home-ops jaimemachadoneto/hermes-k8s
+                - name: NIX_BASE_WORK
+                  value: /work
+                - name: HOME
+                  value: /tmp
+              securityContext: *securityContext
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                  ephemeral-storage: 512Mi
+                limits:
+                  cpu: "1"
+                  memory: 512Mi
+                  ephemeral-storage: 1Gi
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+                - name: tmp-clone
+                  mountPath: /tmp
+                - name: github
+                  mountPath: /run/secrets/github
+                  readOnly: true
+            # The shell of each repository downloads or builds what the store lacks. The
+            # mounts are the same as in a sandbox, so the paths in the store are real. This
+            # step has no token, so the flake inputs of the shells must be public.
+            - name: warm
+              image: ghcr.io/jaimemachadoneto/hermes-sandbox:y2iwr4mjg4pn@sha256:bc56a0949f68efd3ba28e63a83a9e1b00e73a4ea0b8fef9816b228e038912f73
+              command: [/bin/nix-base-build, warm]
+              env:
+                - name: NIX_BASE_REPOS
+                  value: *repos
+                - name: NIX_BASE_WORK
+                  value: /work
+              securityContext: *securityContext
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 2Gi
+                  ephemeral-storage: 2Gi
+                limits:
+                  cpu: "4"
+                  memory: 8Gi
+                  ephemeral-storage: 4Gi
+              volumeMounts:
+                - name: data
+                  mountPath: /nix
+                  subPath: nix
+                - name: data
+                  mountPath: /workspace
+                  subPath: workspace
+                - name: data
+                  mountPath: /home/sandbox
+                  subPath: home
+                - name: tmp
+                  mountPath: /tmp
+                - name: work
+                  mountPath: /work
+          containers:
+            # The step runs after the build ends. The volume is crash-consistent: the builder runs
+            # `sync` as its last command. The label of the digest is the first 32 characters
+            # of the digest of the image of the `warm` step. The plugin uses the same rule.
+            - name: snapshot
+              image: alpine/k8s:1.37.2@sha256:7a82aeefea3d554a43a8676b137f2b88bae6c1fe11c13862b191b3a086cc28c0
+              env:
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: HOME
+                  value: /tmp
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  image_id=$(kubectl get pod "$POD_NAME" -o jsonpath='{.status.initContainerStatuses[?(@.name=="warm")].imageID}')
+                  digest=${image_id##*@sha256:}
+                  case "$digest" in
+                    *[!a-f0-9]* | "") echo "no sha256 digest in the image id: $image_id" >&2; exit 1 ;;
+                  esac
+                  label=$(printf %s "$digest" | cut -c1-32)
+                  name="nix-base-$(printf %s "$label" | cut -c1-12)-$(date -u +%Y%m%d%H%M%S)"
+                  kubectl create -f - <<MANIFEST
+                  apiVersion: snapshot.storage.k8s.io/v1
+                  kind: VolumeSnapshot
+                  metadata:
+                    name: $name
+                    labels:
+                      hermes-k8s/kind: nix-base
+                      hermes-k8s/image-digest: $label
+                  spec:
+                    volumeSnapshotClassName: csi-ceph-blockpool
+                    source:
+                      persistentVolumeClaimName: $POD_NAME-data
+                  MANIFEST
+                  kubectl wait --for=jsonpath='{.status.readyToUse}'=true "volumesnapshot/$name" --timeout=1800s
+                  # The snapshot holds the data. Free the quota of the volume.
+                  kubectl delete pvc "$POD_NAME-data" --wait=false
+              securityContext: *securityContext
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                  ephemeral-storage: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+                  ephemeral-storage: 256Mi
+              volumeMounts:
+                - name: tmp-snapshot
+                  mountPath: /tmp
+                - name: kube-api-access
+                  mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+                  readOnly: true
+          volumes:
+            # An empty volume that belongs to the pod. It is as big as the policy allows for
+            # a sandbox volume, so that a sandbox can start from its snapshot.
+            - name: data
+              ephemeral:
+                volumeClaimTemplate:
+                  spec:
+                    accessModes: [ReadWriteOnce]
+                    storageClassName: ceph-block
+                    resources:
+                      requests:
+                        storage: 20Gi
+            # The build writes its temporary files here, and it can need more than a sandbox.
+            - name: tmp
+              emptyDir:
+                sizeLimit: 4Gi
+            # The clones go from the `clone` step to the `warm` step.
+            - name: work
+              emptyDir:
+                sizeLimit: 1Gi
+            # The steps that hold a token or an API token do not share a directory with `warm`.
+            - name: tmp-clone
+              emptyDir:
+                sizeLimit: 256Mi
+            - name: tmp-snapshot
+              emptyDir:
+                sizeLimit: 256Mi
+            - name: github
+              secret:
+                secretName: hermes-nix-base-github
+                defaultMode: 0440
+            - name: kube-api-access
+              projected:
+                defaultMode: 0444
+                sources:
+                  - serviceAccountToken:
+                      path: token
+                      expirationSeconds: 7200
+                  - configMap:
+                      name: kube-root-ca.crt
+                      items:
+                        - key: ca.crt
+                          path: ca.crt
+                  - downwardAPI:
+                      items:
+                        - path: namespace
+                          fieldRef:
+                            fieldPath: metadata.namespace
+---
+# The Job makes the Nix base of the image that this file names. Flux replaces the Job when
+# the image changes (the annotation force), and the new Job starts. A finished Job stays, so
+# Flux does not run it again each hour. The pod template comes from the CronJob.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hermes-nix-base
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
+spec:
+  # TODO: Remove `suspend` when the image has the builder.
+  suspend: true
+  backoffLimit: 0
+  activeDeadlineSeconds: 3600
+  template: {}

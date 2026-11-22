@@ -1,23 +1,27 @@
 ---
-# Room for six sandboxes. The requests are small, because most sandboxes are
-# idle. The limits allow six pods. Each pod has one container at the maximum
-# size. The count of Sandbox objects is limited, because the pod quota does
-# not limit the objects that the controller reads.
+# Room for six sandboxes and one Nix base Job. The requests are small, because most
+# sandboxes are idle. The limits allow six sandbox pods. Each pod has one container at the
+# maximum size. The count of Sandbox objects is limited, because the pod quota does not
+# limit the objects that the controller reads. The Job pod needs one more pod and one more
+# volume of 20Gi (the quota counts the ephemeral volume of the pod), and its `warm` step
+# requests 500m of CPU, 2Gi of memory and 2Gi of ephemeral storage. The limits of this step
+# are 4 CPU and 8Gi of memory. The requests have 1 CPU and 2Gi of memory of room, so a change
+# of the default request of a sandbox does not block the Job.
 apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: hermes-sandbox-quota
 spec:
   hard:
-    pods: "6"
-    requests.cpu: "2"
-    requests.memory: 8Gi
-    limits.cpu: "24"
-    limits.memory: 48Gi
-    persistentvolumeclaims: "20"
-    ceph-block.storageclass.storage.k8s.io/requests.storage: 400Gi
+    pods: "7"
+    requests.cpu: "3"
+    requests.memory: 10Gi
+    limits.cpu: "28"
+    limits.memory: 56Gi
+    persistentvolumeclaims: "21"
+    ceph-block.storageclass.storage.k8s.io/requests.storage: 420Gi
     count/volumesnapshots.snapshot.storage.k8s.io: "30"
-    requests.ephemeral-storage: 12Gi
+    requests.ephemeral-storage: 14Gi
     count/sandboxes.agents.x-k8s.io: "20"
 ---
 # The quota on requests.ephemeral-storage refuses a container with no request.
