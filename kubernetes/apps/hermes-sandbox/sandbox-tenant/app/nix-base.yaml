@@ -3,10 +3,10 @@
 # image, and takes the snapshot. The Job runs when the image changes, and a CronJob runs it
 # each week. The Hermes plugin selects the newest ready Nix base with the label of the image
 # digest, and deletes the old ones. The Job is not a Sandbox, so the admission policy
-# hermes-sandbox-pod does not apply to it. The pod follows the same rules anyway.
+# hermes-sandbox-pod does not apply to it. The pod follows the same rules as a sandbox pod.
 #
-# TODO: Set the digest of a sandbox image that has /bin/nix-base-build in the Job and the
-# CronJob, and then remove `suspend: true` from both. The digest of the Job must be the digest
+# TODO: Replace the digest in the Job and the CronJob with the digest of an image that has
+# /bin/nix-base-build. Then remove `suspend: true` from both. The digest of the Job must be the digest
 # in the HelmRelease of Hermes (HERMES_K8S_SANDBOX_IMAGE), or the plugin finds no Nix base.
 # Renovate changes `image:` of the Job. A change of the image makes Flux replace the Job, and
 # the new Job makes the Nix base of the new image.
@@ -47,8 +47,8 @@ subjects:
 ---
 # The token that the builder uses to clone the private repositories. The Job has its own
 # Secret, not the Secret of a profile (hermes-sandbox-<profile>): the Job does not belong to
-# a profile, and a sandbox cannot mount this Secret. The builder reads the file
-# /run/secrets/github/GITHUB_TOKEN. It is the token of the owner jaimemachadoneto, because
+# a profile, and a sandbox cannot mount this Secret. Only the `clone` step mounts it. The
+# builder reads the file /run/secrets/github/GITHUB_TOKEN. It is the token of the owner jaimemachadoneto, because
 # the repositories are of that owner.
 # TODO: Use a token that can only read the repositories of the list (a new field in the
 # 1Password item hermes), and change `property` here.
@@ -72,7 +72,8 @@ spec:
         property: GITHUB_TOKEN_PERSONAL
 ---
 # The pod of the Job needs the API server for the snapshot step, and the base policy blocks
-# it. The pod has no token except in the snapshot container, so the build step cannot use it.
+# it. Only the snapshot container has an API token, and it has its own /tmp. The step `clone`
+# has the GitHub token, and the step `warm` has neither token.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -114,7 +115,7 @@ spec:
         metadata:
           labels:
             app.kubernetes.io/name: hermes-nix-base
-            # The policy for the Nix cache selects this label (ticket 15 of hermes-k8s).
+            # TODO: Add the policy for the Nix cache that selects this label (ticket 15 of hermes-k8s).
             hermes-k8s/allow-nix-cache: "true"
         spec:
           restartPolicy: Never
@@ -166,16 +167,49 @@ spec:
               volumeMounts:
                 - name: data
                   mountPath: /data
+            # Only this step has the GitHub token. It clones into the volume `work`. The next
+            # step runs code of these repositories, so it must not have the token.
+            - name: clone
+              image: ghcr.io/jaimemachadoneto/hermes-sandbox:y2iwr4mjg4pn@sha256:bc56a0949f68efd3ba28e63a83a9e1b00e73a4ea0b8fef9816b228e038912f73
+              command: [/bin/nix-base-build, clone]
+              env:
+                # Owner and name, in this order. Add a repository here to put its shell in
+                # the Nix base. The `warm` step reads the same list.
+                - name: NIX_BASE_REPOS
+                  value: &repos jaimemachadoneto/home-ops jaimemachadoneto/hermes-k8s
+                - name: NIX_BASE_WORK
+                  value: /work
+                - name: HOME
+                  value: /tmp
+              securityContext: *securityContext
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                  ephemeral-storage: 512Mi
+                limits:
+                  cpu: "1"
+                  memory: 512Mi
+                  ephemeral-storage: 1Gi
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+                - name: tmp-clone
+                  mountPath: /tmp
+                - name: github
+                  mountPath: /run/secrets/github
+                  readOnly: true
             # The shell of each repository downloads or builds what the store lacks. The
-            # mounts are the same as in a sandbox, so the paths in the store are real.
+            # mounts are the same as in a sandbox, so the paths in the store are real. This
+            # step has no token, so the flake inputs of the shells must be public.
             - name: warm
               image: ghcr.io/jaimemachadoneto/hermes-sandbox:y2iwr4mjg4pn@sha256:bc56a0949f68efd3ba28e63a83a9e1b00e73a4ea0b8fef9816b228e038912f73
               command: [/bin/nix-base-build, warm]
               env:
-                # Owner and name, in this order. Add a repository here to put its shell in
-                # the Nix base.
                 - name: NIX_BASE_REPOS
-                  value: jaimemachadoneto/home-ops jaimemachadoneto/hermes-k8s
+                  value: *repos
+                - name: NIX_BASE_WORK
+                  value: /work
               securityContext: *securityContext
               resources:
                 requests:
@@ -198,13 +232,12 @@ spec:
                   subPath: home
                 - name: tmp
                   mountPath: /tmp
-                - name: github
-                  mountPath: /run/secrets/github
-                  readOnly: true
+                - name: work
+                  mountPath: /work
           containers:
-            # The step runs after the build. The volume is crash-consistent: the builder runs
+            # The step runs after the build ends. The volume is crash-consistent: the builder runs
             # `sync` as its last command. The label of the digest is the first 32 characters
-            # of the digest of the image that the build step ran. The plugin uses the same rule.
+            # of the digest of the image of the `warm` step. The plugin uses the same rule.
             - name: snapshot
               image: alpine/k8s:1.37.2@sha256:7a82aeefea3d554a43a8676b137f2b88bae6c1fe11c13862b191b3a086cc28c0
               env:
@@ -253,7 +286,7 @@ spec:
                   memory: 256Mi
                   ephemeral-storage: 256Mi
               volumeMounts:
-                - name: tmp
+                - name: tmp-snapshot
                   mountPath: /tmp
                 - name: kube-api-access
                   mountPath: /var/run/secrets/kubernetes.io/serviceaccount
@@ -270,9 +303,21 @@ spec:
                     resources:
                       requests:
                         storage: 20Gi
+            # The build writes its temporary files here, and it can need more than a sandbox.
             - name: tmp
               emptyDir:
-                sizeLimit: 2Gi
+                sizeLimit: 4Gi
+            # The clones go from the `clone` step to the `warm` step.
+            - name: work
+              emptyDir:
+                sizeLimit: 1Gi
+            # The steps that hold a token or an API token do not share a directory with `warm`.
+            - name: tmp-clone
+              emptyDir:
+                sizeLimit: 256Mi
+            - name: tmp-snapshot
+              emptyDir:
+                sizeLimit: 256Mi
             - name: github
               secret:
                 secretName: hermes-nix-base-github
