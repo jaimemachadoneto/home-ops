@@ -1,0 +1,92 @@
+---
+# Org runners with a persistent Nix store, for jobs that build images with
+# Nix dockerTools. Use `runs-on: arc-jmn-nix`. The job installs single-user
+# Nix on the volume at its first run (the setup-nix action of hermes-k8s).
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: arc-jmn-nix
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: arc-jmn-nix
+  driftDetection:
+    mode: enabled
+  values:
+    githubConfigUrl: https://github.com/jaimemachadoneto
+    githubConfigSecret: arc-jmn-nix-secret
+
+    # One runner at a time: the Nix store volume is ReadWriteOnce, and
+    # single-user Nix has no daemon to share the store between two pods.
+    minRunners: 0
+    maxRunners: 1
+
+    # No dind and no privilege. The steps run in the runner container.
+    containerMode:
+      type: kubernetes
+      kubernetesModeWorkVolumeClaim:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: openebs-hostpath
+        resources:
+          requests:
+            storage: 5Gi
+
+    controllerServiceAccount:
+      name: actions-runner-controller
+      namespace: actions-runner-system
+
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/name: arc-jmn-nix-runner
+      spec:
+        # The runner user (uid 1001) owns the Nix store. OnRootMismatch
+        # changes the owner only once, not for each file at each start.
+        securityContext:
+          fsGroup: 1001
+          fsGroupChangePolicy: OnRootMismatch
+        # home-ops-03 is the GPU node and gets no CI work.
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: NotIn
+                      values:
+                        - home-ops-03
+        containers:
+          - name: runner
+            image: ghcr.io/home-operations/actions-runner:2.338.2@sha256:2dd7caa094a425c041539447cb0e6ae63cda10b5242773764683b695b8fa5613
+            command:
+              - /home/runner/run.sh
+            env:
+              - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+                value: "false"
+              # No build sandbox: the pod has no privilege for the user
+              # namespaces of Nix. The build directory is on the volume, so
+              # a large build does not fill the disk of the node.
+              - name: NIX_CONFIG
+                value: |
+                  experimental-features = nix-command flakes
+                  sandbox = false
+                  build-dir = /nix/var/nix/builds
+            volumeMounts:
+              - name: nix
+                mountPath: /nix
+            resources:
+              limits:
+                cpu: "4.0"
+                memory: "8Gi"
+                ephemeral-storage: "10Gi"
+              requests:
+                cpu: "1.0"
+                memory: "2Gi"
+                ephemeral-storage: "2Gi"
+        volumes:
+          - name: nix
+            persistentVolumeClaim:
+              claimName: arc-jmn-nix-store

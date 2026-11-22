@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: arc-jmn-nix
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: arc-jmn-nix
+  # The controller in actions-runner-system owns the CRDs and starts the
+  # runner pods. The Nix store is on Ceph, and the work volume of the
+  # kubernetes mode is on OpenEBS.
+  dependsOn:
+    - name: actions-runner-controller
+      namespace: actions-runner-system
+    - name: rook-ceph-cluster
+      namespace: rook-ceph
+    - name: openebs
+      namespace: openebs
+  interval: 1h
+  path: "./kubernetes/apps/actions-runner-docker/arc-jmn-nix/app"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: actions-runner-docker
+  timeout: 5m
+  wait: false
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
