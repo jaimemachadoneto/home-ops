@@ -28,7 +28,7 @@ spec:
                       - home-ops-03
       initContainers:
         - name: copy-closure
-          image: ghcr.io/jaimemachadoneto/hermes-sandbox:1.0.0
+          image: ghcr.io/jaimemachadoneto/hermes-sandbox:1.0.0@sha256:0000000000000000000000000000000000000000000000000000000000000000
           volumeMounts:
             - name: data
               mountPath: /data
