@@ -25,12 +25,12 @@ spec:
     - name: imagePattern
       expression: >-
         '^ghcr\\.io/jaimemachadoneto/hermes-sandbox(:[A-Za-z0-9_][A-Za-z0-9_.-]{0,127})?@sha256:[a-f0-9]{64}$'
-    # The init containers have the same rules as the containers.
     # The Secret of a profile (ADR 0008 of hermes-k8s): the only Secret that a
     # sandbox pod may mount. The name is hermes-sandbox-<profile>.
     - name: secretPattern
       expression: >-
         '^hermes-sandbox-[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+    # The init containers have the same rules as the containers.
     - name: allContainers
       expression: >-
         variables.pod.containers +

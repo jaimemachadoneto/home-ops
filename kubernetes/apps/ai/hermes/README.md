@@ -32,7 +32,7 @@ and fails when the item does not exist.
 ## GitHub
 
 The Hermes pod has `GH_TOKEN` and `GITHUB_TOKEN` (the `jaimeagents`
-token) for its own features: the Skills Hub, its own git clones, the Kanban
+token) for the features of Hermes itself: the Skills Hub, its own git clones, the Kanban
 PR check and the MCP servers that it starts. It does not have
 `GITHUB_TOKEN_PERSONAL`.
 

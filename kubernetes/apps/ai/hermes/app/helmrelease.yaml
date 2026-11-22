@@ -47,8 +47,8 @@ spec:
               HOME: /opt/data
               # The sandbox image, pinned by digest. The admission policy of
               # hermes-sandbox refuses an image with no digest.
-              # TODO: Set the digest of the sandbox image that has the GitHub token
-              # script (hermes-k8s ticket 12). Push the image after the merge.
+              # TODO: After the merge, push the sandbox image of hermes-k8s ticket 12.
+              # Then set its digest here.
               HERMES_K8S_SANDBOX_IMAGE: ghcr.io/jaimemachadoneto/hermes-sandbox:y2iwr4mjg4pn@sha256:bc56a0949f68efd3ba28e63a83a9e1b00e73a4ea0b8fef9816b228e038912f73
               SEARXNG_URL: http://searxng.selfhosted.svc.cluster.local:8080
             envFrom:
