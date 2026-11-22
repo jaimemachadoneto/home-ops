@@ -1,0 +1,14 @@
+---
+# The persistent Nix store of the runner. It is a cache: a new empty volume
+# only makes the next run install Nix and download the packages again, so
+# it has no volsync backup. maxRunners is 1, so one pod uses it at a time.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: arc-jmn-nix-store
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: ceph-block

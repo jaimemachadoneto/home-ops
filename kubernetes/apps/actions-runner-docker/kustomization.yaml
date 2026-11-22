@@ -9,3 +9,4 @@ components:
 resources:
   - ./namespace.yaml
   - ./arc-jmn-docker/ks.yaml
+  - ./arc-jmn-nix/ks.yaml
