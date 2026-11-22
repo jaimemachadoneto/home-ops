@@ -38,6 +38,18 @@ spec:
         has(variables.pod.automountServiceAccountToken) &&
         variables.pod.automountServiceAccountToken == false
       message: A sandbox pod uses hermes-sandbox and does not mount its token.
+    # The labels of the pod select the network policies of the sandbox. The
+    # Hermes pod sets them, so a label key that has no policy behind it, or
+    # one that copies the label of another workload, is not allowed. Add a
+    # key here with the CiliumNetworkPolicy of its service.
+    - expression: >-
+        !has(object.spec.podTemplate.metadata) ||
+        !has(object.spec.podTemplate.metadata.labels) ||
+        object.spec.podTemplate.metadata.labels.all(k,
+          k in ['hermes-task', 'hermes-k8s/allow-litellm'])
+      message: >-
+        A sandbox pod has only the labels hermes-task and
+        hermes-k8s/allow-litellm.
     - expression: >-
         !has(variables.pod.nodeName) &&
         (!has(variables.pod.hostNetwork) || variables.pod.hostNetwork == false) &&

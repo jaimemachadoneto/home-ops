@@ -1,0 +1,28 @@
+---
+# Allowance "litellm" (ADR 0007 of hermes-k8s): a sandbox with the label
+# hermes-k8s/allow-litellm=true can call LiteLLM. The base policy gives a
+# sandbox no other route to it. The label is a permission that the Hermes pod
+# grants, because only that pod holds the Role to create Sandboxes. The
+# admission policy accepts only this label key (and hermes-task), so Hermes
+# cannot invent another allowance. LiteLLM has no ingress policy, so it needs
+# no matching ingress rule. If LiteLLM gets one, add this namespace and label
+# there.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hermes-sandbox-allow-litellm
+spec:
+  endpointSelector:
+    matchLabels:
+      hermes-k8s/allow-litellm: "true"
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: ai
+            app.kubernetes.io/name: litellm
+            app.kubernetes.io/instance: litellm
+      toPorts:
+        - ports:
+            - port: "4000"
+              protocol: TCP
