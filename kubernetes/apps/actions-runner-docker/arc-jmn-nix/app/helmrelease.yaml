@@ -69,11 +69,16 @@ spec:
               # No build sandbox: the pod has no privilege for the user
               # namespaces of Nix. The build directory is on the volume, so
               # a large build does not fill the disk of the node.
+              # Each build adds to the store on the 20Gi volume. When less
+              # than 3 GiB is free, Nix collects garbage until 8 GiB is free.
+              # The system profile keeps Nix itself.
               - name: NIX_CONFIG
                 value: |
                   experimental-features = nix-command flakes
                   sandbox = false
                   build-dir = /nix/var/nix/builds
+                  min-free = 3221225472
+                  max-free = 8589934592
             volumeMounts:
               - name: nix
                 mountPath: /nix
