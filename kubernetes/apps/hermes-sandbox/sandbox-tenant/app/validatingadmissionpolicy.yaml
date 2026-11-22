@@ -21,8 +21,11 @@ spec:
   variables:
     - name: pod
       expression: object.spec.podTemplate.spec
-    - name: image
-      expression: "'ghcr.io/jaimemachadoneto/hermes-sandbox'"
+    # The image is pinned by its digest, so a tag that moves cannot change the
+    # image of a sandbox. The tag part is optional.
+    - name: imagePattern
+      expression: >-
+        '^ghcr\\.io/jaimemachadoneto/hermes-sandbox(:[A-Za-z0-9_][A-Za-z0-9_.-]{0,127})?@sha256:[a-f0-9]{64}$'
     # The init containers have the same rules as the containers.
     - name: allContainers
       expression: >-
@@ -102,14 +105,13 @@ spec:
         except the one that copies the closure (copy-closure).
     - expression: >-
         variables.allContainers.all(c,
-          (c.image == variables.image ||
-           c.image.startsWith(variables.image + ':') ||
-           c.image.startsWith(variables.image + '@')) &&
+          c.image.matches(variables.imagePattern) &&
           (!has(c.env) || c.env.all(e, !has(e.valueFrom))) &&
           !has(c.envFrom))
       message: >-
-        A sandbox pod runs the image ghcr.io/jaimemachadoneto/hermes-sandbox
-        and reads no environment variable from a Secret or a ConfigMap.
+        A sandbox pod runs the image ghcr.io/jaimemachadoneto/hermes-sandbox,
+        pinned by a sha256 digest, and reads no environment variable from a
+        Secret or a ConfigMap.
     - expression: >-
         !has(variables.pod.imagePullSecrets) ||
         variables.pod.imagePullSecrets.all(s, s.name == 'ghcr-pull')
