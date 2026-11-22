@@ -4,8 +4,8 @@
 # That policy selects the label hermes-k8s/allow-<service>=true. There is no
 # ingress rule.
 # The Hermes plugin sets that label in the Sandbox. The admission policy
-# accepts only the label keys of the known allowances, so add a key there
-# with each allowance policy.
+# accepts only the label keys of the known allowances. When you add an
+# allowance policy, add its key to the admission policy.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy

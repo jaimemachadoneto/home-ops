@@ -5,8 +5,8 @@
 # grants, because only that pod holds the Role to create Sandboxes. The
 # admission policy accepts only this label key (and hermes-task), so Hermes
 # cannot invent another allowance. LiteLLM has no ingress policy, so it needs
-# no matching ingress rule. If LiteLLM gets one, add this namespace and label
-# there.
+# no matching ingress rule. If LiteLLM gets an ingress policy, add this
+# namespace and this label to that policy.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
