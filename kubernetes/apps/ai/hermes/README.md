@@ -24,7 +24,7 @@ Each user that signs in gets full agent access, which includes a shell.
 | `OIDC_CLIENT_SECRET` | The secret of the Authentik client. Authentik reads the same field. |
 | `LITELLM_API_KEY` | A LiteLLM virtual key for Hermes, mounted at `/mnt/secrets/litellm/key` |
 | `GITHUB_TOKEN` | The fine-grained token of the organization `jaimeagents`, given to the agent as `GH_TOKEN` and `GITHUB_TOKEN` |
-| `GITHUB_TOKEN_PERSONAL` | The fine-grained token of the account `jaimemachadoneto` (selected repositories only). Only the sandboxes read it (see GitHub) |
+| `GITHUB_TOKEN_PERSONAL` | The fine-grained token of the account `jaimemachadoneto` (selected repositories only). Only the sandboxes read it (see the section GitHub) |
 
 Make the item before the merge. The Authentik ExternalSecret also reads it,
 and fails when the item does not exist.
