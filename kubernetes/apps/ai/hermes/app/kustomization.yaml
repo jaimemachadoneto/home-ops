@@ -7,6 +7,7 @@ resources:
   - ./ocirepository.yaml
   - ./helmrelease.yaml
   - ./ciliumnetworkpolicy.yaml
+  - ./serviceaccount.yaml
 configMapGenerator:
   - name: hermes-config
     files:

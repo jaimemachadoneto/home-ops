@@ -65,6 +65,8 @@
             helmfile
             kustomize
             kubeconform
+            etcd
+            kubernetes
             fluxcd
             cilium-cli
             # Talos

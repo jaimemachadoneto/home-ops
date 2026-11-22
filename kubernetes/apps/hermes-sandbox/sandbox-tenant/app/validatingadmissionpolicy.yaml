@@ -1,0 +1,123 @@
+---
+# The Hermes pod can create Sandboxes, and a Sandbox selects the image, the
+# account, the volumes and the node of its pod. Without this policy, a
+# compromised Hermes could start a pod with a hostPath volume, a service
+# account token, or an image of its own. The policy accepts only the pod that
+# the Hermes plugin builds. A later change adds the Secrets of the profiles.
+# The test of each rule is scripts/test-hermes-sandbox-vap.sh.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: hermes-sandbox-pod
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [agents.x-k8s.io]
+        apiVersions: ["*"]
+        operations: [CREATE, UPDATE]
+        resources: [sandboxes]
+  variables:
+    - name: pod
+      expression: object.spec.podTemplate.spec
+    - name: image
+      expression: "'ghcr.io/jaimemachadoneto/hermes-sandbox'"
+    # The init containers have the same rules as the containers.
+    - name: allContainers
+      expression: >-
+        variables.pod.containers +
+        (has(variables.pod.initContainers) ? variables.pod.initContainers : [])
+  validations:
+    - expression: >-
+        has(variables.pod.serviceAccountName) &&
+        variables.pod.serviceAccountName == 'hermes-sandbox' &&
+        has(variables.pod.automountServiceAccountToken) &&
+        variables.pod.automountServiceAccountToken == false
+      message: A sandbox pod uses hermes-sandbox and does not mount its token.
+    - expression: >-
+        !has(variables.pod.nodeName) &&
+        (!has(variables.pod.hostNetwork) || variables.pod.hostNetwork == false) &&
+        (!has(variables.pod.hostPID) || variables.pod.hostPID == false) &&
+        (!has(variables.pod.hostIPC) || variables.pod.hostIPC == false)
+      message: >-
+        A sandbox pod sets no nodeName and uses no host network, PID or IPC
+        namespace.
+    # The controller adds the volumes of volumeClaimTemplates to the pod, so
+    # the template lists only emptyDir volumes. A volume of a Secret, a
+    # projected token or a hostPath is not allowed.
+    - expression: >-
+        !has(variables.pod.volumes) ||
+        variables.pod.volumes.all(v, has(v.emptyDir) &&
+          has(v.emptyDir.sizeLimit) &&
+          (!has(v.emptyDir.medium) || v.emptyDir.medium == ''))
+      message: >-
+        A sandbox pod has only emptyDir volumes, each with a sizeLimit and
+        not in memory.
+    - expression: >-
+        !has(object.spec.volumeClaimTemplates) ||
+        object.spec.volumeClaimTemplates.all(t, has(t.spec) &&
+          has(t.spec.storageClassName) &&
+          t.spec.storageClassName == 'ceph-block' &&
+          !has(t.spec.volumeName) &&
+          !has(t.spec.selector) &&
+          (!has(t.spec.dataSource) ||
+            (has(t.spec.dataSource.apiGroup) &&
+             t.spec.dataSource.apiGroup == 'snapshot.storage.k8s.io' &&
+             t.spec.dataSource.kind == 'VolumeSnapshot')) &&
+          (!has(t.spec.dataSourceRef) ||
+            (has(t.spec.dataSourceRef.apiGroup) &&
+             t.spec.dataSourceRef.apiGroup == 'snapshot.storage.k8s.io' &&
+             t.spec.dataSourceRef.kind == 'VolumeSnapshot' &&
+             !has(t.spec.dataSourceRef.namespace))) &&
+          quantity(t.spec.resources.requests.storage).compareTo(quantity('20Gi')) <= 0)
+      message: >-
+        A volume template uses the class ceph-block, no volumeName or
+        selector, at most 20Gi, and a VolumeSnapshot as its data source.
+    - expression: >-
+        !has(variables.pod.ephemeralContainers) &&
+        (!has(variables.pod.initContainers) ||
+          (size(variables.pod.initContainers) == 1 &&
+           variables.pod.initContainers[0].name == 'copy-closure'))
+      message: >-
+        A sandbox pod has no ephemeral container, and no init container
+        except the one that copies the closure (copy-closure).
+    - expression: >-
+        variables.allContainers.all(c,
+          (c.image == variables.image ||
+           c.image.startsWith(variables.image + ':') ||
+           c.image.startsWith(variables.image + '@')) &&
+          (!has(c.env) || c.env.all(e, !has(e.valueFrom))) &&
+          !has(c.envFrom))
+      message: >-
+        A sandbox pod runs the image ghcr.io/jaimemachadoneto/hermes-sandbox
+        and reads no environment variable from a Secret or a ConfigMap.
+    - expression: >-
+        !has(variables.pod.imagePullSecrets) ||
+        variables.pod.imagePullSecrets.all(s, s.name == 'ghcr-pull')
+      message: A sandbox pod pulls its image only with the Secret ghcr-pull.
+    # The terms of nodeSelectorTerms are alternatives. Each term must exclude
+    # the node, or the scheduler can use a term that allows it.
+    - expression: >-
+        has(variables.pod.affinity) &&
+        has(variables.pod.affinity.nodeAffinity) &&
+        has(variables.pod.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution) &&
+        variables.pod.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.all(term,
+          has(term.matchExpressions) &&
+          term.matchExpressions.exists(e,
+            e.key == 'kubernetes.io/hostname' && e.operator == 'NotIn' &&
+            has(e.values) && 'home-ops-03' in e.values))
+      message: >-
+        A sandbox pod has a required node affinity that excludes the node
+        home-ops-03 in each term.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: hermes-sandbox-pod
+spec:
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: hermes-sandbox
+  policyName: hermes-sandbox-pod
+  validationActions: [Deny]

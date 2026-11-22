@@ -1,0 +1,27 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: hermes-sandbox-tenant
+spec:
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: hermes-sandbox-tenant
+  # The controller owns the Sandbox CRD that the policy and the Role name.
+  # External Secrets owns the ExternalSecret CRD.
+  dependsOn:
+    - name: agent-sandbox
+      namespace: agent-sandbox-system
+    - name: external-secrets
+      namespace: external-secrets
+  interval: 1h
+  path: "./kubernetes/apps/hermes-sandbox/sandbox-tenant/app"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: hermes-sandbox
+  timeout: 5m
+  wait: false
