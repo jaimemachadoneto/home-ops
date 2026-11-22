@@ -11,8 +11,11 @@ spec:
               version: v1
               kind: Deployment
               name: ${APP}
+            # The patch body needs apiVersion. With only version, kustomize
+            # adds a field version to the Deployment, and the API server
+            # refuses the create of a new Deployment.
             patch: |-
-              version: v1
+              apiVersion: apps/v1
               kind: Deployment
               metadata:
                 name: ${APP}
