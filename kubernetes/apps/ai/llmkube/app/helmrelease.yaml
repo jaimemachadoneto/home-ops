@@ -16,8 +16,10 @@ spec:
       keep: true
     controllerManager:
       replicaCount: 1
+      # Chart 0.10.18 binds the lease Role only with leader election on, but
+      # the watch canary needs it too; without it the pod restarts every 6m.
       leaderElection:
-        enabled: false
+        enabled: true
       resources:
         requests:
           cpu: 10m
