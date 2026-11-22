@@ -71,8 +71,10 @@ secrets:
       set -eu
       printf 'LITELLM_API_KEY='
       /bin/cat /mnt/secrets/litellm/key
-      printf '\nCLAUDE_CODE_OAUTH_TOKEN='
-      /bin/cat /mnt/secrets/claude/token
+      if [ -r /mnt/secrets/claude/token ]; then
+        printf '\nCLAUDE_CODE_OAUTH_TOKEN='
+        /bin/cat /mnt/secrets/claude/token
+      fi
       printf '\n'
     helper_timeout_seconds: 3
     override_existing: true
@@ -117,7 +119,8 @@ on the volume.
 
 The model provider, the default model, the fallback and the secret command are
 in `/opt/data/config.yaml`, not in the overlay. Hermes reads them from the
-profile only. The setting `extra_usage` is in the overlay
+profile only. The secret command is only in `/opt/data/config.yaml`. The
+container `dashboard` has no token file, so the command skips it there. The setting `extra_usage` is in the overlay
 (`app/resources/config.yaml`): it is a rule of the cluster, not a preference.
 `notify` is also the default of the plugin. The overlay pins the value, so
 `hermes config set` refuses to change it.
@@ -125,31 +128,33 @@ profile only. The setting `extra_usage` is in the overlay
 Run each command in the pod:
 
 ```sh
-H="kubectl -n ai exec -i deploy/hermes -c app --"
+h() { kubectl -n ai exec -i deploy/hermes -c app -- "$@"; }
 
 # 1. The secret command reads the token file. This replaces the old command.
-$H sh -c 'hermes config set secrets.command.command "$(cat)"' <<'EOF'
+h sh -c 'hermes config set secrets.command.command "$(cat)"' <<'EOF'
 set -eu
 printf 'LITELLM_API_KEY='
 /bin/cat /mnt/secrets/litellm/key
-printf '\nCLAUDE_CODE_OAUTH_TOKEN='
-/bin/cat /mnt/secrets/claude/token
+if [ -r /mnt/secrets/claude/token ]; then
+  printf '\nCLAUDE_CODE_OAUTH_TOKEN='
+  /bin/cat /mnt/secrets/claude/token
+fi
 printf '\n'
 EOF
 
 # 2. The subscription is the provider. Remove the old LiteLLM base_url.
-$H hermes config set model.provider claude-subscription-directsdk-experimental
-$H hermes config set model.default sonnet
-$H hermes config set model.base_url ""
+h hermes config set model.provider claude-subscription-directsdk-experimental
+h hermes config set model.default sonnet
+h hermes config set model.base_url ""
 
 # 3. LiteLLM is the fallback model. The block providers.litellm stays.
-$H hermes config set fallback_model.provider litellm
-$H hermes config set fallback_model.model opr/deepseek-v4.1-flash
-$H hermes config set fallback_model.base_url http://litellm.ai.svc.cluster.local:4000/v1
-$H hermes config set fallback_model.key_env LITELLM_API_KEY
+h hermes config set fallback_model.provider litellm
+h hermes config set fallback_model.model opr/deepseek-v4.1-flash
+h hermes config set fallback_model.base_url http://litellm.ai.svc.cluster.local:4000/v1
+h hermes config set fallback_model.key_env LITELLM_API_KEY
 
 # 4. Check.
-$H hermes fallback list
+h hermes fallback list
 ```
 
 To go back to LiteLLM as the primary provider, set `model.provider` to
