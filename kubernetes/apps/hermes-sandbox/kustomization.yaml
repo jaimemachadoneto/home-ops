@@ -1,0 +1,13 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: hermes-sandbox
+# This Kustomization has no cluster-secrets component. A Sandbox pod runs
+# untrusted agent commands, and nothing here reads ${SECRET_DOMAIN} or
+# ${TIMEZONE}.
+components:
+  - ../../components/flux-alerts
+resources:
+  - ./namespace.yaml
+  - ./sandbox-tenant/ks.yaml

@@ -1,0 +1,63 @@
+---
+# The account of the sandbox pods. It has no Role. The admission policy also
+# requires automountServiceAccountToken: false in each Sandbox.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hermes-sandbox
+automountServiceAccountToken: false
+---
+# This Role gives the Hermes pod access to the sandboxes. The pod has no
+# ClusterRole. It cannot create a pod, a Secret or a network policy, and it
+# cannot read a Secret. It can only create a Sandbox, and the admission
+# policy limits each Sandbox.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hermes-sandbox-manager
+rules:
+  - apiGroups: [agents.x-k8s.io]
+    resources: [sandboxes]
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch]
+  # A command runs in a sandbox with pods/exec. The client reads the stream
+  # with a GET request that upgrades to a websocket. The client also needs get.
+  - apiGroups: [""]
+    resources: [pods/exec]
+    verbs: [create, get]
+  # The controller makes the volume of a Sandbox. Hermes deletes the volume
+  # of a sandbox that it archives or removes.
+  - apiGroups: [""]
+    resources: [persistentvolumeclaims]
+    verbs: [delete, get, list]
+  # The Sandbox archive and the Nix base are VolumeSnapshots.
+  - apiGroups: [snapshot.storage.k8s.io]
+    resources: [volumesnapshots]
+    verbs: [create, delete, get, list]
+---
+# The Hermes pod runs as the account hermes-sandbox-client in the namespace
+# ai. The account is not in this namespace. A Sandbox selects the account of
+# its pod, so an account here can give its token to a sandbox pod. The
+# Hermes HelmRelease starts to use this account in a later change.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hermes-sandbox-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hermes-sandbox-manager
+subjects:
+  - kind: ServiceAccount
+    name: hermes-sandbox-client
+    namespace: ai

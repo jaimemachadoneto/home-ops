@@ -1,0 +1,14 @@
+---
+# A sandbox gets no ingress. The Hermes pod reaches it through pods/exec of
+# the API server, not through the pod network. This policy denies all egress.
+# The only allowed egress is in ciliumnetworkpolicy.yaml. The Cilium policy
+# gives the same default deny. This file is a second layer on purpose.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hermes-sandbox-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+    - Ingress
