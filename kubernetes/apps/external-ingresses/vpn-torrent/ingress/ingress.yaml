@@ -45,7 +45,7 @@ metadata:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "VPN Torrent"
     gethomepage.dev/description: "VPN Torrent"
-    gethomepage.dev/group: "Infrastructure"
+    gethomepage.dev/group: Network
     gethomepage.dev/icon: "si-qbittorrent.svg"
     gethomepage.dev/href: "https://vpn-torrent.${SECRET_DOMAIN}"
 spec:

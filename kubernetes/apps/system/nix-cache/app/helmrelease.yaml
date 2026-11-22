@@ -1,0 +1,118 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nix-cache
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: nix-cache
+  interval: 30m
+  values:
+    controllers:
+      nix-cache:
+        pod:
+          securityContext:
+            # ncps runs as uid 1000 in its image. fsGroup does not apply to
+            # the NFS volume. The export must let uid 1000 write.
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+        initContainers:
+          # ncps needs a migration of the database before it starts.
+          migrate:
+            image: &image
+              repository: ghcr.io/kalbasit/ncps
+              tag: v0.10.1@sha256:75fe26ea14bc35d336eca877a2e94a768d30631f415198242bbf1e5203f26a47
+            args:
+              - /bin/ncps
+              - migrate
+              - up
+              - --cache-database-url=sqlite:/db/db.sqlite
+            securityContext: &securityContext
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+        containers:
+          app:
+            image: *image
+            args:
+              - /bin/ncps
+              - serve
+            env:
+              CACHE_HOSTNAME: nix-cache.system.svc.cluster.local
+              # The NAR files are on the NAS. The database is on the ceph volume.
+              # SQLite is not safe on NFS.
+              CACHE_STORAGE_LOCAL: /storage
+              CACHE_DATABASE_URL: sqlite:/db/db.sqlite
+              # The three upstream caches, in this order.
+              CACHE_UPSTREAM_URLS: https://cache.nixos.org,https://devenv.cachix.org,https://nix-community.cachix.org
+              CACHE_UPSTREAM_PUBLIC_KEYS: cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=,devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=,nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
+              # No key of its own: ncps passes the upstream signatures through,
+              # and the sandboxes trust the upstream public keys.
+              CACHE_SIGN_NARINFO: "false"
+              # A sandbox can only read. Both verbs are off by default in ncps.
+              CACHE_ALLOW_PUT_VERB: "false"
+              CACHE_ALLOW_DELETE_VERB: "false"
+              # The cache limit is 100 GiB. The LRU removes the oldest NAR files.
+              CACHE_MAX_SIZE: 100G
+              CACHE_LRU_SCHEDULE: "0 3 * * *"
+              CACHE_LRU_SCHEDULE_TZ: ${TIMEZONE}
+              ANALYTICS_REPORTING_ENABLED: "false"
+              SERVER_ADDR: ":8501"
+            probes:
+              liveness: &probes
+                enabled: true
+                custom: true
+                spec:
+                  failureThreshold: 3
+                  httpGet:
+                    path: /healthz
+                    port: 8501
+                  initialDelaySeconds: 0
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+              readiness: *probes
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+            securityContext: *securityContext
+    persistence:
+      db:
+        existingClaim: nix-cache
+        advancedMounts:
+          nix-cache:
+            migrate:
+              - path: /db
+            app:
+              - path: /db
+      # The export /mnt/Data1/nix-cache must exist on the NAS (user step).
+      storage:
+        type: nfs
+        path: /mnt/Data1/nix-cache
+        server: nas.jaimenet.com
+        advancedMounts:
+          nix-cache:
+            app:
+              - path: /storage
+      tmpfs:
+        type: emptyDir
+        advancedMounts:
+          nix-cache:
+            app:
+              - path: /tmp
+    service:
+      app:
+        ports:
+          http:
+            port: 8501
