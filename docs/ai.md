@@ -392,18 +392,15 @@ record for `litellm.${SECRET_DOMAIN}` (NXDOMAIN).
   prefix is `external-dns.kubernetes.io/`, with no fallback to
   `external-dns.alpha.kubernetes.io/`. Thus v0.23.0 ignored the `target`
   annotation of the Gateway `envoy-external` and used its address.
-- Fix: the Cloudflare instance went back to 1.20.0
-  (`external-dns/cloudflare/ocirepository.yaml`). Then all annotations
-  changed to the prefix `external-dns.kubernetes.io/`. The Cloudflare
-  instance reads them with `--annotation-prefix`, also on 1.20.0. UniFi and
-  Pi-hole use this prefix by default.
+- Fix: the Cloudflare instance went back to 1.20.0. Then #829 changed all
+  annotations to the prefix `external-dns.kubernetes.io/`, and #767 moved
+  all instances to 1.24.0 (2026-11-23), with no error 9003.
 - Use only the prefix `external-dns.kubernetes.io/` in a new annotation.
-  An app copied from another repository can have the old prefix.
-- There is no Renovate hold, so each new version comes as a PR. Do not
-  merge 1.23.0. Merge a newer version only as a test: after Flux
-  applies it, watch the log of the Cloudflare instance for one minute. If
-  error 9003 comes back, revert the PR. To find the cause, set `logLevel:
-  debug` in `external-dns/cloudflare/helmrelease.yaml`.
+  An app copied from another repository can have the old prefix. On a
+  DNSEndpoint, write the Cloudflare property as `cloudflare/proxied`.
+- After a new version of the Cloudflare instance, watch its log for one
+  minute. If error 9003 comes back, revert the PR. To find the cause, set
+  `logLevel: debug` in `external-dns/cloudflare/helmrelease.yaml`.
 
 To check: `dig litellm.${SECRET_DOMAIN} @1.1.1.1` gives Cloudflare addresses,
 and `kubectl -n network logs deploy/externaldns-cloudflare` has no error 9003.

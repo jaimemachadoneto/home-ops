@@ -12,7 +12,7 @@ spec:
       recordType: A
       targets: ["10.30.70.5"]
       providerSpecific: &dnsOnly
-        - name: external-dns.kubernetes.io/cloudflare-proxied
+        - name: cloudflare/proxied
           value: "false"
     - dnsName: "*.preview.${SECRET_DOMAIN}"
       recordType: A
