@@ -142,7 +142,7 @@ spec:
             # The volume at /nix must hold the store before Nix runs, so the copy has its own
             # step with the volume at /data.
             - name: copy-closure
-              image: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-0e640a8b702df1923e847d0ad8ed1a02e88ab348@sha256:2169fc4f95ad71adb1e68aa1b62e9ed8fb207f0ce35884f45b5d52fd8c37b77d
+              image: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-5903ee8cdacde57ea4b116dea46b6fb9f950060f@sha256:67bd8d377e22504dbf707d3e681ff1f7e5daadf589db17c29bc448aeec844cf3
               command: [/bin/nix-base-build, copy]
               env:
                 - name: NIX_BASE_TARGET
@@ -167,7 +167,7 @@ spec:
             # Only this step has the GitHub token. It clones into the volume `work`. The next
             # step runs code of these repositories, so it must not have the token.
             - name: clone
-              image: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-0e640a8b702df1923e847d0ad8ed1a02e88ab348@sha256:2169fc4f95ad71adb1e68aa1b62e9ed8fb207f0ce35884f45b5d52fd8c37b77d
+              image: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-5903ee8cdacde57ea4b116dea46b6fb9f950060f@sha256:67bd8d377e22504dbf707d3e681ff1f7e5daadf589db17c29bc448aeec844cf3
               command: [/bin/nix-base-build, clone]
               env:
                 # Owner and name, in this order. Add a repository here to put its shell in
@@ -200,7 +200,7 @@ spec:
             # mounts are the same as in a sandbox, so the paths in the store are real. This
             # step has no token, so the flake inputs of the shells must be public.
             - name: warm
-              image: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-0e640a8b702df1923e847d0ad8ed1a02e88ab348@sha256:2169fc4f95ad71adb1e68aa1b62e9ed8fb207f0ce35884f45b5d52fd8c37b77d
+              image: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-5903ee8cdacde57ea4b116dea46b6fb9f950060f@sha256:67bd8d377e22504dbf707d3e681ff1f7e5daadf589db17c29bc448aeec844cf3
               command: [/bin/nix-base-build, warm]
               env:
                 - name: NIX_BASE_REPOS
