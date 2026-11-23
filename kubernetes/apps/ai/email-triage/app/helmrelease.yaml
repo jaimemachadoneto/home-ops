@@ -31,7 +31,7 @@ spec:
             image:
               # The release workflow of email-triage sets the tag (sha-<commit>).
               repository: ghcr.io/jaimemachadoneto/email-triage
-              tag: sha-8b329ffb7dc5bea74547d3e4ad7c4eefbe122fdf
+              tag: sha-8b329ffb7dc5bea74547d3e4ad7c4eefbe122fdf@sha256:fb93b65398341f5fa9c6d6181d55e61b3d4fad54cc85dca15942e324e2b14bb6
             command:
               - sh
               - -c
@@ -86,7 +86,7 @@ spec:
           app:
             image:
               repository: ghcr.io/jaimemachadoneto/email-triage
-              tag: sha-8b329ffb7dc5bea74547d3e4ad7c4eefbe122fdf
+              tag: sha-8b329ffb7dc5bea74547d3e4ad7c4eefbe122fdf@sha256:fb93b65398341f5fa9c6d6181d55e61b3d4fad54cc85dca15942e324e2b14bb6
             command:
               - email-triage
               - sync
