@@ -39,7 +39,7 @@ spec:
           app:
             image: &image
               repository: ghcr.io/jaimemachadoneto/hermes
-              tag: sha-3576e3ff73f2dc567f64732b94a05bf585a0d45b@sha256:55163c46e473ce88ff810fc46f287862ad3abf8bacdbd4b0b5dfd9b19ec2c72c
+              tag: sha-d4a029274fa133e91f94fc56d20428c71c701285@sha256:36d440e9f1bb6750ff83343eeb5bbb54f4e199d3ddc1296ac1c6674ab7e4a1d5
             env: &env
               # The login directory of `claude`, on the volume. HOME is
               # /opt/data, so this is also the default directory.
@@ -52,7 +52,7 @@ spec:
               # hermes-sandbox refuses an image with no digest.
               # TODO: After the merge, push the sandbox image of hermes-k8s ticket 12.
               # Then set its digest here.
-              HERMES_K8S_SANDBOX_IMAGE: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-3576e3ff73f2dc567f64732b94a05bf585a0d45b@sha256:67bd8d377e22504dbf707d3e681ff1f7e5daadf589db17c29bc448aeec844cf3
+              HERMES_K8S_SANDBOX_IMAGE: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-d4a029274fa133e91f94fc56d20428c71c701285@sha256:ba14ce92599ecf73323796aea6a6a57ce446c5b4ecf8b58571046b5f68567c96
               SEARXNG_URL: http://searxng.selfhosted.svc.cluster.local:8080
               # git in this pod uses GITHUB_TOKEN for each repository (see
               # resources/gitconfig). A system file, so `git config --global` still works.
