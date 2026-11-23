@@ -3,7 +3,7 @@
 # them; the root disk was full for a month in 2026 with no alert.
 services:
   node-exporter:
-    image: quay.io/prometheus/node-exporter:v1.12.1
+    image: quay.io/prometheus/node-exporter:v1.13.1
     container_name: node-exporter
     restart: unless-stopped
     network_mode: host
