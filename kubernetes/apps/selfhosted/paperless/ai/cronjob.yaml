@@ -8,8 +8,8 @@
 # view permission. The owner can change the owner of its own objects, so the
 # job needs only the token of paperless-ai and the change permission of the
 # group ai-services on these objects (docs/paperless-mcp.md). Flux substitutes
-# ${...}, so each $ of the script is written as $$. curl retries for about a
-# minute, because a restart of Paperless otherwise fails the run (backoffLimit
+# ${...}, so each $ of the script is written as $$. curl retries for about two
+# minutes, because a restart of Paperless otherwise fails the run (backoffLimit
 # is 0); the PATCH gives the same result when it runs twice.
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/batch/cronjob_v1.json
 apiVersion: batch/v1
@@ -25,6 +25,9 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 0
+      # A failed Job stays and makes the cluster look unhealthy (renovate-merge
+      # wait.sh) until newer failures replace it, so delete each Job after an hour.
+      ttlSecondsAfterFinished: 3600
       activeDeadlineSeconds: 300
       template:
         spec:
@@ -53,11 +56,11 @@ spec:
                 - |
                   set -eu
                   auth="Authorization: Token $${PAPERLESS_API_TOKEN}"
-                  me=$$(curl -fsS --retry 5 --retry-connrefused --retry-delay 10 -H "$$auth" "$${PAPERLESS_API}/users/?username__iexact=$${PAPERLESS_USERNAME}" | jq -e '.results[0].id')
+                  me=$$(curl -fsS --retry 12 --retry-connrefused --retry-delay 10 -H "$$auth" "$${PAPERLESS_API}/users/?username__iexact=$${PAPERLESS_USERNAME}" | jq -e '.results[0].id')
                   for kind in tags correspondents document_types; do
-                    ids=$$(curl -fsS --retry 5 --retry-connrefused --retry-delay 10 -H "$$auth" "$${PAPERLESS_API}/$${kind}/?page_size=10000" | jq -r --argjson me "$$me" '.results[] | select(.owner == $$me) | .id')
+                    ids=$$(curl -fsS --retry 12 --retry-connrefused --retry-delay 10 -H "$$auth" "$${PAPERLESS_API}/$${kind}/?page_size=10000" | jq -r --argjson me "$$me" '.results[] | select(.owner == $$me) | .id')
                     for id in $$ids; do
-                      curl -fsS --retry 5 --retry-connrefused --retry-delay 10 -o /dev/null -X PATCH -H "$$auth" -H "Content-Type: application/json" -d '{"owner": null}' "$${PAPERLESS_API}/$${kind}/$${id}/"
+                      curl -fsS --retry 12 --retry-connrefused --retry-delay 10 -o /dev/null -X PATCH -H "$$auth" -H "Content-Type: application/json" -d '{"owner": null}' "$${PAPERLESS_API}/$${kind}/$${id}/"
                       echo "$${kind} $${id}: owner removed"
                     done
                   done
