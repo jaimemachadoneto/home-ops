@@ -18,7 +18,7 @@ metadata:
     # external-dns 0.23 makes an A record to envoy-external's private IP,
     # which Cloudflare refuses for a proxied record, and the error blocks
     # every change in the zone. Authentik's route does the same.
-    external-dns.alpha.kubernetes.io/target: ingress-ext.${SECRET_DOMAIN}
+    external-dns.kubernetes.io/target: ingress-ext.${SECRET_DOMAIN}
 spec:
   hostnames:
     - litellm.${SECRET_DOMAIN}
