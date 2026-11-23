@@ -22,7 +22,7 @@ spec:
     # litellm-operator). After the merge, run the follow-up command in
     # docs/ai.md, "Outlook MCP: an update needs a follow-up command".
     # renovate: datasource=docker depName=ghcr.io/softeria/ms-365-mcp-server
-    image: ghcr.io/softeria/ms-365-mcp-server:0.186.0@sha256:80efc702b727e6644aeaef4ccce1b2c620cd3a3da77d04334f29597f6c551f55
+    image: ghcr.io/softeria/ms-365-mcp-server:0.190.5@sha256:9ecacb42997104244624f154de4e85b2188dba7ff58cfbeac21c1c3db7f8f9ce
     port: 8000
     path: /mcp
     command:
