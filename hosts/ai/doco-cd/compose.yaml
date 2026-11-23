@@ -11,7 +11,7 @@ services:
     container_name: doco-cd
     # Pinned by digest: this container holds the docker socket, so a silent
     # replacement of the image is a root-level risk. Bump the digest by hand.
-    image: ghcr.io/kimdre/doco-cd:latest@sha256:1d40f570403689c762c63009ade3d5d0dc24595bf40f9629a8ab3865e4ddb768
+    image: ghcr.io/kimdre/doco-cd:latest@sha256:fa55a3a431e479163a06dd42b8d59ceb90483e958056fd8f325b304aaf3d2a97
     restart: unless-stopped
     environment:
       TZ: Europe/Madrid
