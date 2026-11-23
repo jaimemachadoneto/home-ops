@@ -26,6 +26,8 @@ spec:
             name: externaldns-cloudflare-secrets
             key: cloudflare_api_token
     extraArgs:
+      # The default prefix of 0.22 and later. On 0.20 it makes this instance read the renamed annotations.
+      - --annotation-prefix=external-dns.kubernetes.io/
       - --cloudflare-dns-records-per-page=1000
       - --cloudflare-proxied
       - --crd-source-apiversion=externaldns.k8s.io/v1alpha1

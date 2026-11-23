@@ -72,7 +72,7 @@ spec:
           hostnames:
             - sso.${SECRET_DOMAIN}
           annotations:
-            external-dns.alpha.kubernetes.io/target: ingress-ext.${SECRET_DOMAIN}
+            external-dns.kubernetes.io/target: ingress-ext.${SECRET_DOMAIN}
             gethomepage.dev/enabled: "true"
             gethomepage.dev/description: Authentik
             gethomepage.dev/group: Infrastructure

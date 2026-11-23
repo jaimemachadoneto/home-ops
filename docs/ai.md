@@ -388,13 +388,19 @@ record for `litellm.${SECRET_DOMAIN}` (NXDOMAIN).
   `10.30.50.200`, not a CNAME to `ingress-ext`. Cloudflare refuses a proxied
   record to a private IP (error 9003). The failed create is a soft error for
   the full zone, so no other public record changed either.
-- The annotation `external-dns.alpha.kubernetes.io/target` on the route did
-  not fix it. The route keeps it, as the route of Authentik does.
-- Fix: the Cloudflare instance is back on 1.20.0
-  (`external-dns/cloudflare/ocirepository.yaml`). It made the CNAME at its
-  first sync. UniFi and Pi-hole stay on 1.23.0.
+- Root cause (found 2026-11-23): from app v0.22.0, the default annotation
+  prefix is `external-dns.kubernetes.io/`, with no fallback to
+  `external-dns.alpha.kubernetes.io/`. Thus v0.23.0 ignored the `target`
+  annotation of the Gateway `envoy-external` and used its address.
+- Fix: the Cloudflare instance went back to 1.20.0
+  (`external-dns/cloudflare/ocirepository.yaml`). Then all annotations
+  changed to the prefix `external-dns.kubernetes.io/`. The Cloudflare
+  instance reads them with `--annotation-prefix`, also on 1.20.0. UniFi and
+  Pi-hole use this prefix by default.
+- Use only the prefix `external-dns.kubernetes.io/` in a new annotation.
+  An app copied from another repository can have the old prefix.
 - There is no Renovate hold, so each new version comes as a PR. Do not
-  merge 1.23.0 again. Merge a newer version only as a test: after Flux
+  merge 1.23.0. Merge a newer version only as a test: after Flux
   applies it, watch the log of the Cloudflare instance for one minute. If
   error 9003 comes back, revert the PR. To find the cause, set `logLevel:
   debug` in `external-dns/cloudflare/helmrelease.yaml`.
