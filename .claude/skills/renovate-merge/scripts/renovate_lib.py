@@ -186,7 +186,8 @@ def assess_health(kustomizations, helmreleases, pods, sha, merged_at):
     return ("progressing" if waiting else "ready"), waiting
 
 
-_TITLE = re.compile(r"^(?P<type>[a-z]+)(\([^)]*\))?(?P<bang>!)?:\s*[Uu]pdate (?P<package>.+?)(?: \( ?(?P<old>\S+) ➔ (?P<new>\S+) ?\))?\s*$")
+# The prefix is optional: with semanticCommits "auto", Renovate drops it when main has plain commits.
+_TITLE = re.compile(r"^(?:(?P<type>[a-z]+)(\([^)]*\))?(?P<bang>!)?:\s*)?[Uu]pdate\s+(?P<package>.+?)(?: \( ?(?P<old>\S+) ➔ (?P<new>\S+) ?\))?\s*$")
 # A digest has a letter; a version of digits only (20250101) is a calendar version.
 _DIGEST = re.compile(r"^(?=[0-9a-f]*[a-f])[0-9a-f]{7,}$")
 

@@ -424,6 +424,22 @@ class MoreClassify(unittest.TestCase):
         c = classify(title, APP)
         self.assertEqual((c["package"], c["update"], c["class"]), (title, "unknown", "review"))
 
+    # Renovate writes titles without a conventional prefix when semanticCommits is "auto"
+    # and the recent commits of main have no prefix.
+    def test_title_without_prefix_gives_the_update_type(self):
+        c = classify("Update ghcr.io/stakater/charts/reloader ( 2.2.20 ➔ 2.2.21 )",
+                     "kubernetes/apps/system/reloader/app/ocirepository.yaml")
+        self.assertEqual((c["package"], c["update"], c["class"]),
+                         ("ghcr.io/stakater/charts/reloader", "patch", "medium"))
+
+    def test_title_without_prefix_and_without_bang_finds_a_major(self):
+        c = classify("Update x ( 1.9.0 ➔ 2.0.0 )", APP)
+        self.assertEqual((c["update"], c["class"]), ("major", "review"))
+
+    def test_title_without_prefix_finds_a_digest(self):
+        c = classify("Update ghcr.io/autobrr/qui ( b248ba6 ➔ ce2e229 )", APP)
+        self.assertEqual((c["update"], c["class"]), ("digest", "low"))
+
     def test_digest_of_infrastructure_is_medium(self):
         c = classify("chore(container): update x ( f6a589d ➔ 601e99e )", "kubernetes/apps/network/x/app/helmrelease.yaml")
         self.assertEqual((c["update"], c["class"]), ("digest", "medium"))
