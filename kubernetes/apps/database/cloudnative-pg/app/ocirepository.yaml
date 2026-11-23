@@ -8,7 +8,7 @@ spec:
   interval: 12h
   provider: generic
   ref:
-    tag: 0.29.1
+    tag: 0.29.2
   # Select the gzipped Helm chart layer so the source controller
   # extracts the correct content instead of attempting to unpack
   # non-gzip layers (fixes: "requires gzip-compressed body: gzip: invalid header").
