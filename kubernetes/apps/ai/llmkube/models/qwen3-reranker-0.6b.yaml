@@ -25,7 +25,7 @@ spec:
   runtime: llamacpp
   # CPU build. Swap to ghcr.io/ggml-org/llama.cpp:server-cuda once an
   # Nvidia GPU + device plugin are available.
-  image: ghcr.io/ggml-org/llama.cpp:server-b12648@sha256:20db01dc9a92bff54a5b9fe4078caa52be6a0c1fa73859c6449e25b9cb67f998
+  image: ghcr.io/ggml-org/llama.cpp:server-b12679@sha256:6fab63852916c294cc8a2f1515079c4ca40248193eea8868ae742134335b989b
   replicas: 1
   priority: normal
   contextSize: 16384
