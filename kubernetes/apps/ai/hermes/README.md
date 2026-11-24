@@ -27,6 +27,8 @@ Each user that signs in gets full agent access, which includes a shell.
 | `GITHUB_TOKEN_PERSONAL` | The fine-grained token of the account `jaimemachadoneto` (selected repositories only). Only the sandboxes read it (see the section GitHub) |
 | `CLAUDE_CODE_OAUTH_TOKEN` | The token of `claude setup-token` for the Claude Pro subscription, mounted at `/mnt/secrets/claude/token` |
 | `CLAUDE_CODE_OAUTH_TOKEN valid until` | The end date of the token. A Google Calendar event gives a warning 2 weeks before this date. |
+| `CLAUDE_CODE_OAUTH_TOKEN_2` | The token of the second Claude subscription, mounted at `/mnt/secrets/claude/token-2` |
+| `CLAUDE_CODE_OAUTH_TOKEN_2 valid until` | The end date of the second token, with its own Google Calendar event |
 
 Make the item before the merge. The Authentik ExternalSecret also reads it,
 and fails when the item does not exist.
@@ -175,6 +177,38 @@ h hermes fallback list
 To go back to LiteLLM as the primary provider, set `model.provider` to
 `litellm`, `model.default` to `opr/deepseek-v4.1-flash`, and `model.base_url`
 to the LiteLLM URL.
+
+### Two Claude subscriptions
+
+The Secret `hermes-claude` holds two tokens: `token` and `token-2`. Each
+profile selects one token in its own secret command. The plugin reads the
+token of the profile first. Give each account its own `claude_config_dir`,
+so that the two accounts do not share the login state of `claude`.
+
+Add both fields of the second token to the 1Password item before the merge.
+Until the field `CLAUDE_CODE_OAUTH_TOKEN_2` exists, the ExternalSecret
+`hermes-claude` reports an error and the Secret keeps only `token`.
+
+To put the profile `<name>` on the second account, run:
+
+```sh
+h sh -c 'hermes -p <name> config set secrets.command.command "$(cat)"' <<'EOF'
+set -eu
+printf 'LITELLM_API_KEY='
+/bin/cat /mnt/secrets/litellm/key
+if [ -r /mnt/secrets/claude/token-2 ]; then
+  printf '\nCLAUDE_CODE_OAUTH_TOKEN='
+  /bin/cat /mnt/secrets/claude/token-2
+fi
+printf '\n'
+EOF
+h hermes -p <name> config set \
+  plugins.entries.claude-subscription-directsdk-experimental.settings.claude_config_dir \
+  /opt/data/.claude-2
+```
+
+Then restart the gateway. Turn extra usage off in the second Anthropic
+account too.
 
 ## Sandboxes
 
