@@ -3,7 +3,22 @@
 # A persona is seeded once: the app owns it after that, so a Dashboard edit
 # survives a redeploy. Only the keys that point at cluster paths are set at
 # each start (see README.md, "Profiles from git").
-set -eu
+# Not -e: one setting that fails must not stop Hermes. hset logs the failure,
+# and a profile with a failure is not marked as seeded, so the next start
+# tries again.
+set -u
+failed=0
+
+# hset PROFILE KEY VALUE: one `hermes config set`, logged when it fails.
+hset() {
+  prof=$1
+  shift
+  if ! out=$(hermes -p "$prof" config set "$@" 2>&1); then
+    echo "profiles: $prof: config set $1 failed: $out"
+    failed=1
+  fi
+  return 0
+}
 
 SEEDS=/etc/hermes-personas
 LITELLM=http://litellm.ai.svc.cluster.local:4000/v1
@@ -31,23 +46,23 @@ copy_task_tiers() {
 # use_task_tiers NAME: turn on the backend. `hermes plugins enable` fails in
 # this image (it reads uv.lock), so the list is set directly.
 use_task_tiers() {
-  hermes -p "$1" config set plugins.enabled '["task-tiers"]' >/dev/null
-  hermes -p "$1" config set delegation.backend task-tiers >/dev/null
+  hset "$1" plugins.enabled '["task-tiers"]'
+  hset "$1" delegation.backend task-tiers
   # A clone copies the agents and tiers of default: start from an empty block.
-  hermes -p "$1" config set delegation.backends.task-tiers '{}' >/dev/null
+  hset "$1" delegation.backends.task-tiers '{}'
 }
 
 # seed_tiers NAME: the subagents use LiteLLM models, by the difficulty of the task.
 seed_tiers() {
   t=delegation.backends.task-tiers
   use_task_tiers "$1"
-  hermes -p "$1" config set $t.default standard >/dev/null
-  hermes -p "$1" config set $t.tiers.light.model opr-free-light >/dev/null
-  hermes -p "$1" config set $t.tiers.light.use "one read or one query, then a short summary" >/dev/null
-  hermes -p "$1" config set $t.tiers.standard.model opr-free-strong >/dev/null
-  hermes -p "$1" config set $t.tiers.standard.use "a diagnosis with several steps and tools" >/dev/null
-  hermes -p "$1" config set $t.tiers.strong.model opr-free-strong >/dev/null
-  hermes -p "$1" config set $t.tiers.strong.use "a long analysis of large logs or many resources, when time is not important" >/dev/null
+  hset "$1" $t.default standard
+  hset "$1" $t.tiers.light.model opr-free-light
+  hset "$1" $t.tiers.light.use "one read or one query, then a short summary"
+  hset "$1" $t.tiers.standard.model opr-free-strong
+  hset "$1" $t.tiers.standard.use "a diagnosis with several steps and tools"
+  hset "$1" $t.tiers.strong.model opr-free-strong
+  hset "$1" $t.tiers.strong.use "a long analysis of large logs or many resources, when time is not important"
 }
 
 # seed_agents NAME: the orchestrator gives tasks to these agents only. Each
@@ -57,16 +72,16 @@ seed_tiers() {
 seed_agents() {
   a=delegation.backends.task-tiers.agents
   use_task_tiers "$1"
-  hermes -p "$1" config set $a.house.use "lights, scenes and media; the state of the house (sensors, temperature, presence)" >/dev/null
-  hermes -p "$1" config set $a.web.use "a web search: a short answer with the links" >/dev/null
-  hermes -p "$1" config set $a.infra.use "the health of the cluster and the network (read-only)" >/dev/null
-  hermes -p "$1" config set $a.personal.use "read mail, calendar and documents; drafts; add a calendar event" >/dev/null
+  hset "$1" $a.house.use "lights, scenes and media; the state of the house (sensors, temperature, presence)"
+  hset "$1" $a.web.use "a web search: a short answer with the links"
+  hset "$1" $a.infra.use "the health of the cluster and the network (read-only)"
+  hset "$1" $a.personal.use "read mail, calendar and documents; drafts; add a calendar event"
 }
 
 # seed_kid_agents NAME: kid can only give calendar items to default.
 seed_kid_agents() {
   use_task_tiers "$1"
-  hermes -p "$1" config set delegation.backends.task-tiers.agents.default.use "add school dates and tasks to the calendar of Jaime" >/dev/null
+  hset "$1" delegation.backends.task-tiers.agents.default.use "add school dates and tasks to the calendar of Jaime"
 }
 
 # The secret command of a profile. $1 is the Claude token file, or "-" for a
@@ -93,11 +108,15 @@ profile() {
   name=$1 token=$2 claude_dir=$3 model=$4 mcp=$5 description=$6 delegation=
   [ $# -ge 7 ] && delegation=$7
   if [ "$name" = default ]; then home=$HERMES_HOME; else home=$HERMES_HOME/profiles/$name; fi
-  set_key() { hermes -p "$name" config set "$@" >/dev/null; }
+  set_key() { hset "$name" "$@"; }
+  failed=0
 
   if [ ! -d "$home" ]; then
     # --no-skills: the skills that default wrote are its own.
-    hermes profile create "$name" --clone-from default --no-alias --no-skills >/dev/null
+    if ! out=$(hermes profile create "$name" --clone-from default --no-alias --no-skills 2>&1); then
+      echo "profiles: $name: profile create failed: $out"
+      return 0
+    fi
   fi
 
   # Set at each start: these keys point at files and Secrets of the cluster.
@@ -140,9 +159,13 @@ profile() {
     set_key plugins.enabled '[]'
     set_key delegation.backends.task-tiers '{}'
   fi
-  hermes profile describe "$name" --text "$description" >/dev/null
-  touch "$home/.seeded-from-git"
-  echo "seeded profile $name"
+  hermes profile describe "$name" --text "$description" >/dev/null 2>&1 || echo "profiles: $name: describe failed"
+  if [ "$failed" = 0 ]; then
+    touch "$home/.seeded-from-git"
+    echo "seeded profile $name"
+  else
+    echo "profiles: $name: not marked as seeded; the next start tries again"
+  fi
 }
 
 T1=/mnt/secrets/claude/token
