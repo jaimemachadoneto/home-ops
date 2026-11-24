@@ -84,7 +84,7 @@ T1=/mnt/secrets/claude/token
 T2=/mnt/secrets/claude/token-2
 FLASH=opr/deepseek-v4.1-flash
 
-profile default "$T1" "$HERMES_HOME/.claude" sonnet \
+profile default "$T1" "$HERMES_HOME/.claude" opus \
   memini_hermes,notes,web_search,paperless,outlook \
   "Chief of staff: plans, routes work to the other profiles, morning brief"
 profile dev "$T2" "$HERMES_HOME/.claude-2" opus \
