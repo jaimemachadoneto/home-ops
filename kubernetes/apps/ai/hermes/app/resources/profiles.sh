@@ -159,7 +159,7 @@ profile() {
       set_key model.default "$model"
       set_key model.base_url ""
       set_key fallback_model.provider litellm
-      set_key fallback_model.model opr/deepseek-v4.1-flash
+      set_key fallback_model.model "$FLASH"
       set_key fallback_model.base_url "$LITELLM"
       set_key fallback_model.key_env LITELLM_API_KEY
       ;;
@@ -167,6 +167,11 @@ profile() {
       set_key model.provider litellm
       set_key model.default "$model"
       set_key model.base_url "$LITELLM"
+      # A clone copies the fallback of default: set it here too.
+      set_key fallback_model.provider litellm
+      set_key fallback_model.model "$FLASH"
+      set_key fallback_model.base_url "$LITELLM"
+      set_key fallback_model.key_env LITELLM_API_KEY
       ;;
   esac
   if [ -n "$delegation" ]; then
@@ -188,7 +193,7 @@ profile() {
 
 T1=/mnt/secrets/claude/token
 T2=/mnt/secrets/claude/token-2
-FLASH=opr/deepseek-v4.1-flash
+FLASH=opr/deepseek-v4.1-flash-1017
 
 profile default "$T1" "$HERMES_HOME/.claude" opus \
   memini_hermes,notes \
