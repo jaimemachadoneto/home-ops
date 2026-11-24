@@ -135,5 +135,5 @@ profile house - - "$FLASH" \
   memini_hermes,notes,ha_mcp \
   "Home Assistant state, energy and automation proposals"
 profile kid - - "$FLASH" \
-  memini_hermes,notes,outlook,browser_colegio \
-  "School mail and portal digest for the kids"
+  browser_colegio \
+  "School portal digest for the kids"

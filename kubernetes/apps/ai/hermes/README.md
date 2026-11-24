@@ -164,7 +164,7 @@ start. The script has one line for each profile:
 | `infra` | Cluster and network (read-only). Subagents use LiteLLM, by task (see "Subagent tiers") | `opus` | 1 |
 | `research` | Research and lessons for Jaime | LiteLLM `opr-free-strong` | none |
 | `house` | Home Assistant | LiteLLM | none |
-| `kid` | School mail and portal of the kids | LiteLLM | none |
+| `kid` | School portal of the kids (only `browser_colegio`) | LiteLLM | none |
 
 The script does two different things:
 
