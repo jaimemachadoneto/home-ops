@@ -89,7 +89,9 @@ secret_command() {
 # LiteLLM as the fallback, or a LiteLLM model. SEED_DELEGATION (seed_tiers or
 # seed_agents) installs the backend task-tiers and seeds its settings.
 profile() {
-  name=$1 token=$2 claude_dir=$3 model=$4 mcp=$5 description=$6 delegation=${7:-}
+  # No dollar-brace expansion in this file: Flux substitutes it in the ConfigMap.
+  name=$1 token=$2 claude_dir=$3 model=$4 mcp=$5 description=$6 delegation=
+  [ $# -ge 7 ] && delegation=$7
   if [ "$name" = default ]; then home=$HERMES_HOME; else home=$HERMES_HOME/profiles/$name; fi
   set_key() { hermes -p "$name" config set "$@" >/dev/null; }
 

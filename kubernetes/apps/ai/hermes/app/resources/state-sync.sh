@@ -47,8 +47,9 @@ sync_once() {
   g pull -q --ff-only 2>/dev/null || true
   copy_home "$DATA" "$REPO/default"
   rm -rf "$REPO/profiles"
-  for p in "$DATA"/profiles/*/; do
-    [ -d "$p" ] && [ ! -L "${p%/}" ] && copy_home "$p" "$REPO/profiles/$(basename "$p")"
+  # No dollar-brace expansion in this file: Flux substitutes it in the ConfigMap.
+  for p in "$DATA"/profiles/*; do
+    [ -d "$p" ] && [ ! -L "$p" ] && copy_home "$p" "$REPO/profiles/$(basename "$p")"
   done
   g add -A
   g diff --cached --quiet && return 0
