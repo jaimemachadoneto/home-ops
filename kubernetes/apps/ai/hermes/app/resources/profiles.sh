@@ -49,14 +49,14 @@ seed_tiers() {
 }
 
 # seed_agents NAME: the orchestrator gives tasks to these agents only. Each
-# agent decides in its SOUL what it may do on a relayed request.
+# agent decides in its SOUL what it may do on a relayed request. Not personal:
+# default has web_search, so mail that personal reads could leave in a URL.
 seed_agents() {
   a=delegation.backends.task-tiers.agents
   use_task_tiers "$1"
   hermes -p "$1" config set $a.house.use "lights, scenes and media; the state of the house (sensors, temperature, presence)" >/dev/null
   hermes -p "$1" config set $a.research.use "research a topic with sources" >/dev/null
   hermes -p "$1" config set $a.infra.use "the health of the cluster and the network (read-only)" >/dev/null
-  hermes -p "$1" config set $a.personal.use "read mail, calendar and documents; prepare drafts (it sends nothing without Jaime)" >/dev/null
 }
 
 # The secret command of a profile. $1 is the Claude token file, or "-" for a

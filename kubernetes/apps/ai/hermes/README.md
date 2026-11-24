@@ -205,11 +205,12 @@ subagent task, so the orchestrator selects the model from the task:
 | `strong` | `opr-free-strong` | A long analysis, when time is not important |
 
 `default` uses the same backend with the parameter `agent`: it gives a task to
-`house`, `research`, `infra` or `personal`. Hermes runs that subagent as the
+`house`, `research` or `infra`. Hermes runs that subagent as the
 other profile, with its own SOUL, tools and model. The SOUL of each agent says
 what it may do on a relayed request: `house` only lights, scenes, media and
-state; `personal` only reads and drafts. Jaime can still talk to each agent
-directly. `dev` and `kid` are not in the list.
+state. Jaime can still talk to each agent directly. `personal`, `dev` and
+`kid` are not in the list. `personal` must not be: `default` has `web_search`,
+so a relayed read of the mail could leave in a URL.
 
 The tiers and the agents are in `delegation.backends.task-tiers` of the
 profile, seeded once. `app/resources/task-tiers/test_plugin.py` tests the
