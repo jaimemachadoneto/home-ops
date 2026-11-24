@@ -81,11 +81,12 @@ profile() {
   # The memini namespace of the profile. memini_hermes forwards it, and
   # memini adds the parent `hermes` and the personal namespace.
   set_key mcp_servers.Litellm.headers.X-Memini-Namespace "hermes/$name"
+  # The MCP servers decide what the profile can reach, so git owns them.
+  set_key mcp_servers.Litellm.headers.x-mcp-servers "$mcp"
 
   # Seeded once. Delete the marker file to seed the profile again.
   [ -e "$home/.seeded-from-git" ] && return 0
   cp "$SEEDS/soul-$name.md" "$home/SOUL.md"
-  set_key mcp_servers.Litellm.headers.x-mcp-servers "$mcp"
   case $model in
     sonnet | opus | haiku)
       set_key model.provider claude-subscription-directsdk-experimental

@@ -169,11 +169,12 @@ start. The script has one line for each profile:
 The script does two different things:
 
 - At each start, it sets the keys that point at files of the cluster: the
-  secret command, `claude_config_dir`, a copy of the Claude plugin, and the
-  memini namespace.
+  secret command, `claude_config_dir`, a copy of the Claude plugin, the
+  memini namespace, and the `x-mcp-servers` header (the MCP servers of the
+  profile).
 - Only once, it seeds the persona: it creates the profile, copies
   `app/resources/personas/soul-<name>.md` to `SOUL.md`, and sets the model,
-  the fallback, the description and the `x-mcp-servers` header. Then it
+  the fallback and the description. Then it
   writes the marker file `.seeded-from-git` in the profile.
 
 After the seed, the app owns the persona. A change in the Dashboard stays
@@ -224,7 +225,8 @@ Hermes and the facts in memini.
 `memini_hermes` lets the caller select the namespace. Give only the Hermes key
 access to it in the LiteLLM UI.
 
-The namespaces keep the memories in order. They are not a security boundary:
+The namespaces and the `x-mcp-servers` header keep the profiles in order.
+They are not a security boundary. The header only narrows the Hermes key, and
 a profile can send the namespace of another profile, or `personal/jaime`. All
 profiles run in one container with one LiteLLM key, so a key for each profile
 does not stop this either.
