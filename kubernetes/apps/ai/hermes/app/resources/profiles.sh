@@ -33,11 +33,12 @@ secret_command() {
   echo "printf '\\n'"
 }
 
-# profile NAME TOKEN CLAUDE_DIR MODEL MCP_SERVERS DESCRIPTION
+# profile NAME TOKEN CLAUDE_DIR MODEL MCP_SERVERS DESCRIPTION [SUBAGENT_MODEL]
 # MODEL is a Claude model (sonnet, opus, haiku) on the subscription with
-# LiteLLM as the fallback, or a LiteLLM model.
+# LiteLLM as the fallback, or a LiteLLM model. SUBAGENT_MODEL is a LiteLLM
+# model for the subagents, so that they do not use the Claude plan.
 profile() {
-  name=$1 token=$2 claude_dir=$3 model=$4 mcp=$5 description=$6
+  name=$1 token=$2 claude_dir=$3 model=$4 mcp=$5 description=$6 subagent_model=${7:-}
   if [ "$name" = default ]; then home=$HERMES_HOME; else home=$HERMES_HOME/profiles/$name; fi
   set_key() { hermes -p "$name" config set "$@" >/dev/null; }
 
@@ -75,6 +76,10 @@ profile() {
       set_key model.base_url "$LITELLM"
       ;;
   esac
+  if [ -n "$subagent_model" ]; then
+    set_key delegation.provider litellm
+    set_key delegation.model "$subagent_model"
+  fi
   hermes profile describe "$name" --text "$description" >/dev/null
   touch "$home/.seeded-from-git"
   echo "seeded profile $name"
@@ -90,10 +95,11 @@ profile default "$T1" "$HERMES_HOME/.claude" opus \
 profile dev "$T2" "$HERMES_HOME/.claude-2" opus \
   memini_hermes,notes,context7,kubesearch,web_search \
   "Software engineering in the sandbox, PRs, tests"
-profile infra - - "$FLASH" \
+profile infra "$T1" "$HERMES_HOME/.claude" opus \
   memini_hermes,notes,flux,victorialogs,kubectl,unifi_network \
-  "Read-only cluster and network health"
-profile research - - "$FLASH" \
+  "Read-only cluster and network health; plans on opus, subagents on LiteLLM" \
+  "$FLASH"
+profile research - - opr-free-strong \
   memini_hermes,notes,web_search,context7 \
   "Research and lessons with sources"
 profile house - - "$FLASH" \

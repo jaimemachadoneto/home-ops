@@ -160,8 +160,8 @@ start. The script has one line for each profile:
 | --- | --- | --- | --- |
 | `default` | Chief of staff | `opus` | 1 |
 | `dev` | Software engineer | `opus` | 2 |
-| `infra` | Cluster and network (read-only) | LiteLLM | none |
-| `research` | Research and lessons for Jaime | LiteLLM | none |
+| `infra` | Cluster and network (read-only). Subagents use LiteLLM `opr/deepseek-v4.1-flash` | `opus` | 1 |
+| `research` | Research and lessons for Jaime | LiteLLM `opr-free-strong` | none |
 | `house` | Home Assistant | LiteLLM | none |
 | `kid` | School mail and portal of the kids | LiteLLM | none |
 
