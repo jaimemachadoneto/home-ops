@@ -1,0 +1,5 @@
+name: task-tiers
+kind: backend
+version: 0.1.0
+description: "Delegation backend: the orchestrator selects a tier for each subagent task, and each tier is a model in delegation.backends.task-tiers.tiers."
+author: home-ops

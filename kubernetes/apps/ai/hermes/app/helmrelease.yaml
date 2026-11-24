@@ -163,6 +163,67 @@ spec:
               capabilities:
                 drop:
                   - ALL
+          # Copies the text configuration of each profile to a private GitHub
+          # repository each hour (resources/state-sync.sh). Only this container
+          # has the personal GitHub token.
+          state-sync:
+            image:
+              repository: docker.io/alpine/git
+              tag: v2.54.0@sha256:6a1fdb962814ca11508ca8d1bab94375b5b7ac4e4a9a40981c29fc32c02f095d
+            command:
+              - /bin/sh
+              - /etc/hermes/state-sync.sh
+            env:
+              HOME: /work
+            resources:
+              requests:
+                cpu: 5m
+                memory: 32Mi
+              limits:
+                memory: 256Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+        # These run after the containers block only so that they can use its
+        # YAML anchors. Kubernetes runs them in order, before the containers.
+        initContainers:
+          # A restore or a node restart can leave the root of the volume
+          # owned by root. fsGroup fixes only the group, and the gateway
+          # refuses a control path that uid 10000 does not own.
+          fix-owner:
+            image: *image
+            command:
+              - /bin/chown
+              - "10000"
+              - /opt/data
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              runAsNonRoot: false
+              runAsUser: 0
+              capabilities:
+                add:
+                  - CHOWN
+                drop:
+                  - ALL
+          # Seeds the persona profiles once and sets their cluster paths
+          # (resources/profiles.sh).
+          profiles:
+            dependsOn: fix-owner
+            image: *image
+            command:
+              - /bin/sh
+              - /etc/hermes/profiles.sh
+            env: *env
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
     persistence:
       data:
         existingClaim: hermes
@@ -172,6 +233,13 @@ spec:
               - path: /opt/data
             dashboard:
               - path: /opt/data
+            fix-owner:
+              - path: /opt/data
+            profiles:
+              - path: /opt/data
+            state-sync:
+              - path: /opt/data
+                readOnly: true
       config:
         type: configMap
         name: hermes-config
@@ -183,6 +251,20 @@ spec:
             dashboard:
               - path: /etc/hermes
                 readOnly: true
+            profiles:
+              - path: /etc/hermes
+                readOnly: true
+            state-sync:
+              - path: /etc/hermes
+                readOnly: true
+      personas:
+        type: configMap
+        name: hermes-personas
+        advancedMounts:
+          hermes:
+            profiles:
+              - path: /etc/hermes-personas
+                readOnly: true
       litellm-key:
         type: secret
         name: hermes-litellm
@@ -193,6 +275,18 @@ spec:
                 readOnly: true
             dashboard:
               - path: /mnt/secrets/litellm
+                readOnly: true
+            # `hermes config set` runs the secret command of the profile.
+            profiles:
+              - path: /mnt/secrets/litellm
+                readOnly: true
+      state-sync-token:
+        type: secret
+        name: hermes-state-sync
+        advancedMounts:
+          hermes:
+            state-sync:
+              - path: /mnt/secrets/state-sync
                 readOnly: true
       claude-token:
         type: secret
@@ -238,6 +332,14 @@ spec:
           hermes:
             app:
               - path: /workspace
+      # The clone of the hermes-state repository. A new pod clones it again.
+      state-sync-work:
+        type: emptyDir
+        sizeLimit: 1Gi
+        advancedMounts:
+          hermes:
+            state-sync:
+              - path: /work
     route:
       webapp:
         annotations:
