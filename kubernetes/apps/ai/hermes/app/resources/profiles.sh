@@ -52,13 +52,13 @@ seed_tiers() {
 
 # seed_agents NAME: the orchestrator gives tasks to these agents only. Each
 # agent decides in its SOUL what it may do on a relayed request. default reads
-# mail through personal, so no agent in this list can open a URL: web has
-# only the search tools, and research is not in the list.
+# mail through personal and web can open a URL: Jaime accepted on 2026-11-24
+# that only the SOULs keep mail text out of the tasks for web.
 seed_agents() {
   a=delegation.backends.task-tiers.agents
   use_task_tiers "$1"
   hermes -p "$1" config set $a.house.use "lights, scenes and media; the state of the house (sensors, temperature, presence)" >/dev/null
-  hermes -p "$1" config set $a.web.use "a web search: a short answer with the links (it cannot open a URL)" >/dev/null
+  hermes -p "$1" config set $a.web.use "a web search: a short answer with the links" >/dev/null
   hermes -p "$1" config set $a.infra.use "the health of the cluster and the network (read-only)" >/dev/null
   hermes -p "$1" config set $a.personal.use "read mail, calendar and documents; drafts; add a calendar event" >/dev/null
 }
@@ -166,9 +166,9 @@ profile infra "$T1" "$HERMES_HOME/.claude" opus \
 profile research - - opr-free-strong \
   memini_hermes,notes,web_search,context7 \
   "Research and lessons with sources"
-# Search only (web_search_only has no web_url_read) and no memory.
+# No memory: a page that tricks web finds no private data here.
 profile web - - opr-free-strong \
-  web_search_only \
+  web_search \
   "Web search for default: short answers with sources"
 profile house - - "$FLASH" \
   memini_hermes,notes,ha_mcp \
