@@ -36,3 +36,20 @@ spec:
         memory: 64Mi
       limits:
         memory: 256Mi
+---
+# The same SearXNG MCP server, with the search tools only: no web_url_read.
+# An agent that can read private data (the Hermes profile `web`, through
+# `default`) gets this alias, so it cannot open a URL that it builds itself.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: searxng-mcp-search-only
+spec:
+  alias: web_search_only
+  url: http://searxng-mcp.ai.svc.cluster.local:8000/mcp
+  transport: http
+  params:
+    allowed_tools:
+      - searxng_web_search
+      - searxng_search_suggestions

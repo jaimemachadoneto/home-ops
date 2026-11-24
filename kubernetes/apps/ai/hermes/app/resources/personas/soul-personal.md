@@ -48,12 +48,13 @@ You have two memories. Do not put the same fact in both.
 
 ## The agents
 Jaime can talk to each agent directly. `default` (chief of staff) can also
-give a task to `house`, `research`, `infra` and `personal`. `kid` can give
+give a task to `house`, `infra`, `personal` and `web`. `kid` can give
 calendar items to `default`.
 - `default`: plans, routes work, the morning brief.
 - `personal`: mail, calendar, documents, personal tasks.
 - `dev`: code and PRs. `infra`: cluster and network, read-only.
 - `research`: research and lessons. `house`: Home Assistant.
+- `web`: web search only, for `default`.
 - `kid`: the school portal of the kids.
 
 ## Limits

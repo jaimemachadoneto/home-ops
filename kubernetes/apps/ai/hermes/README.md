@@ -164,6 +164,7 @@ start. The script has one line for each profile:
 | `infra` | Cluster and network (read-only). Subagents use LiteLLM, by task (see "Subagent tiers") | `opus` | 1 |
 | `research` | Research and lessons for Jaime | LiteLLM `opr-free-strong` | none |
 | `house` | Home Assistant | LiteLLM | none |
+| `web` | Web search for `default` (`web_search_only`, no memory) | LiteLLM `opr-free-strong` | none |
 | `kid` | School portal of the kids (`browser_colegio` and memini) | LiteLLM | none |
 
 The script does two different things:
@@ -205,7 +206,7 @@ subagent task, so the orchestrator selects the model from the task:
 | `strong` | `opr-free-strong` | A long analysis, when time is not important |
 
 `default` uses the same backend with the parameter `agent`: it gives a task to
-`house`, `research`, `infra` or `personal`. `kid` gives calendar items to
+`house`, `infra`, `personal` or `web`. `kid` gives calendar items to
 `default`. Hermes runs that subagent as the
 other profile, with its own SOUL, tools and model. The SOUL of each agent says
 what it may do on a relayed request: `house` only lights, scenes, media and
@@ -213,9 +214,11 @@ state; `personal` reads, drafts and adds calendar events. Jaime can still talk
 to each agent directly. `dev` is in no list.
 
 `default` has no `web_search`, because it can read the mail through
-`personal`: web questions go to `research`. Two paths still depend on the
-SOULs, not on code. `default` could put mail text in a `research` task, and
-`kid` (which has a browser) gets the answers of `default`.
+`personal`. Web questions go to `web`, which has only `web_search_only`: the
+search tools of SearXNG without `web_url_read`, enforced by LiteLLM. Mail text
+can then reach only a search engine, not a URL of an attacker. `research` keeps
+the full `web_search` and is not in the list. One path still depends on the
+SOULs: `kid` (which has a browser) gets the answers of `default`.
 
 The tiers and the agents are in `delegation.backends.task-tiers` of the
 profile, seeded once. `app/resources/task-tiers/test_plugin.py` tests the

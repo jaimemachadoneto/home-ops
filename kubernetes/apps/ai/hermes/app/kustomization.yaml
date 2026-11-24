@@ -28,5 +28,6 @@ configMapGenerator:
       - ./resources/personas/soul-kid.md
       - ./resources/personas/soul-personal.md
       - ./resources/personas/soul-research.md
+      - ./resources/personas/soul-web.md
 generatorOptions:
   disableNameSuffixHash: true
