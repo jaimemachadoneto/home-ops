@@ -134,6 +134,8 @@ profile research - - opr-free-strong \
 profile house - - "$FLASH" \
   memini_hermes,notes,ha_mcp \
   "Home Assistant state, energy and automation proposals"
+# memini next to a browser breaks the rule "no URL-fetch tool next to memini":
+# Jaime accepted that risk for kid on 2026-11-24.
 profile kid - - "$FLASH" \
-  browser_colegio \
+  memini_hermes,browser_colegio \
   "School portal digest for the kids"
