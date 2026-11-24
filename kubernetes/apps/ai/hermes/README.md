@@ -158,17 +158,18 @@ start. The script has one line for each profile:
 
 | Profile | Persona | Model | Claude account |
 | --- | --- | --- | --- |
-| `default` | John, chief of staff | `sonnet` | 1 |
-| `dev` | Dev, software engineer | `opus` | 2 |
-| `jeff` | Jeff, chief IT (read-only) | LiteLLM | none |
-| `jena` | Jena, tutor | LiteLLM | none |
-| `home` | Home Assistant | LiteLLM | none |
-| `laura` | School mail | LiteLLM | none |
+| `default` | Chief of staff | `sonnet` | 1 |
+| `dev` | Software engineer | `opus` | 2 |
+| `infra` | Cluster and network (read-only) | LiteLLM | none |
+| `tutor` | Lessons for Jaime | LiteLLM | none |
+| `house` | Home Assistant | LiteLLM | none |
+| `kid` | School mail and portal of the kids | LiteLLM | none |
 
 The script does two different things:
 
 - At each start, it sets the keys that point at files of the cluster: the
-  secret command, `claude_config_dir`, and a copy of the Claude plugin.
+  secret command, `claude_config_dir`, a copy of the Claude plugin, and the
+  memini namespace.
 - Only once, it seeds the persona: it creates the profile, copies
   `app/resources/personas/soul-<name>.md` to `SOUL.md`, and sets the model,
   the fallback, the description and the `x-mcp-servers` header. Then it
@@ -187,6 +188,23 @@ image.
 The init container `fix-owner` runs first. It gives the root directory of
 the volume back to uid 10000. A node restart or a restore can leave it
 owned by root, and the gateway then refuses to start.
+
+## Memory of the profiles
+
+Each profile has two memories:
+
+- The memory of Hermes: `memories/` and `skills/` in the profile. Hermes
+  writes them itself. `profiles.sh` never changes them.
+- memini, through the LiteLLM server `memini_hermes`
+  (`kubernetes/apps/ai/memini-mcp`). At each start, `profiles.sh` sets the
+  header `X-Memini-Namespace: hermes/<profile>`. memini then reads
+  `hermes/<profile>`, `hermes` and `personal/jaime`.
+
+The SOUL of each profile tells it to keep its working habits in the memory of
+Hermes and the facts in memini.
+
+`memini_hermes` lets the caller select the namespace. Give only the Hermes key
+access to it in the LiteLLM UI.
 
 ## Snapshot of the configuration
 

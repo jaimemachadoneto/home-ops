@@ -51,6 +51,9 @@ profile() {
     copy_plugin "$home"
     set_key plugins.entries.claude-subscription-directsdk-experimental.settings.claude_config_dir "$claude_dir"
   fi
+  # The memini namespace of the profile. memini_hermes forwards it, and
+  # memini adds the parent `hermes` and the personal namespace.
+  set_key mcp_servers.Litellm.headers.X-Memini-Namespace "hermes/$name"
 
   # Seeded once. Delete the marker file to seed the profile again.
   [ -e "$home/.seeded-from-git" ] && return 0
@@ -82,20 +85,20 @@ T2=/mnt/secrets/claude/token-2
 FLASH=opr/deepseek-v4.1-flash
 
 profile default "$T1" "$HERMES_HOME/.claude" sonnet \
-  memini,notes,web_search,paperless,outlook \
-  "John, chief of staff: plans, routes work to the other profiles, morning brief"
+  memini_hermes,notes,web_search,paperless,outlook \
+  "Chief of staff: plans, routes work to the other profiles, morning brief"
 profile dev "$T2" "$HERMES_HOME/.claude-2" opus \
-  memini,notes,context7,kubesearch,web_search \
-  "Dev: software engineering in the sandbox, PRs, tests"
-profile jeff - - "$FLASH" \
-  memini,notes,flux,victorialogs,kubectl,unifi_network \
-  "Jeff, chief IT: read-only cluster and network health"
-profile jena - - "$FLASH" \
-  memini,notes,web_search,context7 \
-  "Jena, tutor: daily lessons with sources"
-profile home - - "$FLASH" \
-  memini,notes,ha_mcp \
-  "Home: Home Assistant state, energy and automation proposals"
-profile laura - - "$FLASH" \
-  memini,notes,outlook,browser_colegio \
-  "Laura: school mail and portal digest for the kids"
+  memini_hermes,notes,context7,kubesearch,web_search \
+  "Software engineering in the sandbox, PRs, tests"
+profile infra - - "$FLASH" \
+  memini_hermes,notes,flux,victorialogs,kubectl,unifi_network \
+  "Read-only cluster and network health"
+profile tutor - - "$FLASH" \
+  memini_hermes,notes,web_search,context7 \
+  "Daily lessons with sources"
+profile house - - "$FLASH" \
+  memini_hermes,notes,ha_mcp \
+  "Home Assistant state, energy and automation proposals"
+profile kid - - "$FLASH" \
+  memini_hermes,notes,outlook,browser_colegio \
+  "School mail and portal digest for the kids"

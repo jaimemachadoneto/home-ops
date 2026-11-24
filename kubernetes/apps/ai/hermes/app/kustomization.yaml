@@ -21,9 +21,9 @@ configMapGenerator:
     files:
       - ./resources/personas/soul-default.md
       - ./resources/personas/soul-dev.md
-      - ./resources/personas/soul-home.md
-      - ./resources/personas/soul-jeff.md
-      - ./resources/personas/soul-jena.md
-      - ./resources/personas/soul-laura.md
+      - ./resources/personas/soul-house.md
+      - ./resources/personas/soul-infra.md
+      - ./resources/personas/soul-kid.md
+      - ./resources/personas/soul-tutor.md
 generatorOptions:
   disableNameSuffixHash: true

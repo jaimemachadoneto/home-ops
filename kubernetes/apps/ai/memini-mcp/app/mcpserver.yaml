@@ -21,3 +21,27 @@ spec:
     static_headers:
       X-Memini-Namespace: personal/jaime
       X-Memini-Home: personal/jaime
+---
+# memini for the Hermes profiles. Each profile sends its own
+# X-Memini-Namespace (hermes/<profile>), so each persona has its own memory
+# and inherits `hermes` and the personal namespace. A static header always
+# wins over a forwarded one, so this server sets only the home namespace.
+# A caller can select any namespace here: give only the Hermes key access.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: memini-hermes
+spec:
+  alias: memini_hermes
+  url: http://memini.ai.svc.cluster.local:8080/mcp
+  transport: http
+  authType: bearer_token
+  authTokenRef:
+    name: memini-secret
+    key: MEMINI_API_KEY
+  params:
+    extra_headers:
+      - X-Memini-Namespace
+    static_headers:
+      X-Memini-Home: personal/jaime
