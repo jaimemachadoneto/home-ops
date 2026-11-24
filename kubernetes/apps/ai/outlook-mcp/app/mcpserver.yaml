@@ -8,8 +8,10 @@
 # volsync-backed PVC, refreshed by MSAL), and supergateway serves that over
 # Streamable HTTP to LiteLLM. One-time sign-in: docs/ai.md.
 #
-# Full mail access (read, send, move, delete), as asked; add --read-only to
-# the server command to take that back.
+# Full mail and calendar access (read, send, move, delete, and events), as
+# asked; add --read-only to the server command to take that back. The Hermes
+# profile `personal` writes events to this calendar only. The other
+# calendars (Gmail, Yahoo, iCloud) are read-only subscriptions in Outlook.
 # yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
 apiVersion: litellm.home-operations.com/v1alpha1
 kind: LiteLLMMCPServer
@@ -32,7 +34,7 @@ spec:
       # supergateway is fetched by npx at start (cached in /tmp/.npm).
       - >-
         exec npx -y supergateway@4.1.0
-        --stdio "ms-365-mcp-server --preset mail"
+        --stdio "ms-365-mcp-server --preset mail,calendar"
         --outputTransport streamableHttp --stateful --sessionTimeout 600000
         --port 8000 --healthEndpoint /healthz
     env:
