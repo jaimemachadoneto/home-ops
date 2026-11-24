@@ -32,6 +32,18 @@ copy_home() {
   for d in memories skills; do
     [ -d "$1/$d" ] && cp -RP "$1/$d" "$2/$d"
   done
+  # Only the skills that the agent wrote: the bundled skills are the same in
+  # each image and have example tokens that the secret check refuses. The
+  # dot entries (hub cache, usage, locks) are runtime state.
+  if [ -d "$2/skills" ]; then
+    if [ -f "$1/skills/.bundled_manifest" ]; then
+      cut -d: -f1 "$1/skills/.bundled_manifest" | while read -r s; do
+        [ -n "$s" ] && find "$2/skills" -mindepth 1 -maxdepth 3 -type d -name "$s" -exec rm -rf {} +
+      done
+    fi
+    find "$2/skills" -mindepth 1 -maxdepth 1 -name '.*' -exec rm -rf {} +
+    find "$2/skills" -type d -empty -delete
+  fi
   # The lock files of memories change on each write and hold nothing. Links,
   # nested repositories and large files are not configuration.
   find "$2" -name '*.lock' -delete
