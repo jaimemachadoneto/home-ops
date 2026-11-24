@@ -206,6 +206,11 @@ Hermes and the facts in memini.
 `memini_hermes` lets the caller select the namespace. Give only the Hermes key
 access to it in the LiteLLM UI.
 
+The namespaces keep the memories in order. They are not a security boundary:
+a profile can send the namespace of another profile, or `personal/jaime`. All
+profiles run in one container with one LiteLLM key, so a key for each profile
+does not stop this either.
+
 ## Snapshot of the configuration
 
 The container `state-sync` runs `app/resources/state-sync.sh`. Each hour it
