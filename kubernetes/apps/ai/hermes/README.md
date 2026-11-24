@@ -29,6 +29,7 @@ Each user that signs in gets full agent access, which includes a shell.
 | `CLAUDE_CODE_OAUTH_TOKEN valid until` | The end date of the token. A Google Calendar event gives a warning 2 weeks before this date. |
 | `CLAUDE_CODE_OAUTH_TOKEN_2` | The token of the second Claude subscription, mounted at `/mnt/secrets/claude/token-2` |
 | `CLAUDE_CODE_OAUTH_TOKEN_2 valid until` | The end date of the second token, with its own Google Calendar event |
+| `HERMES_STATE_GITHUB_TOKEN` | A fine-grained token for `jaimemachadoneto/hermes-state` only, read by the container `state-sync` |
 
 Make the item before the merge. The Authentik ExternalSecret also reads it,
 and fails when the item does not exist.
@@ -58,9 +59,10 @@ profile. The profiles, `.env` and `SOUL.md` are on the PVC.
 
 Hermes reads the secret sources and the model provider from the
 `config.yaml` of each profile only. Do not put them in the overlay: a save in
-the Dashboard then removes them from the profile. Merge this into
-`/opt/data/config.yaml` (or `/opt/data/profiles/<name>/config.yaml`) after
-the first start. Keep the other settings of the profile.
+the Dashboard then removes them from the profile. On a new volume, merge this
+into `/opt/data/config.yaml` after the first start. The other profiles are
+copies of `default`. `app/resources/profiles.sh` sets the secret command and
+the model of each profile (see "Profiles from git").
 
 ```yaml
 model:
@@ -122,93 +124,90 @@ Only the container `app` mounts it.
    overage. The plugin cannot stop it (ADR 0010).
 4. Add a Google Calendar event 2 weeks before the end date. Make a new token
    in that week.
-5. After the merge, change the profile configuration on the volume. The
-   commands follow in the next section.
-6. Restart the gateway: `kubectl -n ai rollout restart deploy/hermes`. Restart
+5. Restart the gateway: `kubectl -n ai rollout restart deploy/hermes`. Restart
    it also after each new token, because the gateway reads the token once.
-
-### Profile configuration on the volume
-
-`/opt/data/config.yaml` holds the model provider, the default model, the
-fallback and the secret command. The overlay does not hold them, because
-Hermes reads them from the profile only. This section replaces the provider and
-the secret command of the section "Configuration".
-
-The container `dashboard` has no token file, so the secret command skips the
-token there.
 
 The setting `extra_usage` is in the overlay (`app/resources/config.yaml`). It
 is a rule of the cluster, not a preference. `notify` is also the default value
 of the plugin. The overlay pins the value, so a save in the Dashboard cannot
-change it.
-
-Run each command in the pod:
-
-```sh
-h() { kubectl -n ai exec -i deploy/hermes -c app -- "$@"; }
-
-# 1. This command replaces the old secret command.
-h sh -c 'hermes config set secrets.command.command "$(cat)"' <<'EOF'
-set -eu
-printf 'LITELLM_API_KEY='
-/bin/cat /mnt/secrets/litellm/key
-if [ -r /mnt/secrets/claude/token ]; then
-  printf '\nCLAUDE_CODE_OAUTH_TOKEN='
-  /bin/cat /mnt/secrets/claude/token
-fi
-printf '\n'
-EOF
-
-# 2. Set the subscription as the provider. Remove the old LiteLLM base_url.
-h hermes config set model.provider claude-subscription-directsdk-experimental
-h hermes config set model.default sonnet
-h hermes config set model.base_url ""
-
-# 3. Set LiteLLM as the fallback. Keep the block providers.litellm.
-h hermes config set fallback_model.provider litellm
-h hermes config set fallback_model.model opr/deepseek-v4.1-flash
-h hermes config set fallback_model.base_url http://litellm.ai.svc.cluster.local:4000/v1
-h hermes config set fallback_model.key_env LITELLM_API_KEY
-
-# 4. Check.
-h hermes fallback list
-```
-
-To go back to LiteLLM as the primary provider, set `model.provider` to
-`litellm`, `model.default` to `opr/deepseek-v4.1-flash`, and `model.base_url`
-to the LiteLLM URL.
+change it. The container `dashboard` has no token file, so the secret command
+skips the token there.
 
 ### Two Claude subscriptions
 
-The Secret `hermes-claude` holds two tokens: `token` and `token-2`. Each
-profile selects one token in its own secret command. The plugin reads the
-token of the profile first. Give each account its own `claude_config_dir`,
-so that the two accounts do not share the login state of `claude`.
+The Secret `hermes-claude` holds two tokens: `token` (account 1) and
+`token-2` (account 2). Both files are in the container `app`, so a profile
+can read the token of the other account: the split is for the plan limits,
+not a security boundary. Each profile selects one token in its own secret
+command, and each account has its own `claude_config_dir`, so that the two
+accounts do not share the login state of `claude`. `app/resources/profiles.sh`
+sets both at each start.
 
 Add both fields of the second token to the 1Password item before the merge.
 Until the field `CLAUDE_CODE_OAUTH_TOKEN_2` exists, the ExternalSecret
-`hermes-claude` reports an error and the Secret keeps only `token`.
+`hermes-claude` reports an error and the Secret keeps only `token`. Turn extra
+usage off in the second Anthropic account too.
 
-To put the profile `<name>` on the second account, run:
+When a plan limit is used up, Anthropic refuses the turn with a 429 and the
+time of the reset. Hermes then uses the LiteLLM fallback until that time.
 
-```sh
-h sh -c 'hermes -p <name> config set secrets.command.command "$(cat)"' <<'EOF'
-set -eu
-printf 'LITELLM_API_KEY='
-/bin/cat /mnt/secrets/litellm/key
-if [ -r /mnt/secrets/claude/token-2 ]; then
-  printf '\nCLAUDE_CODE_OAUTH_TOKEN='
-  /bin/cat /mnt/secrets/claude/token-2
-fi
-printf '\n'
-EOF
-h hermes -p <name> config set \
-  plugins.entries.claude-subscription-directsdk-experimental.settings.claude_config_dir \
-  /opt/data/.claude-2
-```
+## Profiles from git
 
-Then restart the gateway. Turn extra usage off in the second Anthropic
-account too.
+The init container `profiles` runs `app/resources/profiles.sh` before each
+start. The script has one line for each profile:
+
+| Profile | Persona | Model | Claude account |
+| --- | --- | --- | --- |
+| `default` | John, chief of staff | `sonnet` | 1 |
+| `dev` | Dev, software engineer | `opus` | 2 |
+| `jeff` | Jeff, chief IT (read-only) | LiteLLM | none |
+| `jena` | Jena, tutor | LiteLLM | none |
+| `home` | Home Assistant | LiteLLM | none |
+| `laura` | School mail | LiteLLM | none |
+
+The script does two different things:
+
+- At each start, it sets the keys that point at files of the cluster: the
+  secret command, `claude_config_dir`, and a copy of the Claude plugin.
+- Only once, it seeds the persona: it creates the profile, copies
+  `app/resources/personas/soul-<name>.md` to `SOUL.md`, and sets the model,
+  the fallback, the description and the `x-mcp-servers` header. Then it
+  writes the marker file `.seeded-from-git` in the profile.
+
+After the seed, the app owns the persona. A change in the Dashboard stays
+after a redeploy. A change to a seed file in git has no effect on a seeded
+profile. To seed a profile again, delete its `.seeded-from-git` and restart.
+
+The Claude plugin is in the wrong directory of the `hermes-k8s` image:
+Hermes reads a bundled model provider only from `model-providers/`. The
+script therefore copies the plugin into the `plugins/` directory of each
+profile with a Claude account. Remove the copy when `hermes-k8s` fixes the
+image.
+
+The init container `fix-owner` runs first. It gives the root directory of
+the volume back to uid 10000. A node restart or a restore can leave it
+owned by root, and the gateway then refuses to start.
+
+## Snapshot of the configuration
+
+The container `state-sync` runs `app/resources/state-sync.sh`. Each hour it
+copies the text files of each profile to the private repository
+`jaimemachadoneto/hermes-state`: `config.yaml`, `SOUL.md`, `memories/`,
+`skills/` and `cron/jobs.json`. It never copies `.env`, `auth.json` or a
+database. When the change has a string like a key, it pushes nothing and
+writes an error to its log.
+
+The snapshot is a view with history. Nothing reads it back into Hermes. The
+full backup of the volume is volsync.
+
+`state-sync` pushes with the 1Password field `HERMES_STATE_GITHUB_TOKEN`, a
+fine-grained token for `jaimemachadoneto/hermes-state` only, with the
+permission "Contents: read and write". The Secret `hermes-state-sync` holds
+it, and only this container mounts it. The agent containers do not have it.
+
+The agent can write on the volume, so the script copies no symbolic link, no
+`.git` directory and no file larger than 1 MiB. The secret scan also reads
+binary files.
 
 ## Sandboxes
 
