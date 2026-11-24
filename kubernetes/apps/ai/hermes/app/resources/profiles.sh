@@ -127,8 +127,9 @@ profile() {
   failed=0
 
   if [ ! -d "$home" ]; then
-    # --no-skills: the skills that default wrote are its own.
-    if ! out=$(hermes profile create "$name" --clone-from default --no-alias --no-skills 2>&1); then
+    # A clone also copies the skills of default; hermes does not allow
+    # --no-skills with --clone-from.
+    if ! out=$(hermes profile create "$name" --clone-from default --no-alias 2>&1); then
       echo "profiles: $name: profile create failed: $out"
       return 0
     fi
