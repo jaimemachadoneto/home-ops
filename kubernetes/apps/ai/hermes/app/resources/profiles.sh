@@ -115,8 +115,10 @@ FLASH=opr/deepseek-v4.1-flash
 profile default "$T1" "$HERMES_HOME/.claude" opus \
   memini_hermes,notes,web_search \
   "Chief of staff: plans, routes work to the other profiles, morning brief"
+# No URL-fetch tool here: mail is untrusted text, and with web_search an agent
+# could send mail or memory data to any URL.
 profile personal "$T1" "$HERMES_HOME/.claude" sonnet \
-  memini_hermes,notes,outlook,paperless,web_search \
+  memini_hermes,notes,outlook,paperless \
   "Personal assistant: mail, calendar, documents and personal tasks"
 profile dev "$T2" "$HERMES_HOME/.claude-2" opus \
   memini_hermes,notes,context7,kubesearch,web_search \
