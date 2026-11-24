@@ -13,5 +13,17 @@ configMapGenerator:
     files:
       - ./resources/config.yaml
       - ./resources/gitconfig
+      - ./resources/profiles.sh
+      - ./resources/state-sync.sh
+  # The SOUL.md seed of each profile. profiles.sh copies a seed only when it
+  # creates the profile.
+  - name: hermes-personas
+    files:
+      - ./resources/personas/soul-default.md
+      - ./resources/personas/soul-dev.md
+      - ./resources/personas/soul-home.md
+      - ./resources/personas/soul-jeff.md
+      - ./resources/personas/soul-jena.md
+      - ./resources/personas/soul-laura.md
 generatorOptions:
   disableNameSuffixHash: true
