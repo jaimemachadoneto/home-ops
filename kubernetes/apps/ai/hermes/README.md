@@ -159,6 +159,7 @@ start. The script has one line for each profile:
 | Profile | Persona | Model | Claude account |
 | --- | --- | --- | --- |
 | `default` | Chief of staff | `opus` | 1 |
+| `personal` | Mail, calendar, documents, personal tasks | `sonnet` | 1 |
 | `dev` | Software engineer | `opus` | 2 |
 | `infra` | Cluster and network (read-only). Subagents use LiteLLM, by task (see "Subagent tiers") | `opus` | 1 |
 | `research` | Research and lessons for Jaime | LiteLLM `opr-free-strong` | none |
