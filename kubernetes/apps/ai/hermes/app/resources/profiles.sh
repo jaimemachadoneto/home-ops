@@ -93,9 +93,9 @@ profile dev "$T2" "$HERMES_HOME/.claude-2" opus \
 profile infra - - "$FLASH" \
   memini_hermes,notes,flux,victorialogs,kubectl,unifi_network \
   "Read-only cluster and network health"
-profile tutor - - "$FLASH" \
+profile research - - "$FLASH" \
   memini_hermes,notes,web_search,context7 \
-  "Daily lessons with sources"
+  "Research and lessons with sources"
 profile house - - "$FLASH" \
   memini_hermes,notes,ha_mcp \
   "Home Assistant state, energy and automation proposals"

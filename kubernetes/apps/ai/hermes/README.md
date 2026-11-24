@@ -161,7 +161,7 @@ start. The script has one line for each profile:
 | `default` | Chief of staff | `sonnet` | 1 |
 | `dev` | Software engineer | `opus` | 2 |
 | `infra` | Cluster and network (read-only) | LiteLLM | none |
-| `tutor` | Lessons for Jaime | LiteLLM | none |
+| `research` | Research and lessons for Jaime | LiteLLM | none |
 | `house` | Home Assistant | LiteLLM | none |
 | `kid` | School mail and portal of the kids | LiteLLM | none |
 
