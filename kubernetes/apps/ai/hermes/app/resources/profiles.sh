@@ -33,6 +33,8 @@ copy_task_tiers() {
 use_task_tiers() {
   hermes -p "$1" config set plugins.enabled '["task-tiers"]' >/dev/null
   hermes -p "$1" config set delegation.backend task-tiers >/dev/null
+  # A clone copies the agents and tiers of default: start from an empty block.
+  hermes -p "$1" config set delegation.backends.task-tiers '{}' >/dev/null
 }
 
 # seed_tiers NAME: the subagents use LiteLLM models, by the difficulty of the task.
@@ -126,6 +128,7 @@ profile() {
     # A clone copies the delegation settings of default.
     set_key delegation.backend default
     set_key plugins.enabled '[]'
+    set_key delegation.backends.task-tiers '{}'
   fi
   hermes profile describe "$name" --text "$description" >/dev/null
   touch "$home/.seeded-from-git"
