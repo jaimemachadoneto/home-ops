@@ -192,7 +192,7 @@ The init container `fix-owner` runs first. It gives the root directory of
 the volume back to uid 10000. A node restart or a restore can leave it
 owned by root, and the gateway then refuses to start.
 
-### Subagent tiers
+### Subagent tiers and agents
 
 `infra` plans on `opus` and gives the work to subagents. The delegation backend
 `task-tiers` (`app/resources/task-tiers/`) adds the parameter `tier` to each
@@ -204,7 +204,16 @@ subagent task, so the orchestrator selects the model from the task:
 | `standard` (default) | `opr-free-strong` | A diagnosis with several steps |
 | `strong` | `opr-free-strong` | A long analysis, when time is not important |
 
-The tiers are in `delegation.backends.task-tiers` of the profile, seeded once.
+`default` uses the same backend with the parameter `agent`: it gives a task to
+`house`, `research`, `infra` or `personal`. Hermes runs that subagent as the
+other profile, with its own SOUL, tools and model. The SOUL of each agent says
+what it may do on a relayed request: `house` only lights, scenes, media and
+state; `personal` only reads and drafts. Jaime can still talk to each agent
+directly. `dev` and `kid` are not in the list.
+
+The tiers and the agents are in `delegation.backends.task-tiers` of the
+profile, seeded once. `app/resources/task-tiers/test_plugin.py` tests the
+backend; run it in the Hermes pod (see the file).
 `profiles.sh` copies the plugin at each start and sets `plugins.enabled`,
 because `hermes plugins enable` fails in this image (it reads `uv.lock`).
 
