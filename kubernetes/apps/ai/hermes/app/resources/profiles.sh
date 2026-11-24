@@ -16,6 +16,30 @@ copy_plugin() {
   rm -rf "$1/plugins/$PLUGIN"
   mkdir -p "$1/plugins"
   cp -r "$HERMES_BUNDLED_PLUGINS/$PLUGIN" "$1/plugins/$PLUGIN"
+  # The Nix store is read-only, and Hermes cannot stage a read-only copy.
+  chmod -R u+w "$1/plugins/$PLUGIN"
+}
+
+# The delegation backend task-tiers (resources/task-tiers): the orchestrator
+# selects a model for each subagent task.
+copy_task_tiers() {
+  mkdir -p "$1/plugins/task-tiers"
+  cp /etc/hermes/task-tiers-plugin.yaml "$1/plugins/task-tiers/plugin.yaml"
+  cp /etc/hermes/task-tiers.py "$1/plugins/task-tiers/__init__.py"
+}
+
+# seed_task_tiers NAME: the tiers of the subagents, all on LiteLLM.
+seed_task_tiers() {
+  t=delegation.backends.task-tiers
+  hermes -p "$1" config set plugins.enabled '["task-tiers"]' >/dev/null
+  hermes -p "$1" config set delegation.backend task-tiers >/dev/null
+  hermes -p "$1" config set $t.default standard >/dev/null
+  hermes -p "$1" config set $t.tiers.light.model opr-free-light >/dev/null
+  hermes -p "$1" config set $t.tiers.light.use "one read or one query, then a short summary" >/dev/null
+  hermes -p "$1" config set $t.tiers.standard.model opr/deepseek-v4.1-flash >/dev/null
+  hermes -p "$1" config set $t.tiers.standard.use "a diagnosis with several steps and tools" >/dev/null
+  hermes -p "$1" config set $t.tiers.strong.model opr-free-strong >/dev/null
+  hermes -p "$1" config set $t.tiers.strong.use "a long analysis of large logs or many resources, when time is not important" >/dev/null
 }
 
 # The secret command of a profile. $1 is the Claude token file, or "-" for a
@@ -33,12 +57,13 @@ secret_command() {
   echo "printf '\\n'"
 }
 
-# profile NAME TOKEN CLAUDE_DIR MODEL MCP_SERVERS DESCRIPTION [SUBAGENT_MODEL]
+# profile NAME TOKEN CLAUDE_DIR MODEL MCP_SERVERS DESCRIPTION [task-tiers]
 # MODEL is a Claude model (sonnet, opus, haiku) on the subscription with
-# LiteLLM as the fallback, or a LiteLLM model. SUBAGENT_MODEL is a LiteLLM
-# model for the subagents, so that they do not use the Claude plan.
+# LiteLLM as the fallback, or a LiteLLM model. With task-tiers, the subagents
+# use LiteLLM models that the orchestrator selects for each task, so that they
+# do not use the Claude plan.
 profile() {
-  name=$1 token=$2 claude_dir=$3 model=$4 mcp=$5 description=$6 subagent_model=${7:-}
+  name=$1 token=$2 claude_dir=$3 model=$4 mcp=$5 description=$6 tiers=${7:-}
   if [ "$name" = default ]; then home=$HERMES_HOME; else home=$HERMES_HOME/profiles/$name; fi
   set_key() { hermes -p "$name" config set "$@" >/dev/null; }
 
@@ -52,6 +77,7 @@ profile() {
     copy_plugin "$home"
     set_key plugins.entries.claude-subscription-directsdk-experimental.settings.claude_config_dir "$claude_dir"
   fi
+  [ -n "$tiers" ] && copy_task_tiers "$home"
   # The memini namespace of the profile. memini_hermes forwards it, and
   # memini adds the parent `hermes` and the personal namespace.
   set_key mcp_servers.Litellm.headers.X-Memini-Namespace "hermes/$name"
@@ -76,10 +102,7 @@ profile() {
       set_key model.base_url "$LITELLM"
       ;;
   esac
-  if [ -n "$subagent_model" ]; then
-    set_key delegation.provider litellm
-    set_key delegation.model "$subagent_model"
-  fi
+  [ -n "$tiers" ] && seed_task_tiers "$name"
   hermes profile describe "$name" --text "$description" >/dev/null
   touch "$home/.seeded-from-git"
   echo "seeded profile $name"
@@ -98,7 +121,7 @@ profile dev "$T2" "$HERMES_HOME/.claude-2" opus \
 profile infra "$T1" "$HERMES_HOME/.claude" opus \
   memini_hermes,notes,flux,victorialogs,kubectl,unifi_network \
   "Read-only cluster and network health; plans on opus, subagents on LiteLLM" \
-  "$FLASH"
+  task-tiers
 profile research - - opr-free-strong \
   memini_hermes,notes,web_search,context7 \
   "Research and lessons with sources"

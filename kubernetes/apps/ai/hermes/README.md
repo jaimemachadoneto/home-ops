@@ -160,7 +160,7 @@ start. The script has one line for each profile:
 | --- | --- | --- | --- |
 | `default` | Chief of staff | `opus` | 1 |
 | `dev` | Software engineer | `opus` | 2 |
-| `infra` | Cluster and network (read-only). Subagents use LiteLLM `opr/deepseek-v4.1-flash` | `opus` | 1 |
+| `infra` | Cluster and network (read-only). Subagents use LiteLLM, by task (see "Subagent tiers") | `opus` | 1 |
 | `research` | Research and lessons for Jaime | LiteLLM `opr-free-strong` | none |
 | `house` | Home Assistant | LiteLLM | none |
 | `kid` | School mail and portal of the kids | LiteLLM | none |
@@ -182,12 +182,29 @@ profile. To seed a profile again, delete its `.seeded-from-git` and restart.
 The Claude plugin is in the wrong directory of the `hermes-k8s` image:
 Hermes reads a bundled model provider only from `model-providers/`. The
 script therefore copies the plugin into the `plugins/` directory of each
-profile with a Claude account. Remove the copy when `hermes-k8s` fixes the
-image.
+profile with a Claude account, and makes the copy writable: Hermes cannot
+stage a read-only copy from the Nix store. Remove the copy when `hermes-k8s`
+fixes the image.
 
 The init container `fix-owner` runs first. It gives the root directory of
 the volume back to uid 10000. A node restart or a restore can leave it
 owned by root, and the gateway then refuses to start.
+
+### Subagent tiers
+
+`infra` plans on `opus` and gives the work to subagents. The delegation backend
+`task-tiers` (`app/resources/task-tiers/`) adds the parameter `tier` to each
+subagent task, so the orchestrator selects the model from the task:
+
+| Tier | LiteLLM model | Use |
+| --- | --- | --- |
+| `light` | `opr-free-light` | One read or one query |
+| `standard` (default) | `opr/deepseek-v4.1-flash` | A diagnosis with several steps |
+| `strong` | `opr-free-strong` | A long analysis, when time is not important |
+
+The tiers are in `delegation.backends.task-tiers` of the profile, seeded once.
+`profiles.sh` copies the plugin at each start and sets `plugins.enabled`,
+because `hermes plugins enable` fails in this image (it reads `uv.lock`).
 
 ## Memory of the profiles
 
