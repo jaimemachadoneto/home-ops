@@ -199,7 +199,7 @@ subagent task, so the orchestrator selects the model from the task:
 | Tier | LiteLLM model | Use |
 | --- | --- | --- |
 | `light` | `opr-free-light` | One read or one query |
-| `standard` (default) | `opr/deepseek-v4.1-flash` | A diagnosis with several steps |
+| `standard` (default) | `opr-free-strong` | A diagnosis with several steps |
 | `strong` | `opr-free-strong` | A long analysis, when time is not important |
 
 The tiers are in `delegation.backends.task-tiers` of the profile, seeded once.

@@ -36,7 +36,7 @@ seed_task_tiers() {
   hermes -p "$1" config set $t.default standard >/dev/null
   hermes -p "$1" config set $t.tiers.light.model opr-free-light >/dev/null
   hermes -p "$1" config set $t.tiers.light.use "one read or one query, then a short summary" >/dev/null
-  hermes -p "$1" config set $t.tiers.standard.model opr/deepseek-v4.1-flash >/dev/null
+  hermes -p "$1" config set $t.tiers.standard.model opr-free-strong >/dev/null
   hermes -p "$1" config set $t.tiers.standard.use "a diagnosis with several steps and tools" >/dev/null
   hermes -p "$1" config set $t.tiers.strong.model opr-free-strong >/dev/null
   hermes -p "$1" config set $t.tiers.strong.use "a long analysis of large logs or many resources, when time is not important" >/dev/null
