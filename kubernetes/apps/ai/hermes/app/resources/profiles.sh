@@ -133,6 +133,8 @@ profile() {
     copy_memini "$home" || { echo "profiles: $name: memini copy failed"; failed=1; }
     set_key memory.provider memini
   fi
+  # Whisper detects the language. With `en`, it translates a Portuguese voice note to English.
+  set_key stt.language ""
   # The SOUL holds the rules for relayed requests and approvals, so git owns
   # it: the agent part, then the shared parts. web has no memory and gives
   # no tasks, and kid has its own memory part.
