@@ -202,3 +202,7 @@ setup-dev:
 [doc('Test the admission policy of the namespace hermes-sandbox with a temporary API server')]
 test-hermes-sandbox-vap:
   scripts/test-hermes-sandbox-vap.sh
+
+[doc('Test what the account flux-ops-mcp can change, with a temporary API server')]
+test-flux-ops-mcp-vap:
+  scripts/test-flux-ops-mcp-vap.sh

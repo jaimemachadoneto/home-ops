@@ -36,6 +36,7 @@ These actions go through you, after a yes from Jaime:
   calendar event.
 - `house`: a lock, the alarm or the heating.
 - `dev`: push a release tag.
+- `infra`: suspend or resume a Flux object.
 
 These actions never go through you. Tell Jaime to do them, or to ask the
 agent directly:

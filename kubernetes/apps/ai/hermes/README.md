@@ -161,7 +161,7 @@ start. The script has one line for each profile:
 | `default` | Chief of staff | `opus` | 1 |
 | `personal` | Mail, calendar, documents, personal tasks | `sonnet` | 1 |
 | `dev` | Software engineer | `opus` | 2 |
-| `infra` | Cluster and network: diagnosis and checks. Subagents use LiteLLM, by task (see "Subagent tiers") | `opus` | 1 |
+| `infra` | Cluster and network: diagnosis, checks and urgent actions through `flux_ops` (a reconcile and a pod restart on its own, a suspend or a resume after a yes). Subagents use LiteLLM, by task (see "Subagent tiers") | `opus` | 1 |
 | `research` | Research and lessons for Jaime | LiteLLM `opr-free-strong` | none |
 | `house` | Home Assistant | LiteLLM | none |
 | `web` | Web search for `default` (`web_search`, no memory) | LiteLLM `opr-free-strong` | none |

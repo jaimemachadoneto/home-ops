@@ -1,0 +1,57 @@
+---
+# The Flux ops MCP server (flux-operator-mcp, write mode) through the LiteLLM
+# MCP gateway, for the urgent actions of the Hermes agent infra: reconcile,
+# suspend, resume and a pod restart. Two limits: LiteLLM exposes only the
+# four tools below, and the role in rbac.yaml allows only these changes. The
+# server has no login of its own: give only the Hermes key access to it in
+# the LiteLLM UI. Keep the image the same as in ai/flux-mcp.
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/litellm.home-operations.com/litellmmcpserver_v1alpha1.json
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMMCPServer
+metadata:
+  name: flux-ops-mcp
+spec:
+  alias: flux_ops
+  params:
+    allowed_tools:
+      - reconcile_flux_resource
+      - suspend_flux_reconciliation
+      - resume_flux_reconciliation
+      - delete_kubernetes_resource
+  workload:
+    image: ghcr.io/controlplaneio-fluxcd/flux-operator-mcp:v0.62.1@sha256:0b4181bc9ada80eedf3e9df3355153abc9c3e6d8b913bddebe0b12908309bff6
+    port: 8080
+    args:
+      - serve
+      - --transport=http
+      - --port=8080
+    serviceAccountName: flux-ops-mcp
+    # The Kubernetes client writes its discovery cache in $HOME/.kube. The root
+    # file system is read-only, so $HOME is an emptyDir.
+    env:
+      - name: HOME
+        value: /tmp
+    volumes:
+      - name: tmp
+        emptyDir: {}
+    volumeMounts:
+      - name: tmp
+        mountPath: /tmp
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 65532
+      runAsGroup: 65532
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
