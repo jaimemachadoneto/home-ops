@@ -124,8 +124,11 @@ profile() {
   fi
   copy_task_tiers "$home" || { echo "profiles: $name: REQUIRED task-tiers copy failed"; boundary_failed=1; }
   # web has no memory on purpose: a page that tricks it finds no private data.
+  # The provider calls memini_hermes itself, past the x-mcp-servers list, so
+  # this setting is the boundary for web: a failure stops Hermes. A copied
+  # plugins/memini folder does nothing while the setting is builtin.
   if [ "$name" = web ]; then
-    set_key memory.provider builtin
+    req_key memory.provider builtin
   else
     copy_memini "$home" || { echo "profiles: $name: memini copy failed"; failed=1; }
     set_key memory.provider memini
