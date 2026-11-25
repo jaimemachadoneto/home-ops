@@ -15,6 +15,9 @@ own SOUL, tools and model. Only the agents in this list are allowed.
 
 from __future__ import annotations
 
+import json
+import re
+import unicodedata
 from typing import Any, Mapping
 
 from agent.delegation_provider import DelegationProvider, DelegationRouteError
@@ -25,6 +28,28 @@ def _entries(settings: Mapping[str, Any], key: str, need: str | None = None) -> 
     if not isinstance(block, Mapping):
         return {}
     return {str(k): v for k, v in block.items() if isinstance(v, Mapping) and (need is None or v.get(need))}
+
+
+def _caller() -> str:
+    """The profile that gives the task: the route runs in the scope of the parent."""
+    from hermes_cli.profiles import current_profile_name
+
+    return current_profile_name("default") or "default"
+
+
+def _from_default() -> bool:
+    try:
+        return _caller() == "default"
+    except Exception:
+        return False  # An unknown sender is not default.
+
+
+def _has_approval(task: Mapping[str, Any]) -> bool:
+    """True when the task text names Jaime and an approval, in any form or field."""
+    text = unicodedata.normalize("NFKC", json.dumps(task, ensure_ascii=False, default=str)).lower()
+    # Remove invisible format characters (zero-width space, soft hyphen), which can split a word.
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
+    return bool(re.search(r"jaime", text) and re.search(r"approv", text))
 
 
 def _lines(entries: Mapping[str, Mapping[str, Any]]) -> str:
@@ -72,6 +97,12 @@ class TaskTiersProvider(DelegationProvider):
         settings = self.settings(config)
         agents = _entries(settings, "agents")
         agent = task.get("agent")
+        # Only default asks Jaime for an approval, so only default can pass one on. A child cannot
+        # see who sent a task, so the check is here and not in the SOUL of the child.
+        # shortcut: any task from another profile that names Jaime and an approval is refused, also
+        # a question about one. Make an approval a field that only default can set if this is too wide.
+        if _has_approval(task) and not _from_default():
+            raise DelegationRouteError("Only default can pass an approval of Jaime. Remove it from the task.")
         if agent:
             if agent not in agents:
                 raise DelegationRouteError(f"Set `agent` to one of: {', '.join(sorted(agents)) or '(none allowed)'}.")

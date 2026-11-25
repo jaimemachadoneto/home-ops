@@ -28,7 +28,8 @@ hreq() {
   prof=$1
   shift
   if ! out=$(hermes -p "$prof" config set "$@" 2>&1); then
-    echo "profiles: $prof: REQUIRED config set $1 failed: $out"
+    # $* names the key also after --force. Cut it: a value can be long JSON.
+    echo "profiles: $prof: REQUIRED config set $(printf '%s' "$*" | cut -c1-80) failed: $out"
     boundary_failed=1
   fi
   return 0
@@ -57,19 +58,10 @@ copy_task_tiers() {
   cp /etc/hermes/task-tiers.py "$1/plugins/task-tiers/__init__.py"
 }
 
-# use_task_tiers NAME: turn on the backend. `hermes plugins enable` fails in
-# this image (it reads uv.lock), so the list is set directly.
-use_task_tiers() {
-  hreq "$1" plugins.enabled '["task-tiers"]'
-  hreq "$1" delegation.backend task-tiers
-  # A clone copies the agents and tiers of default: start from an empty block.
-  hreq "$1" delegation.backends.task-tiers '{}'
-}
-
-# seed_tiers NAME: the subagents use LiteLLM models, by the difficulty of the task.
+# seed_tiers NAME: the subagents use LiteLLM models, by the difficulty of the
+# task. Seeded once, so a change in the Dashboard stays.
 seed_tiers() {
   t=delegation.backends.task-tiers
-  use_task_tiers "$1"
   hset "$1" $t.default standard
   hset "$1" $t.tiers.light.model opr-free-light
   hset "$1" $t.tiers.light.use "one read or one query, then a short summary"
@@ -77,25 +69,6 @@ seed_tiers() {
   hset "$1" $t.tiers.standard.use "a diagnosis with several steps and tools"
   hset "$1" $t.tiers.strong.model opr-free-strong
   hset "$1" $t.tiers.strong.use "a long analysis of large logs or many resources, when time is not important"
-}
-
-# seed_agents NAME: the orchestrator gives tasks to these agents only. Each
-# agent decides in its SOUL what it may do on a relayed request. default reads
-# mail through personal and web can open a URL: Jaime accepted on 2026-11-24
-# that only the SOULs keep mail text out of the tasks for web.
-seed_agents() {
-  a=delegation.backends.task-tiers.agents
-  use_task_tiers "$1"
-  hreq "$1" $a.house.use "lights, scenes and media; the state of the house (sensors, temperature, presence)"
-  hreq "$1" $a.web.use "a web search: a short answer with the links"
-  hreq "$1" $a.infra.use "the health of the cluster and the network (read-only)"
-  hreq "$1" $a.personal.use "read mail, calendar and documents; drafts; add a calendar event"
-}
-
-# seed_kid_agents NAME: kid can only give calendar items to default.
-seed_kid_agents() {
-  use_task_tiers "$1"
-  hreq "$1" delegation.backends.task-tiers.agents.default.use "add school dates and tasks to the calendar of Jaime"
 }
 
 # The secret command of a profile. $1 is the Claude token file, or "-" for a
@@ -113,10 +86,10 @@ secret_command() {
   echo "printf '\\n'"
 }
 
-# profile NAME TOKEN CLAUDE_DIR MODEL MCP_SERVERS DESCRIPTION [SEED_DELEGATION]
+# profile NAME TOKEN CLAUDE_DIR MODEL MCP_SERVERS DESCRIPTION [SEED_TIERS]
 # MODEL is a Claude model (sonnet, opus, haiku) on the subscription with
-# LiteLLM as the fallback, or a LiteLLM model. SEED_DELEGATION (seed_tiers or
-# seed_agents) installs the backend task-tiers and seeds its settings.
+# LiteLLM as the fallback, or a LiteLLM model. SEED_TIERS (seed_tiers) seeds
+# the model tiers of the subagents once.
 profile() {
   # No dollar-brace expansion in this file: Flux substitutes it in the ConfigMap.
   name=$1 token=$2 claude_dir=$3 model=$4 mcp=$5 description=$6 delegation=
@@ -141,8 +114,20 @@ profile() {
     copy_plugin "$home" || { echo "profiles: $name: REQUIRED Claude plugin copy failed"; boundary_failed=1; }
     req_key plugins.entries.claude-subscription-directsdk-experimental.settings.claude_config_dir "$claude_dir"
   fi
-  if [ -n "$delegation" ]; then
-    copy_task_tiers "$home" || { echo "profiles: $name: REQUIRED task-tiers copy failed"; boundary_failed=1; }
+  copy_task_tiers "$home" || { echo "profiles: $name: REQUIRED task-tiers copy failed"; boundary_failed=1; }
+  # The SOUL holds the rules for relayed requests and approvals, so git owns
+  # it: the agent part, then the shared parts. web has no memory and gives
+  # no tasks, and kid has its own memory part.
+  case $name in
+    web) parts= ;;
+    kid) parts=$SEEDS/shared-agents.md ;;
+    *) parts="$SEEDS/shared-memory.md $SEEDS/shared-agents.md" ;;
+  esac
+  # shellcheck disable=SC2086 # parts is a list of paths without spaces.
+  if ! (cat "$SEEDS/soul-$name.md" && for p in $parts; do echo && cat "$p" || exit 1; done) >"$home/SOUL.md.new" ||
+    ! mv "$home/SOUL.md.new" "$home/SOUL.md"; then
+    echo "profiles: $name: REQUIRED SOUL copy failed"
+    boundary_failed=1
   fi
   # The memini namespace of the profile. memini_hermes forwards it, and
   # memini adds the parent `hermes` and the personal namespace.
@@ -152,7 +137,6 @@ profile() {
 
   # Seeded once. Delete the marker file to seed the profile again.
   [ -e "$home/.seeded-from-git" ] && return 0
-  cp "$SEEDS/soul-$name.md" "$home/SOUL.md" || { echo "profiles: $name: SOUL copy failed"; failed=1; }
   case $model in
     sonnet | opus | haiku)
       set_key model.provider claude-subscription-directsdk-experimental
@@ -174,14 +158,7 @@ profile() {
       set_key fallback_model.key_env LITELLM_API_KEY
       ;;
   esac
-  if [ -n "$delegation" ]; then
-    "$delegation" "$name"
-  else
-    # A clone copies the delegation settings of default.
-    req_key delegation.backend default
-    req_key plugins.enabled '[]'
-    req_key delegation.backends.task-tiers '{}'
-  fi
+  [ -n "$delegation" ] && "$delegation" "$name"
   hermes profile describe "$name" --text "$description" >/dev/null 2>&1 || echo "profiles: $name: describe failed"
   if [ "$failed" = 0 ]; then
     touch "$home/.seeded-from-git"
@@ -197,15 +174,14 @@ FLASH=opr/deepseek-v4.1-flash-1017
 
 profile default "$T1" "$HERMES_HOME/.claude" opus \
   memini_hermes,notes \
-  "Chief of staff: plans, routes work to the other profiles, morning brief" \
-  seed_agents
+  "Chief of staff: plans, routes work to the other profiles, morning brief"
 # No URL-fetch tool here: mail is untrusted text, and with web_search an agent
 # could send mail or memory data to any URL.
 profile personal "$T1" "$HERMES_HOME/.claude" sonnet \
   memini_hermes,notes,outlook,paperless \
   "Personal assistant: mail, calendar, documents and personal tasks"
 profile dev "$T2" "$HERMES_HOME/.claude-2" opus \
-  memini_hermes,notes,context7,kubesearch,web_search \
+  memini_hermes,notes,context7,kubesearch,web_search,flux,kubectl,victorialogs \
   "Software engineering in the sandbox, PRs, tests"
 profile infra "$T1" "$HERMES_HOME/.claude" opus \
   memini_hermes,notes,flux,victorialogs,kubectl,unifi_network \
@@ -225,8 +201,7 @@ profile house - - "$FLASH" \
 # Jaime accepted that risk for kid on 2026-11-24.
 profile kid - - "$FLASH" \
   memini_hermes,browser_colegio \
-  "School portal digest for the kids" \
-  seed_kid_agents
+  "School portal and school mailbox of the kids"
 
 # The built-in tools of each profile, on every platform. A platform without an
 # entry gets all tools, so the list names each platform that Hermes knows.
@@ -264,6 +239,38 @@ toolsets() {
   toolsets house $BASE
   toolsets kid $BASE
 }
+
+# handoffs PROFILE AGENTS_JSON: the agents that the profile can give a task
+# to, a boundary setting at each start. Each agent decides in its SOUL what it
+# does on a relayed request. A child runs as its own profile and reads its own
+# list, and max_spawn_depth 2 stops a chain after two steps, so a loop such as
+# personal, kid, personal cannot go on. A profile with no agents and no tiers
+# gives its subagents its own model.
+handoffs() {
+  hreq "$1" plugins.enabled '["task-tiers"]'
+  hreq "$1" delegation.backend task-tiers
+  hreq "$1" --force delegation.backends.task-tiers.agents "$2"
+  hreq "$1" delegation.max_spawn_depth 2
+}
+
+handoffs default '{
+  "personal": {"use": "mail, calendar and documents of Jaime: read, drafts, add an event; with an approval, a reply on a thread or a change of an event"},
+  "kid": {"use": "the school portal and the school mailbox: open items, messages, draft replies; with an approval, a message to the school"},
+  "house": {"use": "lights, scenes and media; the state of the house (sensors, temperature, presence); with an approval, a lock, the alarm or the heating"},
+  "infra": {"use": "the cluster and the network: diagnosis, health, the check of a rollout"},
+  "dev": {"use": "code, fixes and deployments as a PR in the sandbox; with an approval, a release tag"},
+  "research": {"use": "research and lessons with sources"},
+  "web": {"use": "a web search: a short answer with the links"}
+}'
+handoffs personal '{"kid": {"use": "school information: dates, tasks, what a school message says (read only)"}}'
+handoffs kid '{"personal": {"use": "add a school date, task or note about the kids to the calendar or the notes"}}'
+# No dev to infra: a child gets the built-in tools of its parent, so infra
+# would run with the web tools of dev next to the cluster and network data.
+handoffs dev '{}'
+handoffs infra '{"dev": {"use": "a lasting fix as a PR in git, with the diagnosis and the proposed change"}}'
+handoffs research '{}'
+handoffs web '{}'
+handoffs house '{}'
 
 if [ "$boundary_failed" != 0 ]; then
   echo "profiles: a REQUIRED setting failed (see above); Hermes does not start"

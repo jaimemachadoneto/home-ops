@@ -161,26 +161,28 @@ start. The script has one line for each profile:
 | `default` | Chief of staff | `opus` | 1 |
 | `personal` | Mail, calendar, documents, personal tasks | `sonnet` | 1 |
 | `dev` | Software engineer | `opus` | 2 |
-| `infra` | Cluster and network (read-only). Subagents use LiteLLM, by task (see "Subagent tiers") | `opus` | 1 |
+| `infra` | Cluster and network: diagnosis and checks. Subagents use LiteLLM, by task (see "Subagent tiers") | `opus` | 1 |
 | `research` | Research and lessons for Jaime | LiteLLM `opr-free-strong` | none |
 | `house` | Home Assistant | LiteLLM | none |
 | `web` | Web search for `default` (`web_search`, no memory) | LiteLLM `opr-free-strong` | none |
-| `kid` | School portal of the kids (`browser_colegio` and memini) | LiteLLM | none |
+| `kid` | School portal and school mailbox of the kids (`browser_colegio` and memini) | LiteLLM | none |
 
 The script does two different things:
 
-- At each start, it sets the keys that point at files of the cluster: the
-  secret command, `claude_config_dir`, a copy of the Claude plugin, the
-  memini namespace, and the `x-mcp-servers` header (the MCP servers of the
-  profile).
-- Only once, it seeds the persona: it creates the profile, copies
-  `app/resources/personas/soul-<name>.md` to `SOUL.md`, and sets the model,
-  the fallback and the description. Then it
+- At each start, it sets what a profile can reach and the rules it obeys:
+  the secret command, `claude_config_dir`, a copy of the Claude plugin, the
+  memini namespace, the `x-mcp-servers` header (the MCP servers of the
+  profile), the built-in tools, the hand-off list and `SOUL.md`.
+- Only once, it seeds the persona: it creates the profile, and sets the
+  model, the fallback, the description and the tiers of `infra`. Then it
   writes the marker file `.seeded-from-git` in the profile.
 
-After the seed, the app owns the persona. A change in the Dashboard stays
-after a redeploy. A change to a seed file in git has no effect on a seeded
-profile. To seed a profile again, delete its `.seeded-from-git` and restart.
+`SOUL.md` holds the rules for relayed requests and approvals, so git owns it.
+A change in the Dashboard goes away at the next start. The script writes it
+from `app/resources/personas/`: `soul-<name>.md`, then `shared-memory.md`
+(not for `kid` and `web`) and `shared-agents.md` (not for `web`). The model
+stays as the Dashboard sets it. To seed it again, delete
+`.seeded-from-git` and restart.
 
 The Claude plugin is in the wrong directory of the `hermes-k8s` image:
 Hermes reads a bundled model provider only from `model-providers/`. The
@@ -205,22 +207,51 @@ subagent task, so the orchestrator selects the model from the task:
 | `standard` (default) | `opr-free-strong` | A diagnosis with several steps |
 | `strong` | `opr-free-strong` | A long analysis, when time is not important |
 
-`default` uses the same backend with the parameter `agent`: it gives a task to
-`house`, `infra`, `personal` or `web`. `kid` gives calendar items to
-`default`. Hermes runs that subagent as the
-other profile, with its own SOUL, tools and model. The SOUL of each agent says
-what it may do on a relayed request: `house` only lights, scenes, media and
-state; `personal` reads, drafts and adds calendar events. Jaime can still talk
-to each agent directly. `dev` is in no list.
+Each profile uses the same backend with the parameter `agent`. Hermes runs
+that subagent as the other profile, with its own SOUL, tools, MCP servers,
+model and sandbox. The built-in tools of a child are only those of its
+parent (see "Built-in tools").
 
-`default` has no `web_search`, because it can read the mail through
-`personal`. Web questions go to `web`, which has `web_search` but no memory,
-notes or mail. Two paths depend on the SOULs, not on code: `default` could put
-mail text in a task for `web`, which can open any URL, and `kid` (which has a
-browser) gets the answers of `default`. Jaime accepted this on 2026-11-24.
+| Profile | Gives tasks to |
+| --- | --- |
+| `default` | all other profiles |
+| `personal` | `kid` (school information, read only) |
+| `kid` | `personal` (a school date, task or note for the calendar or the notes) |
+| `infra` | `dev` (a lasting fix as a PR) |
+| `dev`, `research`, `web`, `house` | nobody |
+
+`dev` does not give tasks to `infra`: a child gets the built-in tools of its
+parent, so `infra` would run with the web tools of `dev` next to the cluster
+and network data. `dev` reads the cluster itself.
+
+`delegation.max_spawn_depth` is 2, so a task goes two steps at most, for
+example `default`, `infra`, `dev`. The limit also stops a loop such as
+`personal`, `kid`, `personal`. Jaime can still talk to each agent directly.
+
+`shared-agents.md` gives the rules for a relayed request. An agent does only
+what its section "On a relayed request" allows. Some actions need a yes from
+Jaime: `default` shows Jaime the exact text or action, and after a yes in
+that chat it sends the task with "Jaime approved: <exact text>". The agent
+then does that one action. A child cannot see who sent a task, so the
+plugin `task-tiers` refuses a task from any profile but `default` that
+names Jaime and an approval (`test_plugin.py` tests it). This is a text
+check, so a new wording can pass it: it is a second layer, not a boundary.
+Hermes does not tell a child who sent its task. The edges `kid` to
+`personal`, `personal` to `kid` and `infra` to `dev` can therefore carry a
+forged approval: a portal page or a mail could make `personal` reply on an
+existing thread or `kid` send to the school, and a log line could make
+`dev` push a release tag. Jaime accepted this on 2026-11-25 for the
+convenience of these edges. `soul-default.md` lists these actions, and the
+actions that never go through `default` (a forward to a new address, a
+delete of mail, a payment, an automation, a merge).
+
+`default` has no web tool. Web questions go to `web`, which has `web_search`
+but no memory, notes or mail. The rule that `default` does not put mail text
+in a task for `web` is in the SOUL, not in code. Jaime accepted this on
+2026-11-24.
 
 The tiers and the agents are in `delegation.backends.task-tiers` of the
-profile, seeded once. `app/resources/task-tiers/test_plugin.py` tests the
+profile. The agents are set at each start, and the tiers only once. `app/resources/task-tiers/test_plugin.py` tests the
 backend; run it in the Hermes pod (see the file).
 `profiles.sh` copies the plugin at each start and sets `plugins.enabled`,
 because `hermes plugins enable` fails in this image (it reads `uv.lock`).
