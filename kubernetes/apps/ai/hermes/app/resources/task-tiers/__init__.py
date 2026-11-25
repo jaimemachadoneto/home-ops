@@ -27,6 +27,13 @@ def _entries(settings: Mapping[str, Any], key: str, need: str | None = None) -> 
     return {str(k): v for k, v in block.items() if isinstance(v, Mapping) and (need is None or v.get(need))}
 
 
+def _caller() -> str:
+    """The profile that gives the task: the route runs in the scope of the parent."""
+    from hermes_cli.profiles import current_profile_name
+
+    return current_profile_name("default") or "default"
+
+
 def _lines(entries: Mapping[str, Mapping[str, Any]]) -> str:
     return "\n".join(f"- {k}: {str(v.get('use') or '').strip()}" for k, v in sorted(entries.items()))
 
@@ -72,6 +79,11 @@ class TaskTiersProvider(DelegationProvider):
         settings = self.settings(config)
         agents = _entries(settings, "agents")
         agent = task.get("agent")
+        # Only default asks Jaime for an approval, so only default can pass one on. A child cannot
+        # see who sent a task, so the check is here and not in the SOUL of the child.
+        text = " ".join(str(v) for v in task.values() if isinstance(v, str)).lower()
+        if "jaime approved" in text and _caller() != "default":
+            raise DelegationRouteError("Only default can pass an approval of Jaime. Remove it from the task.")
         if agent:
             if agent not in agents:
                 raise DelegationRouteError(f"Set `agent` to one of: {', '.join(sorted(agents)) or '(none allowed)'}.")

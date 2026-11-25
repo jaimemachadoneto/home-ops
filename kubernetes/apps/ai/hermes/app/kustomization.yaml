@@ -17,10 +17,12 @@ configMapGenerator:
       - ./resources/state-sync.sh
       - task-tiers-plugin.yaml=./resources/task-tiers/plugin.yaml
       - task-tiers.py=./resources/task-tiers/__init__.py
-  # The SOUL.md seed of each profile. profiles.sh copies a seed only when it
-  # creates the profile.
+  # The SOUL.md parts of each profile. profiles.sh writes SOUL.md from them at
+  # each start.
   - name: hermes-personas
     files:
+      - ./resources/personas/shared-agents.md
+      - ./resources/personas/shared-memory.md
       - ./resources/personas/soul-default.md
       - ./resources/personas/soul-dev.md
       - ./resources/personas/soul-house.md
