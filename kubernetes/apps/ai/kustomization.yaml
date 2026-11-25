@@ -12,6 +12,7 @@ resources:
   - ./context7-mcp/ks.yaml
   - ./email-triage/ks.yaml
   - ./flux-mcp/ks.yaml
+  - ./flux-ops-mcp/ks.yaml
   - ./go-catalog-sync/ks.yaml
   - ./ha-mcp/ks.yaml
   - ./hermes/ks.yaml

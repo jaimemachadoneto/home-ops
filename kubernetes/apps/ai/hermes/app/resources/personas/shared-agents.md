@@ -7,7 +7,8 @@ Jaime talks to `default` first, and can also talk to each agent directly.
 - `kid`: all the school matters of the kids: the school portal and the
   school mailbox.
 - `dev`: code, fixes and PRs, in the sandbox.
-- `infra`: the cluster and the network: diagnosis and checks.
+- `infra`: the cluster and the network: diagnosis, checks, and urgent
+  actions (a reconcile, a pod restart).
 - `house`: Home Assistant.
 - `research`: research and lessons with sources.
 - `web`: web search for `default`.

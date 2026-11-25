@@ -184,8 +184,8 @@ profile dev "$T2" "$HERMES_HOME/.claude-2" opus \
   memini_hermes,notes,context7,kubesearch,web_search,flux,kubectl,victorialogs \
   "Software engineering in the sandbox, PRs, tests"
 profile infra "$T1" "$HERMES_HOME/.claude" opus \
-  memini_hermes,notes,flux,victorialogs,kubectl,unifi_network \
-  "Read-only cluster and network health; plans on opus, subagents on LiteLLM" \
+  memini_hermes,notes,flux,flux_ops,victorialogs,kubectl,unifi_network \
+  "Cluster and network health and urgent actions; plans on opus, subagents on LiteLLM" \
   seed_tiers
 profile research - - opr-free-strong \
   memini_hermes,notes,web_search,context7 \
@@ -257,7 +257,7 @@ handoffs default '{
   "personal": {"use": "mail, calendar and documents of Jaime: read, drafts, add an event; with an approval, a reply on a thread or a change of an event"},
   "kid": {"use": "the school portal and the school mailbox: open items, messages, draft replies; with an approval, a message to the school"},
   "house": {"use": "lights, scenes and media; the state of the house (sensors, temperature, presence); with an approval, a lock, the alarm or the heating"},
-  "infra": {"use": "the cluster and the network: diagnosis, health, the check of a rollout"},
+  "infra": {"use": "the cluster and the network: diagnosis, health, the check of a rollout, a reconcile or a pod restart; with an approval, a suspend or a resume"},
   "dev": {"use": "code, fixes and deployments as a PR in the sandbox; with an approval, a release tag"},
   "research": {"use": "research and lessons with sources"},
   "web": {"use": "a web search: a short answer with the links"}

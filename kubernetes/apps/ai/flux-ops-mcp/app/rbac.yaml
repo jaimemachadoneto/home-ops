@@ -1,0 +1,44 @@
+---
+# The urgent actions of the agent infra, and nothing more. A reconcile, a
+# suspend and a resume patch a Flux object. A restart deletes a pod, and its
+# controller makes a new one. The role reads the Flux objects and the pods,
+# because the tools look up an object first. It has no Secrets, no
+# ConfigMaps, and no verb on a Deployment or a StatefulSet, so the server
+# cannot change an image or a spec. LiteLLM exposes only the four tools in
+# mcpserver.yaml. validatingadmissionpolicy.yaml limits each patch to the
+# reconcile annotation and spec.suspend, and each pod delete.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flux-ops-mcp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: flux-ops-mcp
+rules:
+  - apiGroups: [helm.toolkit.fluxcd.io]
+    resources: [helmreleases]
+    verbs: [get, list, watch, patch]
+  - apiGroups: [kustomize.toolkit.fluxcd.io]
+    resources: [kustomizations]
+    verbs: [get, list, watch, patch]
+  - apiGroups: [source.toolkit.fluxcd.io]
+    resources: [buckets, gitrepositories, helmcharts, helmrepositories, ocirepositories]
+    verbs: [get, list, watch, patch]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: flux-ops-mcp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: flux-ops-mcp
+subjects:
+  - kind: ServiceAccount
+    name: flux-ops-mcp
+    namespace: ai

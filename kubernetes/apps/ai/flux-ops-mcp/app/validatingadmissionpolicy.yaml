@@ -1,0 +1,94 @@
+---
+# The changes that the account flux-ops-mcp can make, checked by the API
+# server. The tool list in mcpserver.yaml and the role in rbac.yaml are the
+# first limits. This policy holds also if a tool can send any patch.
+# - A Flux object: only the reconcile annotation and spec.suspend can change.
+#   A suspend in flux-system is refused, so GitOps itself cannot stop.
+# - A pod: only a pod that a controller owns, not a CNPG (Postgres) pod, and
+#   not in a namespace of the platform.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/admissionregistration.k8s.io/validatingadmissionpolicy_v1.json
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: flux-ops-mcp
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - helm.toolkit.fluxcd.io
+          - kustomize.toolkit.fluxcd.io
+          - source.toolkit.fluxcd.io
+          - source.extensions.fluxcd.io
+        apiVersions: ["*"]
+        operations: [UPDATE]
+        resources: ["*"]
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [DELETE]
+        resources: [pods]
+  matchConditions:
+    - name: flux-ops-mcp-only
+      expression: request.userInfo.username == 'system:serviceaccount:ai:flux-ops-mcp'
+  variables:
+    - name: isPod
+      expression: request.resource.resource == 'pods'
+    - name: reconcileKey
+      expression: "'reconcile.fluxcd.io/requestedAt'"
+    - name: newAnnotations
+      expression: >-
+        !variables.isPod && has(object.metadata.annotations) ? object.metadata.annotations : {}
+    - name: oldAnnotations
+      expression: >-
+        !variables.isPod && has(oldObject.metadata.annotations) ? oldObject.metadata.annotations : {}
+    - name: protectedNamespaces
+      expression: >-
+        ['kube-system', 'flux-system', 'rook-ceph', 'database', 'network', 'ai',
+        'external-secrets', 'cert-manager', 'openebs', 'system-upgrade',
+        'cilium-secrets', 'agent-sandbox-system', 'hermes-sandbox']
+  validations:
+    - expression: >-
+        variables.isPod ||
+        (oldObject.spec.all(k, k == 'suspend' || (k in object.spec && object.spec[k] == oldObject.spec[k])) &&
+        object.spec.all(k, k == 'suspend' || k in oldObject.spec))
+      message: flux-ops-mcp can change only spec.suspend of a Flux object.
+    - expression: >-
+        variables.isPod ||
+        ((has(object.metadata.labels) ? object.metadata.labels : {}) ==
+        (has(oldObject.metadata.labels) ? oldObject.metadata.labels : {}))
+      message: flux-ops-mcp cannot change the labels of a Flux object.
+    # An owner reference to a missing object makes the garbage collector
+    # delete the Flux object, and a finalizer can block a delete.
+    - expression: >-
+        variables.isPod ||
+        ((has(object.metadata.ownerReferences) ? object.metadata.ownerReferences : []) ==
+        (has(oldObject.metadata.ownerReferences) ? oldObject.metadata.ownerReferences : []) &&
+        (has(object.metadata.finalizers) ? object.metadata.finalizers : []) ==
+        (has(oldObject.metadata.finalizers) ? oldObject.metadata.finalizers : []))
+      message: flux-ops-mcp cannot change the owner references or the finalizers of a Flux object.
+    - expression: >-
+        variables.isPod ||
+        (variables.newAnnotations.all(k, k == variables.reconcileKey ||
+          (k in variables.oldAnnotations && variables.oldAnnotations[k] == variables.newAnnotations[k])) &&
+        variables.oldAnnotations.all(k, k == variables.reconcileKey || k in variables.newAnnotations))
+      message: flux-ops-mcp can change only the annotation reconcile.fluxcd.io/requestedAt.
+    - expression: >-
+        variables.isPod || request.namespace != 'flux-system' ||
+        !has(object.spec.suspend) || object.spec.suspend == false
+      message: flux-ops-mcp cannot suspend a Flux object in flux-system.
+    - expression: >-
+        !variables.isPod ||
+        (!(request.namespace in variables.protectedNamespaces) &&
+        has(oldObject.metadata.ownerReferences) && size(oldObject.metadata.ownerReferences) > 0 &&
+        !(has(oldObject.metadata.labels) && 'cnpg.io/cluster' in oldObject.metadata.labels))
+      message: >-
+        flux-ops-mcp can delete only a pod that a controller owns, not a CNPG
+        pod, and not in a namespace of the platform.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: flux-ops-mcp
+spec:
+  policyName: flux-ops-mcp
+  validationActions: [Deny]
