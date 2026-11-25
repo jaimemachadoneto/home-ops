@@ -233,8 +233,15 @@ what its section "On a relayed request" allows. Some actions need a yes from
 Jaime: `default` shows Jaime the exact text or action, and after a yes in
 that chat it sends the task with "Jaime approved: <exact text>". The agent
 then does that one action. A child cannot see who sent a task, so the
-plugin `task-tiers` refuses a task with "Jaime approved" from any profile
-but `default` (`test_plugin.py` tests it). `soul-default.md` lists these actions, and the
+plugin `task-tiers` refuses a task from any profile but `default` that
+names Jaime and an approval (`test_plugin.py` tests it). This is a text
+check, so a new wording can pass it: it is a second layer, not a boundary.
+Hermes does not tell a child who sent its task. The edges `kid` to
+`personal`, `personal` to `kid` and `infra` to `dev` can therefore carry a
+forged approval: a portal page or a mail could make `personal` reply on an
+existing thread or `kid` send to the school, and a log line could make
+`dev` push a release tag. Jaime accepted this on 2026-11-25 for the
+convenience of these edges. `soul-default.md` lists these actions, and the
 actions that never go through `default` (a forward to a new address, a
 delete of mail, a payment, an automation, a merge).
 
