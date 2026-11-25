@@ -45,12 +45,15 @@ def fake(namespace, tool, args):
             {"id": "h1", "content": "The office light is light.office.", "namespace": "hermes/house"},
             {"id": "h2", "content": "Jaime lives in Spain.", "namespace": "hermes"},
         ]})
+    if tool == "memory_briefing" and args.get("scope") == "project":
+        # memini answers with the memories of the namespace in the header only.
+        content = {"hermes": "The home cluster has 4 nodes.", "hermes/house": "House fact."}[namespace]
+        return json.dumps({"pinned": [], "facts": [{"content": content}], "procedures": []})
     if tool == "memory_briefing":
-        return json.dumps({
-            "pinned": [{"content": "The home cluster has 4 nodes.", "namespace": "hermes"},
-                       {"content": "A Claude Code rule.", "namespace": "personal/jaime"}],
-            "facts": [{"content": "House fact.", "namespace": "hermes/house"}],
-            "procedures": [], "namespace": "hermes/house", "scope_header": "Scope: hermes/house"})
+        return json.dumps({"pinned": [{"content": "A Claude Code rule.", "namespace": "personal/jaime"}]})
+    if tool == "memory_list":
+        assert args == {"namespace": "personal/jaime", "tags": ["hermes"], "limit": 5}, args
+        return json.dumps({"memories": [{"content": "Jaime drinks tea.", "namespace": "personal/jaime"}]})
     return "{}"
 
 
@@ -70,6 +73,7 @@ assert p._namespace == "hermes/house", p._namespace
 wait()
 first = p.prefetch("hello")
 assert "4 nodes" in first and "House fact." in first, "the first turn gets the briefing"
+assert "Jaime drinks tea." in first, "the briefing has the Hermes facts about Jaime"
 assert "Claude Code" not in first and "{" not in first, "only Hermes memories, as lines"
 assert p.prefetch("hello") == "", "a prefetch result is used once"
 
@@ -129,6 +133,19 @@ c.initialize("s3", hermes_home="/opt/data/profiles/kid", platform="cron", agent_
 c.on_memory_write("add", "memory", "x")
 time.sleep(0.2)
 assert not [x for x in calls if x[1] == "memory_remember"], "no write outside the primary agent"
+
+
+# The first turn comes right after initialize: prefetch waits for a slow briefing.
+def slow(namespace, tool, args):
+    time.sleep(0.5)
+    return fake(namespace, tool, args)
+
+
+mod._call = slow
+s = mod.MeminiProvider()
+s.initialize("s5", hermes_home="/opt/data/profiles/house", platform="cli", agent_context="primary")
+assert "House fact." in s.prefetch("hello"), "the first prefetch waits for the briefing"
+mod._call = fake
 
 
 # A failed call gives no context and no error.

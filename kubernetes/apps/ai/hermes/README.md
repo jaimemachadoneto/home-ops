@@ -290,8 +290,9 @@ memini`) does this without a tool call. `profiles.sh` copies it into each
 profile but `web`, which has no memory on purpose. It calls memini through
 the same LiteLLM server, with the Hermes key:
 
-- At the start of a session it adds the memini briefing, and before each turn
-  the memories that match the message. It adds the memories of
+- At the start of a session it adds a briefing, and before each turn the
+  memories that match the message. The briefing asks memini for each part on
+  its own: a full briefing fills its sections with `personal/jaime` first. It adds the memories of
   `hermes/<profile>` and `hermes`, and of `personal/jaime` only those with the
   tag `hermes`: `personal/jaime` holds mostly the work of Claude Code. An agent
   reads all of `personal/jaime` with its memini tools.
