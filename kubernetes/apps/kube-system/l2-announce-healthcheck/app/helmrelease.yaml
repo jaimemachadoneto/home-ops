@@ -37,6 +37,13 @@ spec:
                         operator: In
                         values:
                           - home-ops-03
+          # The check must run on home-ops-03. The toleration keeps the
+          # descheduler from an eviction of the check for the GPU taint.
+          tolerations:
+            - key: dedicated
+              operator: Equal
+              value: gpu
+              effect: PreferNoSchedule
 
         containers:
           app:

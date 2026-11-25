@@ -16,7 +16,11 @@ machine:
       - name: i915
   kubelet:
     extraArgs:
-      register-with-taints: "dedicated=gpu:NoSchedule"
+      # PreferNoSchedule: when the other nodes are full, a pod can run here,
+      # and the descheduler moves it back later. The kubelet sets this taint
+      # only when the node registers. CI runners and sandboxes exclude this
+      # node with their own affinity.
+      register-with-taints: "dedicated=gpu:PreferNoSchedule"
   network:
     hostname: home-ops-03
     interfaces:
