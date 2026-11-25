@@ -1,0 +1,231 @@
+---
+# A new token for the account hermes-dev-renovate each week, one hour before
+# the Renovate run of dev (Sunday, 23:00). The job deletes the token Secret,
+# which makes the old token invalid at once, creates it again (the API server
+# puts a new token in it), and asks External Secrets to write the new
+# kubeconfig into hermes-sandbox-dev now. Nothing goes through 1Password.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hermes-dev-renovate-rotate
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hermes-dev-renovate-rotate
+rules:
+  - apiGroups: [""]
+    resources: [secrets]
+    resourceNames: [hermes-dev-renovate-token]
+    verbs: [get, delete]
+  # create cannot name the Secret: the script creates only the token Secret.
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [create]
+  - apiGroups: [external-secrets.io]
+    resources: [externalsecrets]
+    resourceNames: [hermes-sandbox-dev]
+    verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hermes-dev-renovate-rotate
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hermes-dev-renovate-rotate
+subjects:
+  - kind: ServiceAccount
+    name: hermes-dev-renovate-rotate
+    namespace: hermes-sandbox
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hermes-dev-renovate-rotate
+spec:
+  schedule: "0 22 * * 0"
+  timeZone: Europe/Madrid
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: hermes-dev-renovate-rotate
+            # The route to the API server (ciliumnetworkpolicy-kube-api.yaml).
+            hermes-k8s/allow-kube-api: "true"
+        spec:
+          restartPolicy: Never
+          serviceAccountName: hermes-dev-renovate-rotate
+          # A token of 10 minutes in place of the default one: the Hermes pod
+          # can run a command in each pod of this namespace.
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10000
+            runAsGroup: 10000
+            seccompProfile:
+              type: RuntimeDefault
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: NotIn
+                        values: [home-ops-03]
+          containers:
+            - name: rotate
+              image: alpine/k8s:1.37.2@sha256:7a82aeefea3d554a43a8676b137f2b88bae6c1fe11c13862b191b3a086cc28c0
+              env:
+                - name: HOME
+                  value: /tmp
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  kubectl delete secret hermes-dev-renovate-token --ignore-not-found
+                  kubectl create -f - <<MANIFEST
+                  apiVersion: v1
+                  kind: Secret
+                  metadata:
+                    name: hermes-dev-renovate-token
+                    annotations:
+                      kubernetes.io/service-account.name: hermes-dev-renovate
+                  type: kubernetes.io/service-account-token
+                  MANIFEST
+                  i=0
+                  until [ -n "$(kubectl get secret hermes-dev-renovate-token -o jsonpath='{.data.token}')" ]; do
+                    i=$((i + 1))
+                    [ "$i" -le 60 ] || { echo "no new token after 2 minutes"; exit 1; }
+                    sleep 2
+                  done
+                  kubectl annotate externalsecret hermes-sandbox-dev force-sync="$(date +%s)" --overwrite
+                  echo "new token, and hermes-sandbox-dev syncs now"
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                - name: kube-api-access
+                  mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+          volumes:
+            - name: tmp
+              emptyDir: {}
+            - name: kube-api-access
+              projected:
+                sources:
+                  - serviceAccountToken:
+                      path: token
+                      expirationSeconds: 600
+                  - configMap:
+                      name: kube-root-ca.crt
+                      items:
+                        - key: ca.crt
+                          path: ca.crt
+                  - downwardAPI:
+                      items:
+                        - path: namespace
+                          fieldRef:
+                            fieldPath: metadata.namespace
+---
+# What the rotation account can change, checked by the API server. The role
+# above cannot name the Secret that it creates, and the Hermes pod can run a
+# command in each pod of this namespace. With these policies, the token of the
+# rotation account can only make the token of hermes-dev-renovate new.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/admissionregistration.k8s.io/validatingadmissionpolicy_v1.json
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: hermes-dev-renovate-rotate-secret
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE]
+        resources: [secrets]
+  matchConditions:
+    - name: rotate-only
+      expression: request.userInfo.username == 'system:serviceaccount:hermes-sandbox:hermes-dev-renovate-rotate'
+  validations:
+    - expression: >-
+        object.metadata.name == 'hermes-dev-renovate-token' &&
+        object.type == 'kubernetes.io/service-account-token' &&
+        has(object.metadata.annotations) &&
+        'kubernetes.io/service-account.name' in object.metadata.annotations &&
+        object.metadata.annotations['kubernetes.io/service-account.name'] == 'hermes-dev-renovate'
+      message: >-
+        hermes-dev-renovate-rotate can create only the token Secret of
+        hermes-dev-renovate.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: hermes-dev-renovate-rotate-secret
+spec:
+  policyName: hermes-dev-renovate-rotate-secret
+  validationActions: [Deny]
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/admissionregistration.k8s.io/validatingadmissionpolicy_v1.json
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: hermes-dev-renovate-rotate-sync
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [external-secrets.io]
+        apiVersions: ["*"]
+        operations: [UPDATE]
+        resources: [externalsecrets]
+  matchConditions:
+    - name: rotate-only
+      expression: request.userInfo.username == 'system:serviceaccount:hermes-sandbox:hermes-dev-renovate-rotate'
+  variables:
+    - name: newAnnotations
+      expression: "has(object.metadata.annotations) ? object.metadata.annotations : {}"
+    - name: oldAnnotations
+      expression: "has(oldObject.metadata.annotations) ? oldObject.metadata.annotations : {}"
+  validations:
+    - expression: >-
+        object.spec == oldObject.spec &&
+        (has(object.metadata.labels) ? object.metadata.labels : {}) ==
+        (has(oldObject.metadata.labels) ? oldObject.metadata.labels : {}) &&
+        (has(object.metadata.ownerReferences) ? object.metadata.ownerReferences : []) ==
+        (has(oldObject.metadata.ownerReferences) ? oldObject.metadata.ownerReferences : []) &&
+        (has(object.metadata.finalizers) ? object.metadata.finalizers : []) ==
+        (has(oldObject.metadata.finalizers) ? oldObject.metadata.finalizers : []) &&
+        variables.newAnnotations.all(k, k == 'force-sync' ||
+          (k in variables.oldAnnotations && variables.oldAnnotations[k] == variables.newAnnotations[k])) &&
+        variables.oldAnnotations.all(k, k == 'force-sync' || k in variables.newAnnotations)
+      message: >-
+        hermes-dev-renovate-rotate can change only the annotation force-sync of
+        an ExternalSecret.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: hermes-dev-renovate-rotate-sync
+spec:
+  policyName: hermes-dev-renovate-rotate-sync
+  validationActions: [Deny]

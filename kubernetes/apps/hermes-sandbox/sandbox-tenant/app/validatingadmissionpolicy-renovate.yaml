@@ -1,0 +1,98 @@
+---
+# The changes that the account hermes-dev-renovate can make, checked by the
+# API server. The role in renovate-identity.yaml is the first limit; this
+# policy holds also if a script or a model sends another change.
+# - GitRepository flux-system: only the reconcile annotation can change.
+# - ReplicationSource: only spec.trigger.manual can change (a manual backup).
+# - Backup: only the Backup of backup.sh (postgres16 in database).
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/admissionregistration.k8s.io/validatingadmissionpolicy_v1.json
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: hermes-dev-renovate
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [source.toolkit.fluxcd.io, volsync.backube]
+        apiVersions: ["*"]
+        operations: [UPDATE]
+        resources: [gitrepositories, replicationsources]
+      - apiGroups: [postgresql.cnpg.io]
+        apiVersions: ["*"]
+        operations: [CREATE]
+        resources: [backups]
+  matchConditions:
+    - name: renovate-only
+      expression: request.userInfo.username == 'system:serviceaccount:hermes-sandbox:hermes-dev-renovate'
+  variables:
+    - name: kind
+      expression: request.resource.resource
+    - name: reconcileKey
+      expression: "'reconcile.fluxcd.io/requestedAt'"
+    - name: meta
+      expression: >-
+        variables.kind == 'backups' ? {} : {
+        'labels': has(object.metadata.labels) ? object.metadata.labels : {},
+        'owners': has(object.metadata.ownerReferences) ? object.metadata.ownerReferences : [],
+        'finalizers': has(object.metadata.finalizers) ? object.metadata.finalizers : []}
+    - name: oldMeta
+      expression: >-
+        variables.kind == 'backups' ? {} : {
+        'labels': has(oldObject.metadata.labels) ? oldObject.metadata.labels : {},
+        'owners': has(oldObject.metadata.ownerReferences) ? oldObject.metadata.ownerReferences : [],
+        'finalizers': has(oldObject.metadata.finalizers) ? oldObject.metadata.finalizers : []}
+    - name: newAnnotations
+      expression: >-
+        variables.kind != 'backups' && has(object.metadata.annotations) ? object.metadata.annotations : {}
+    - name: oldAnnotations
+      expression: >-
+        variables.kind != 'backups' && has(oldObject.metadata.annotations) ? oldObject.metadata.annotations : {}
+    - name: newTrigger
+      expression: >-
+        variables.kind == 'replicationsources' && has(object.spec.trigger) ? object.spec.trigger : {}
+    - name: oldTrigger
+      expression: >-
+        variables.kind == 'replicationsources' && has(oldObject.spec.trigger) ? oldObject.spec.trigger : {}
+  validations:
+    - expression: variables.kind == 'backups' || variables.meta == variables.oldMeta
+      message: hermes-dev-renovate cannot change labels, owner references or finalizers.
+    - expression: >-
+        variables.kind != 'gitrepositories' ||
+        (request.namespace == 'flux-system' && request.name == 'flux-system' &&
+        object.spec == oldObject.spec &&
+        variables.newAnnotations.all(k, k == variables.reconcileKey ||
+          (k in variables.oldAnnotations && variables.oldAnnotations[k] == variables.newAnnotations[k])) &&
+        variables.oldAnnotations.all(k, k == variables.reconcileKey || k in variables.newAnnotations))
+      message: hermes-dev-renovate can only reconcile the GitRepository flux-system.
+    - expression: >-
+        variables.kind != 'replicationsources' ||
+        (variables.newAnnotations == variables.oldAnnotations &&
+        oldObject.spec.all(k, k == 'trigger' || (k in object.spec && object.spec[k] == oldObject.spec[k])) &&
+        object.spec.all(k, k == 'trigger' || k in oldObject.spec) &&
+        variables.oldTrigger.all(k, k == 'manual' || (k in variables.newTrigger && variables.newTrigger[k] == variables.oldTrigger[k])) &&
+        variables.newTrigger.all(k, k == 'manual' || k in variables.oldTrigger))
+      message: hermes-dev-renovate can change only spec.trigger.manual of a ReplicationSource.
+    # The whole Backup is pinned: the one that backup.sh creates, with no
+    # other field, no plugin parameter, and no finalizer or owner reference.
+    - expression: >-
+        variables.kind != 'backups' ||
+        (request.namespace == 'database' &&
+        object.spec.all(k, k in ['cluster', 'method', 'pluginConfiguration']) &&
+        object.spec.cluster.name == 'postgres16' &&
+        has(object.spec.method) && object.spec.method == 'plugin' &&
+        has(object.spec.pluginConfiguration) &&
+        object.spec.pluginConfiguration.all(k, k == 'name') &&
+        object.spec.pluginConfiguration.name == 'barman-cloud.cloudnative-pg.io' &&
+        !has(object.metadata.finalizers) && !has(object.metadata.ownerReferences))
+      message: >-
+        hermes-dev-renovate can create only the Backup of backup.sh: postgres16
+        in database, with the barman-cloud plugin and no other field.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: hermes-dev-renovate
+spec:
+  policyName: hermes-dev-renovate
+  validationActions: [Deny]

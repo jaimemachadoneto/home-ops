@@ -161,6 +161,7 @@ m_pull="only with the Secret ghcr-pull"
 m_affinity="excludes the node"
 m_fields="sets no scheduling field"
 m_labels="has only the labels"
+m_kube="Only a sandbox of dev"
 
 expect "good sandbox" accepted "${good}"
 
@@ -231,6 +232,9 @@ ok "the task label" "${pod%.spec}.metadata.labels = {\"hermes-task\": \"hermes-a
 bad "label of another workload" "${pod%.spec}.metadata.labels = {\"app.kubernetes.io/name\": \"litellm\"}" "${m_labels}"
 bad "allowance of an unknown service" "${pod%.spec}.metadata.labels = {\"hermes-k8s/allow-other\": \"true\"}" "${m_labels}"
 bad "label of another workload on the Sandbox" ".metadata.labels = {\"k8s-app\": \"kube-dns\"}" "${m_labels}"
+ok "kube-api for dev" "${pod%.spec}.metadata.labels += {\"hermes-k8s/allow-kube-api\": \"true\"} | ${pod}.volumes[1].secret.secretName = \"hermes-sandbox-dev\""
+bad "kube-api for another profile" "${pod%.spec}.metadata.labels += {\"hermes-k8s/allow-kube-api\": \"true\"}" "${m_kube}"
+bad "kube-api on the Sandbox of another profile" ".metadata.labels = {\"hermes-k8s/allow-kube-api\": \"true\"}" "${m_kube}"
 bad "known allowance and another label" "${pod%.spec}.metadata.labels += {\"k8s-app\": \"kube-dns\"}" "${m_labels}"
 
 bad "init container with another name" "${pod}.initContainers[0].name = \"setup\"" "${m_init}"

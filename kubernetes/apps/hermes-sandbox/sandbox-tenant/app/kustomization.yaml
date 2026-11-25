@@ -5,13 +5,17 @@ kind: Kustomization
 resources:
   - ./ciliumnetworkpolicy.yaml
   - ./ciliumnetworkpolicy-internet.yaml
+  - ./ciliumnetworkpolicy-kube-api.yaml
   - ./ciliumnetworkpolicy-litellm.yaml
   - ./externalsecret.yaml
   - ./limits.yaml
   - ./networkpolicy.yaml
   - ./nix-base.yaml
   - ./rbac.yaml
+  - ./renovate-identity.yaml
+  - ./renovate-rotate.yaml
   - ./validatingadmissionpolicy.yaml
+  - ./validatingadmissionpolicy-renovate.yaml
 # One pod template serves the CronJob and the Job.
 replacements:
   - source:
