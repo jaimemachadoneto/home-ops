@@ -286,6 +286,29 @@ in the namespace `hermes-sandbox`. The pod uses the account
 gives the sandbox image, pinned by digest. To use a new sandbox image, change
 the digest in `HERMES_K8S_SANDBOX_IMAGE` in `helmrelease.yaml`.
 
+A sandbox has no internet. The setting `service_allowances` in the overlay
+gives the allowance `internet` to `dev` only, and `litellm` to `default`. The
+policies are in `sandbox-tenant/app/ciliumnetworkpolicy*.yaml`. A sandbox
+without `internet` resolves only names in the cluster, because a DNS query
+can also carry data out.
+
+### Built-in tools
+
+Hermes gives each profile its built-in tools (web, browser, terminal) in
+addition to the MCP servers. A platform without an entry in
+`platform_toolsets` gets all of them. `profiles.sh` therefore sets the list
+for each platform at each start:
+
+| Profile | Built-in tools |
+| --- | --- |
+| `dev` | The base list, the shell (`terminal`, `file`, `code_execution`), `web` and `browser` |
+| `default`, `infra` | The base list and the shell |
+| `personal`, `research`, `web`, `house`, `kid` | The base list |
+
+The base list has no tool that reaches the internet. A child of a hand-off
+gets only the built-in tools of its parent. `default` and `infra` hand work
+to `dev`, so they keep the shell. Their sandboxes have no internet.
+
 The sandbox working directory is `/workspace`. The gateway checks that this
 path exists in the pod of the gateway. The container `app` mounts an empty
 directory there. No command runs in that directory.

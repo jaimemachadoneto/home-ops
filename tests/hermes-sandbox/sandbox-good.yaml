@@ -11,6 +11,7 @@ spec:
   podTemplate:
     metadata:
       labels:
+        hermes-k8s/allow-internet: "true"
         hermes-k8s/allow-litellm: "true"
     spec:
       serviceAccountName: hermes-sandbox

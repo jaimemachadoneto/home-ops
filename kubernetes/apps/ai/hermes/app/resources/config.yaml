@@ -25,6 +25,17 @@ plugins:
     claude-subscription-directsdk-experimental:
       settings:
         extra_usage: notify
+    # The service allowances of the sandboxes (ADR 0007 in hermes-k8s), one
+    # list for each profile. Only dev reaches the internet, so a tricked agent
+    # of another profile cannot send data out from its shell. A child of a
+    # hand-off runs as its own profile and gets the list of that profile.
+    k8s_sandbox:
+      settings:
+        service_allowances:
+          default:
+            - litellm
+          dev:
+            - internet
 
 # See ADR 0001 and ADR 0008 in hermes-k8s. Each session runs its shell in its
 # own sandbox. The Hermes image includes the plugin k8s_sandbox. The sandbox

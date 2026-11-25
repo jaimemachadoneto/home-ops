@@ -1,0 +1,53 @@
+---
+# Allowance "internet" (ADR 0007 of hermes-k8s): a sandbox with the label
+# hermes-k8s/allow-internet=true can reach the internet and SearXNG. The base
+# policy gives a sandbox no route out of the cluster. The setting
+# service_allowances in the Hermes config overlay gives this allowance to the
+# dev profile only. A sandbox of another profile then cannot send data out,
+# also when a mail or a web page tricks its agent.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hermes-sandbox-allow-internet
+spec:
+  endpointSelector:
+    matchLabels:
+      hermes-k8s/allow-internet: "true"
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: selfhosted
+            app.kubernetes.io/name: searxng
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    # The excluded ranges include the pod network (10.244.0.0/16) and the
+    # service network (10.96.0.0/12). The ranges also include the home
+    # network. The sandboxes cannot reach the API server or the home network.
+    - toCIDRSet:
+        - cidr: 0.0.0.0/0
+          except:
+            - 0.0.0.0/8
+            - 10.0.0.0/8
+            - 100.64.0.0/10
+            - 127.0.0.0/8
+            - 169.254.0.0/16
+            - 172.16.0.0/12
+            - 192.0.0.0/24
+            - 192.168.0.0/16
+            - 198.18.0.0/15
+            - 224.0.0.0/4
+            - 240.0.0.0/4
