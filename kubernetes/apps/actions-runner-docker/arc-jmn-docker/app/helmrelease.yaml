@@ -19,7 +19,11 @@ spec:
     githubConfigSecret: actions-runner-controller-secret
 
     minRunners: 0
-    maxRunners: 3
+    # One runner only. On 2026-11-25 two devBase CI runs filled the disks of
+    # home-ops-00 and home-ops-01 again, and the kubelet evicted Hermes,
+    # Prometheus and the gateways. The rule "one runner on each node" below
+    # counts only nodes without a taint, so two runners came to one node.
+    maxRunners: 1
 
     # The chart adds a privileged dind sidecar and points DOCKER_HOST at it.
     containerMode:
