@@ -38,7 +38,7 @@ for crd in "${crds[@]}"; do
     yq 'del(.status) | del(.metadata) | .metadata.name = "'"${crd}"'"' >"${work}/${crd}.yaml"
 done
 kustomize build "${app}" |
-  yq 'select(.metadata.name == "hermes-dev-renovate" and (.kind == "ClusterRole" or .kind == "ClusterRoleBinding" or .kind == "ValidatingAdmissionPolicy" or .kind == "ValidatingAdmissionPolicyBinding"))' >"${work}/policy.yaml"
+  yq 'select((.metadata.name == "hermes-dev-renovate" and (.kind == "ClusterRole" or .kind == "ClusterRoleBinding")) or ((.metadata.name | test("^hermes-dev-renovate")) and (.kind == "ValidatingAdmissionPolicy" or .kind == "ValidatingAdmissionPolicyBinding")))' >"${work}/policy.yaml"
 # The role of the weekly rotation (renovate-rotate.yaml), in its namespace.
 kustomize build "${app}" |
   yq 'select(.metadata.name == "hermes-dev-renovate-rotate" and (.kind == "Role" or .kind == "RoleBinding"))' >"${work}/rotate.yaml"
@@ -170,7 +170,7 @@ verdict() {
   local out
   if out="$("$@" 2>&1)"; then
     echo accepted
-  elif grep -q "ValidatingAdmissionPolicy 'hermes-dev-renovate'" <<<"${out}"; then
+  elif grep -q "ValidatingAdmissionPolicy 'hermes-dev-renovate" <<<"${out}"; then
     echo refused
   elif grep -q "forbidden" <<<"${out}"; then
     echo forbidden
@@ -206,7 +206,7 @@ done
 # The type check runs after the creation. A warning means that an expression
 # does not fit the schema of its kind.
 for _ in $(seq 1 60); do
-  [[ "$(kc get validatingadmissionpolicies -o yaml | yq '[.items[] | select(.status.typeChecking)] | length')" == 1 ]] && break
+  [[ "$(kc get validatingadmissionpolicies -o yaml | yq '[.items[] | select(.status.typeChecking)] | length')" == 3 ]] && break
   sleep 1
 done
 warnings="$(kc get validatingadmissionpolicies -o yaml | yq '[.items[].status.typeChecking.expressionWarnings[]?] | length')"
@@ -258,7 +258,29 @@ expect "the role: no Secret read" forbidden kc "${sa[@]}" -n apps get secrets
 expect "the role: no pod delete" forbidden kc "${sa[@]}" -n apps delete pod demo --dry-run=server
 rot=(--as system:serviceaccount:hermes-sandbox:hermes-dev-renovate-rotate -n hermes-sandbox)
 expect "rotation: delete the token Secret" accepted kc "${rot[@]}" delete secret hermes-dev-renovate-token --dry-run=server
-expect "rotation: create the token Secret" accepted kc "${rot[@]}" create secret generic new-token --dry-run=server
+token_secret() {
+  cat >"$3" <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: $1
+  namespace: hermes-sandbox
+  annotations: {kubernetes.io/service-account.name: $2}
+type: kubernetes.io/service-account-token
+EOF
+}
+token_secret hermes-dev-renovate-token hermes-dev-renovate "${work}/token.yaml"
+token_secret hermes-dev-renovate-token hermes-sandbox-client "${work}/token-other-account.yaml"
+token_secret other-token hermes-dev-renovate "${work}/token-other-name.yaml"
+kc -n hermes-sandbox delete secret hermes-dev-renovate-token >/dev/null
+expect "rotation: create the token Secret" accepted kc "${rot[@]}" create --dry-run=server -f "${work}/token.yaml"
+expect "rotation: no token for another account" refused kc "${rot[@]}" create --dry-run=server -f "${work}/token-other-account.yaml"
+expect "rotation: no Secret with another name" refused kc "${rot[@]}" create --dry-run=server -f "${work}/token-other-name.yaml"
+expect "rotation: no plain Secret" refused kc "${rot[@]}" create secret generic hermes-dev-renovate-token --dry-run=server
+expect "rotation: no change of the ExternalSecret spec" refused \
+  kc "${rot[@]}" patch externalsecret hermes-sandbox-dev --dry-run=server --type merge -p '{"spec":{"target":{"name":"evil"}}}'
+expect "rotation: no other annotation on the ExternalSecret" refused \
+  kc "${rot[@]}" annotate externalsecret hermes-sandbox-dev other=1 --dry-run=server
 expect "rotation: start a sync of hermes-sandbox-dev" accepted \
   kc "${rot[@]}" annotate externalsecret hermes-sandbox-dev force-sync=1 --overwrite --dry-run=server
 expect "rotation: no delete of another Secret" forbidden kc "${rot[@]}" delete secret other --dry-run=server
