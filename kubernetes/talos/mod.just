@@ -13,7 +13,7 @@ default:
 [doc('Apply Talos config to a node')]
 apply-node node *args:
   just log info "Applying Talos machineconfig" "node" "{{ node }}";
-  just talos render-config "{{ node }}" | talosctl -n "{{ node }}.internal" apply-config -f /dev/stdin {{ args }}
+  just talos render-config "{{ node }}" | talosctl -n "$(just talos node-ip {{ node }})" apply-config -f /dev/stdin {{ args }}
 
 [doc('Apply Talos config to all nodes in the cluster')]
 apply-cluster *args:
@@ -34,12 +34,12 @@ render-config node:
 [doc('Reboot a node')]
 reboot-node node:
   gum confirm "Reboot node {{ node }}?" && \
-    talosctl -n {{ node }}.internal reboot -m powercycle || exit 0
+    talosctl -n "$(just talos node-ip {{ node }})" reboot -m powercycle || exit 0
 
 [doc('Reset a node')]
 reset-node node mode="reboot":
   gum confirm "Reset node {{ node }}?" && \
-    talosctl -n "{{ node }}.internal" reset --system-labels-to-wipe STATE --system-labels-to-wipe EPHEMERAL --system-labels-to-wipe u-local-hostpath --graceful=false {{ if mode == "reboot" { "--reboot" } else { "" } }} || exit 0
+    talosctl -n "$(just talos node-ip {{ node }})" reset --system-labels-to-wipe STATE --system-labels-to-wipe EPHEMERAL --system-labels-to-wipe u-local-hostpath --graceful=false {{ if mode == "reboot" { "--reboot" } else { "" } }} || exit 0
 
 [doc('Reset all nodes in the cluster')]
 reset-cluster mode="reboot":
@@ -51,7 +51,7 @@ upgrade-k8s version:
 
 [doc('Upgrade Talos version on a node')]
 upgrade-node node:
-  talosctl -n "{{ node }}" upgrade -i "$(just talos machine-image {{ node }})" -m powercycle --timeout=10m
+  talosctl -n "$(just talos node-ip {{ node }})" upgrade -i "$(just talos machine-image {{ node }})" -m powercycle --timeout=10m
 
 [doc('Download Talos machine image')]
 download-image version schematic:
@@ -61,6 +61,12 @@ download-image version schematic:
       "https://factory.talos.dev/image/{{ schematic }}/{{ version }}/nocloud-amd64.iso"
   just log info "Downloaded Talos" version "{{ version }}" schematic "{{ schematic }}"
 
+# The node certificates name only the short host name and .internal, and
+# neither name resolves on every network. The IP in the node file always works.
+[private]
+node-ip node:
+  minijinja-cli "{{ talos_dir }}/nodes/{{ node }}.yaml.j2" | yq -e 'select(.machine) | .machine.network.interfaces[0].addresses[0] | sub("/.*"; "")'
+
 [private]
 machine-controller node:
   just template "{{ talos_dir }}/nodes/{{ node }}.yaml.j2" | yq -e 'select(.machine) | (.machine.type == "controlplane") // ""'
@@ -68,4 +74,4 @@ machine-controller node:
 [doc('Get the machine image for a given node')]
 [private]
 machine-image node:
-  talosctl --nodes {{ node }} get machineconfig --output=jsonpath='{.spec}' | yq -e 'select(.machine) | .machine.install.image'
+  talosctl --nodes "$(just talos node-ip {{ node }})" get machineconfig --output=jsonpath='{.spec}' | yq -e 'select(.machine) | .machine.install.image'
