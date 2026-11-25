@@ -59,6 +59,13 @@ machine:
     defaultRuntimeSeccompProfileEnabled: true
     disableManifestsDirectory: true
     extraConfig:
+      # The defaults start the image cleanup at 85 % disk use, the same level as
+      # the eviction (imagefs.available < 15 %). The kubelet then evicts pods
+      # before it removes images. Clean up earlier, and remove each image that
+      # no pod used for 7 days.
+      imageGCHighThresholdPercent: 70
+      imageGCLowThresholdPercent: 60
+      imageMaximumGCAge: 168h
       maxPods: 150
       serializeImagePulls: false
     image: ghcr.io/siderolabs/kubelet:v1.37.2
