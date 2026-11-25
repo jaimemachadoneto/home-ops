@@ -54,7 +54,12 @@ spec:
               args:
                 nodeAffinityType:
                   - requiredDuringSchedulingIgnoredDuringExecution
+            # Also PreferNoSchedule: a pod can move to the GPU node
+            # home-ops-03 when the other nodes are full, and the descheduler
+            # moves it back when they have room again.
             - name: RemovePodsViolatingNodeTaints
+              args:
+                includePreferNoSchedule: true
             - name: RemovePodsViolatingTopologySpreadConstraint
           plugins:
             balance:
