@@ -147,7 +147,7 @@ verdict() {
   local out
   if out="$("$@" 2>&1)"; then
     echo accepted
-  elif grep -q "ValidatingAdmissionPolicy 'flux-ops-mcp'" <<<"${out}"; then
+  elif grep -q "ValidatingAdmissionPolicy 'flux-ops-mcp-" <<<"${out}"; then
     echo refused
   elif grep -q "forbidden" <<<"${out}"; then
     echo forbidden
@@ -179,6 +179,22 @@ for _ in $(seq 1 60); do
   [[ "$(verdict kc "${sa[@]}" -n apps patch "${ks[@]}" demo "${dry[@]}" -p '{"spec":{"path":"./x"}}')" == refused ]] && break
   sleep 1
 done
+
+# The type check runs after the creation. A warning means that an expression
+# does not fit the schema of its kind, so a rule can fail in a way the cases
+# do not show.
+for _ in $(seq 1 60); do
+  [[ "$(kc get validatingadmissionpolicies -o yaml | yq '[.items[] | select(.status.typeChecking)] | length')" == 2 ]] && break
+  sleep 1
+done
+warnings="$(kc get validatingadmissionpolicies -o yaml | yq '[.items[].status.typeChecking.expressionWarnings[]?] | length')"
+if [[ "${warnings}" != 0 ]]; then
+  echo "FAIL type check: ${warnings} warning(s)" >&2
+  kc get validatingadmissionpolicies -o yaml | yq '.items[].status.typeChecking' >&2
+  failures=$((failures + 1))
+else
+  echo "ok   type check: no warnings"
+fi
 
 expect "reconcile annotation" accepted \
   kc "${sa[@]}" -n apps patch "${ks[@]}" demo "${dry[@]}" -p '{"metadata":{"annotations":{"reconcile.fluxcd.io/requestedAt":"now"}}}'
