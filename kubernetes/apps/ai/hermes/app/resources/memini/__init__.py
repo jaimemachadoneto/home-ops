@@ -34,6 +34,7 @@ RECALL_LIMIT = 5
 RECALL_FETCH = 15
 # The tag of the facts about Jaime that Hermes saves in personal/jaime.
 TAG = "hermes"
+PERSONAL = "personal/jaime"
 
 
 def _call(namespace: str, tool: str, args: dict[str, Any]) -> str:
@@ -129,16 +130,22 @@ class MeminiProvider(MemoryProvider):
 
     def on_memory_write(self, action: str, target: str, content: str,
                         metadata: Optional[dict[str, Any]] = None) -> None:
-        # shortcut: a remove does not forget the memini copy; memini ages facts out. Add a
-        # memory_forget by content if stale facts show up in recalls.
-        if not self._writes or action not in ("add", "replace") or not content.strip():
+        if not self._writes or action not in ("add", "replace", "remove"):
             return
-        args: dict[str, Any] = {"content": content.strip()}
-        if target == "user":
-            # A fact about Jaime: every agent of Jaime knows it, and the tag brings it into recalls.
-            # memini keeps a working or episodic memory in hermes/<profile>, so set the tier.
-            args.update(visibility="personal", tags=[TAG], tier="semantic")
-        self._background(self._save, args)
+        user = target == "user"
+        # Hermes gives the old entry on a replace or a remove: its memini copy goes, or it goes stale.
+        previous = str((metadata or {}).get("previous_content") or "").strip() if action != "add" else ""
+        args: Optional[dict[str, Any]] = None
+        if action != "remove" and content.strip():
+            # The Hermes memory is durable. memini can classify a short entry as working, which
+            # expires in days and which memini keeps in hermes/<profile> for any visibility.
+            args = {"content": content.strip(), "tier": "semantic"}
+            if user:
+                # A fact about Jaime: every agent of Jaime knows it, and the tag brings it into recalls.
+                args.update(visibility="personal", tags=[TAG])
+        if previous or args:
+            # One thread, so the forget of a replace comes before its save.
+            self._background(self._mirror, previous, user, args)
 
     def get_tool_schemas(self) -> list[dict[str, Any]]:
         return []  # The agents have the memini tools through their MCP servers.
@@ -158,11 +165,25 @@ class MeminiProvider(MemoryProvider):
             with self._lock:
                 self._context = f"## {heading}\n{text[:MAX_CHARS]}"
 
-    def _save(self, args: dict[str, Any]) -> None:
+    def _mirror(self, previous: str, user: bool, args: Optional[dict[str, Any]]) -> None:
         try:
-            _call(self._namespace, "memory_remember", args)
+            if previous:
+                self._forget(previous, user)
+            if args:
+                _call(self._namespace, "memory_remember", args)
         except Exception as exc:  # noqa: BLE001 - a lost copy is better than a failed turn.
-            logger.warning("memini: memory_remember failed: %s", exc)
+            logger.warning("memini: memory write failed: %s", exc)
+
+    def _forget(self, content: str, user: bool) -> None:
+        """Forget the copy that this provider saved: the same text, where the provider saves it."""
+        args: dict[str, Any] = {"query": content[:500], "limit": 5, "response_format": "detailed"}
+        if user:
+            args["tags"] = [TAG]  # Never a memory of Claude Code in personal/jaime.
+        namespace = PERSONAL if user else self._namespace
+        for item in json.loads(_call(self._namespace, "memory_recall", args)).get("results", []):
+            if (isinstance(item, dict) and item.get("namespace") == namespace
+                    and str(item.get("content") or "").strip() == content and item.get("id")):
+                _call(self._namespace, "memory_forget", {"id": item["id"], "namespace": namespace})
 
 
 def register(ctx) -> None:

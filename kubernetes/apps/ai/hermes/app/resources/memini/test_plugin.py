@@ -22,6 +22,18 @@ calls = []
 
 def fake(namespace, tool, args):
     calls.append((namespace, tool, args))
+    if tool == "memory_recall" and args.get("response_format") == "detailed":
+        # The lookup of a stale copy: the same text in many places, only one of them ours.
+        same = [
+            {"id": "own", "content": "Old fact.", "namespace": "hermes/house"},
+            {"id": "other-profile", "content": "Old fact.", "namespace": "hermes/kid"},
+            {"id": "near", "content": "Old fact. And more.", "namespace": "hermes/house"},
+        ]
+        if args.get("tags") == ["hermes"]:
+            same = [{"id": "jaime-hermes", "content": "Jaime likes tea.", "namespace": "personal/jaime"}]
+        else:
+            same.append({"id": "claude-code", "content": "Jaime likes tea.", "namespace": "personal/jaime"})
+        return json.dumps({"results": same})
     if tool == "memory_recall" and args.get("tags") == ["hermes"]:
         return json.dumps({"results": [
             {"id": "t1", "content": "Jaime prefers short answers.", "namespace": "personal/jaime"},
@@ -80,7 +92,30 @@ wait()
 saved = [(c[2]["content"], c[2].get("visibility"), c[2].get("tags"), c[2].get("tier"))
          for c in calls if c[1] == "memory_remember"]
 assert saved == [("Jaime prefers short answers.", "personal", ["hermes"], "semantic"),
-                 ("The office light is light.office.", None, None, None)], saved
+                 ("The office light is light.office.", None, None, "semantic")], saved
+
+# A remove forgets only the copy that the provider saved: same text, same namespace.
+calls.clear()
+p.on_memory_write("remove", "memory", "", {"previous_content": "Old fact."})
+wait()
+forgets = [c[2] for c in calls if c[1] == "memory_forget"]
+assert forgets == [{"id": "own", "namespace": "hermes/house"}], forgets
+assert not [c for c in calls if c[1] == "memory_remember"]
+
+# A user fact is forgotten only with the tag hermes: a Claude Code memory with the same text stays.
+calls.clear()
+p.on_memory_write("remove", "user", "", {"previous_content": "Jaime likes tea."})
+wait()
+forgets = [c[2] for c in calls if c[1] == "memory_forget"]
+assert forgets == [{"id": "jaime-hermes", "namespace": "personal/jaime"}], forgets
+
+# A replace forgets the old copy, then saves the new text.
+calls.clear()
+p.on_memory_write("replace", "memory", "New fact.", {"previous_content": "Old fact."})
+wait()
+order = [c[1] for c in calls if c[1] in ("memory_forget", "memory_remember")]
+assert order == ["memory_forget", "memory_remember"], order
+assert calls[-1][2] == {"content": "New fact.", "tier": "semantic"}
 
 # The root profile is default.
 d = mod.MeminiProvider()

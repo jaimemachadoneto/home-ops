@@ -297,14 +297,19 @@ the same LiteLLM server, with the Hermes key:
   reads all of `personal/jaime` with its memini tools.
 - A write to the memory of Hermes also goes to memini: a `user` fact goes to
   `personal/jaime` with the tag `hermes`, so Claude Code also sees it. The
-  other facts go to `hermes/<profile>`, the memory of that agent only.
+  other facts go to `hermes/<profile>`, the memory of that agent only. Each
+  copy has the tier `semantic`, so it does not expire. When the agent replaces
+  or removes an entry, the provider forgets the memini copy with the same
+  text, in the same place.
   Only the agent that talks to Jaime writes, not a scheduled job or a
   subagent.
 - A call that fails adds nothing and does not stop the turn.
   `memini/test_plugin.py` tests the provider; run it in the Hermes pod.
 
 `memini_hermes` lets the caller select the namespace. Give only the Hermes key
-access to it in the LiteLLM UI.
+access to it in the LiteLLM UI. The key also needs `memory_update` and
+`memory_forget` on it. The UI did not save these two tools (2026-11-25), so
+they were set with the API `/key/update`.
 
 The namespaces and the `x-mcp-servers` header keep the profiles in order.
 They are not a security boundary. The header only narrows the Hermes key, and
