@@ -17,6 +17,8 @@ configMapGenerator:
       - ./resources/state-sync.sh
       - task-tiers-plugin.yaml=./resources/task-tiers/plugin.yaml
       - task-tiers.py=./resources/task-tiers/__init__.py
+      - memini-plugin.yaml=./resources/memini/plugin.yaml
+      - memini.py=./resources/memini/__init__.py
   # The SOUL.md parts of each profile. profiles.sh writes SOUL.md from them at
   # each start.
   - name: hermes-personas
