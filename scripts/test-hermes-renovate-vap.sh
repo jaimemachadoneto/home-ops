@@ -32,13 +32,16 @@ for s in socks:
 print(*[s.getsockname()[1] for s in socks])'
 }
 
-crds=(gitrepositories.source.toolkit.fluxcd.io replicationsources.volsync.backube backups.postgresql.cnpg.io)
+crds=(gitrepositories.source.toolkit.fluxcd.io replicationsources.volsync.backube backups.postgresql.cnpg.io externalsecrets.external-secrets.io)
 for crd in "${crds[@]}"; do
   kubectl get crd "${crd}" -o yaml |
     yq 'del(.status) | del(.metadata) | .metadata.name = "'"${crd}"'"' >"${work}/${crd}.yaml"
 done
 kustomize build "${app}" |
   yq 'select(.metadata.name == "hermes-dev-renovate" and (.kind == "ClusterRole" or .kind == "ClusterRoleBinding" or .kind == "ValidatingAdmissionPolicy" or .kind == "ValidatingAdmissionPolicyBinding"))' >"${work}/policy.yaml"
+# The role of the weekly rotation (renovate-rotate.yaml), in its namespace.
+kustomize build "${app}" |
+  yq 'select(.metadata.name == "hermes-dev-renovate-rotate" and (.kind == "Role" or .kind == "RoleBinding"))' >"${work}/rotate.yaml"
 
 read -r etcd_port etcd_peer_port api_port < <(free_ports)
 
@@ -87,6 +90,20 @@ for crd in "${crds[@]}"; do
   kc wait --for=condition=Established "crd/${crd}" --timeout=60s >/dev/null
 done
 kc create -f "${work}/policy.yaml" >/dev/null
+kc -n hermes-sandbox create -f "${work}/rotate.yaml" >/dev/null
+for es in hermes-sandbox-dev hermes-sandbox-default; do
+  kc apply -f - >/dev/null <<EOF
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata: {name: ${es}, namespace: hermes-sandbox}
+spec:
+  secretStoreRef: {kind: ClusterSecretStore, name: onepassword}
+  target: {name: ${es}}
+  data: [{secretKey: x, remoteRef: {key: hermes, property: x}}]
+EOF
+done
+kc -n hermes-sandbox create secret generic hermes-dev-renovate-token >/dev/null
+kc -n hermes-sandbox create secret generic other >/dev/null
 
 # git_repo NAMESPACE NAME
 git_repo() {
@@ -239,6 +256,15 @@ expect "the role: reconcile another GitRepository" forbidden \
   kc "${sa[@]}" -n apps patch "${gr[@]}" other "${dry[@]}" -p '{"metadata":{"annotations":{"reconcile.fluxcd.io/requestedAt":"now"}}}'
 expect "the role: no Secret read" forbidden kc "${sa[@]}" -n apps get secrets
 expect "the role: no pod delete" forbidden kc "${sa[@]}" -n apps delete pod demo --dry-run=server
+rot=(--as system:serviceaccount:hermes-sandbox:hermes-dev-renovate-rotate -n hermes-sandbox)
+expect "rotation: delete the token Secret" accepted kc "${rot[@]}" delete secret hermes-dev-renovate-token --dry-run=server
+expect "rotation: create the token Secret" accepted kc "${rot[@]}" create secret generic new-token --dry-run=server
+expect "rotation: start a sync of hermes-sandbox-dev" accepted \
+  kc "${rot[@]}" annotate externalsecret hermes-sandbox-dev force-sync=1 --overwrite --dry-run=server
+expect "rotation: no delete of another Secret" forbidden kc "${rot[@]}" delete secret other --dry-run=server
+expect "rotation: no read of another Secret" forbidden kc "${rot[@]}" get secret other
+expect "rotation: no change of another ExternalSecret" forbidden \
+  kc "${rot[@]}" annotate externalsecret hermes-sandbox-default force-sync=1 --overwrite --dry-run=server
 expect "another account is not limited" accepted \
   kc -n flux-system patch "${gr[@]}" flux-system "${dry[@]}" -p '{"spec":{"url":"https://example.com/other"}}'
 

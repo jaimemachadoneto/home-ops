@@ -253,7 +253,11 @@ allowance `kube-api` and the cluster account `hermes-dev-renovate` in
 `/run/secrets/github/kubeconfig`. The admission policy `hermes-dev-renovate`
 allows only the changes of the scripts: the reconcile of `flux-system`, a
 manual VolSync backup, and a Backup of `postgres16`. Test it with
-`just test-hermes-renovate-vap`. The rows that wait for Jaime show in the
+`just test-hermes-renovate-vap`. The CronJob `hermes-dev-renovate-rotate`
+gives the account a new token each Sunday at 22:00, one hour before the run:
+it deletes the token Secret (the old token stops at once), creates it again,
+and makes External Secrets write the new kubeconfig. Nothing goes through
+1Password. The rows that wait for Jaime show in the
 morning brief, and Jaime approves them through `default`.
 
 `default` has no web tool. Web questions go to `web`, which has `web_search`
