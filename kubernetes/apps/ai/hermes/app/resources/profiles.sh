@@ -248,7 +248,9 @@ toolsets() {
   for t in "$@"; do list="$list$sep\"$t\"" sep=,; done
   map= sep=
   for p in $PLATFORMS; do map="$map$sep\"$p\":[$list]" sep=,; done
-  hreq "$prof" platform_toolsets "{$map}"
+  # --force: a profile already has this section, and config set replaces a
+  # whole section only with --force.
+  hreq "$prof" --force platform_toolsets "{$map}"
 }
 
 # shellcheck disable=SC2086 # Each list is one toolset for each word.
