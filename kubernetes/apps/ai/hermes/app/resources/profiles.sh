@@ -228,6 +228,41 @@ profile kid - - "$FLASH" \
   "School portal digest for the kids" \
   seed_kid_agents
 
+# The built-in tools of each profile, on every platform. A platform without an
+# entry gets all tools, so the list names each platform that Hermes knows.
+# MCP tools are not in this list: x-mcp-servers above sets them.
+PLATFORMS="a2a api_server bluebubbles buzz cli cron dingtalk discord email feishu google_chat irc line matrix mattermost ntfy photon qqbot raft signal simplex slack sms teams telegram webhook wecom wecom_callback weixin whatsapp whatsapp_cloud"
+# No tool here reaches the internet. `connections` is not in the list: it
+# manages connections to outside services.
+BASE="clarify cronjob delegation image_gen memory session_search skills todo tts vision"
+# The shell runs in the sandbox, which reaches the internet only with the
+# allowance "internet" (config.yaml). A child of a hand-off gets only the
+# built-in tools of its parent, so a profile that hands work to dev keeps the shell.
+SHELL_TOOLS="$BASE terminal file code_execution"
+
+# toolsets PROFILE TOOLSET...: a boundary setting, so a failure stops Hermes.
+toolsets() {
+  prof=$1
+  shift
+  list= sep=
+  for t in "$@"; do list="$list$sep\"$t\"" sep=,; done
+  map= sep=
+  for p in $PLATFORMS; do map="$map$sep\"$p\":[$list]" sep=,; done
+  hreq "$prof" platform_toolsets "{$map}"
+}
+
+# shellcheck disable=SC2086 # Each list is one toolset for each word.
+{
+  toolsets default $SHELL_TOOLS
+  toolsets infra $SHELL_TOOLS
+  toolsets dev $SHELL_TOOLS web browser
+  toolsets personal $BASE
+  toolsets research $BASE
+  toolsets web $BASE
+  toolsets house $BASE
+  toolsets kid $BASE
+}
+
 if [ "$boundary_failed" != 0 ]; then
   echo "profiles: a REQUIRED setting failed (see above); Hermes does not start"
   exit 1

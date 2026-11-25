@@ -1,7 +1,8 @@
 ---
-# The base egress of each sandbox: DNS, SearXNG, the Nix cache and the
-# internet without the private ranges. A sandbox needs its own policy to
-# reach another service.
+# The base egress of each sandbox: DNS names in the cluster and the Nix cache.
+# A sandbox has no internet: the allowance "internet"
+# (ciliumnetworkpolicy-internet.yaml) gives it. A sandbox needs its own policy
+# to reach another service.
 # That policy selects the label hermes-k8s/allow-<service>=true. There is no
 # ingress rule.
 # The Hermes plugin sets that label in the Sandbox. The admission policy
@@ -24,19 +25,12 @@ spec:
             - port: "53"
               protocol: ANY
           rules:
+            # Only names in the cluster: kube-dns forwards other names to the
+            # internet, so a query can carry data out.
             dns:
-              - matchPattern: "*"
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: selfhosted
-            app.kubernetes.io/name: searxng
-      toPorts:
-        - ports:
-            - port: "8080"
-              protocol: TCP
-    # The Nix cache (ncps, namespace system). The rule below excludes the pod
-    # network. The cache therefore needs its own rule. The cache has the
-    # matching ingress rule.
+              - matchPattern: "**.cluster.local"
+    # The Nix cache (ncps, namespace system). The cache has the matching
+    # ingress rule.
     - toEndpoints:
         - matchLabels:
             app.kubernetes.io/name: nix-cache
@@ -45,20 +39,3 @@ spec:
         - ports:
             - port: "8501"
               protocol: TCP
-    # The excluded ranges include the pod network (10.244.0.0/16) and the
-    # service network (10.96.0.0/12). The ranges also include the home
-    # network. The sandboxes cannot reach the API server or the home network.
-    - toCIDRSet:
-        - cidr: 0.0.0.0/0
-          except:
-            - 0.0.0.0/8
-            - 10.0.0.0/8
-            - 100.64.0.0/10
-            - 127.0.0.0/8
-            - 169.254.0.0/16
-            - 172.16.0.0/12
-            - 192.0.0.0/24
-            - 192.168.0.0/16
-            - 198.18.0.0/15
-            - 224.0.0.0/4
-            - 240.0.0.0/4

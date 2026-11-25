@@ -112,6 +112,8 @@ spec:
         metadata:
           labels:
             app.kubernetes.io/name: hermes-nix-base
+            # The clone and the warm-up download from GitHub and the Nix caches.
+            hermes-k8s/allow-internet: "true"
             # TODO: Add the policy for the Nix cache that selects this label (ticket 15 of hermes-k8s).
             hermes-k8s/allow-nix-cache: "true"
         spec:
