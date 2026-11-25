@@ -47,6 +47,8 @@ def _from_default() -> bool:
 def _has_approval(task: Mapping[str, Any]) -> bool:
     """True when the task text names Jaime and an approval, in any form or field."""
     text = unicodedata.normalize("NFKC", json.dumps(task, ensure_ascii=False, default=str)).lower()
+    # Remove invisible format characters (zero-width space, soft hyphen), which can split a word.
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
     return bool(re.search(r"jaime", text) and re.search(r"approv", text))
 
 
