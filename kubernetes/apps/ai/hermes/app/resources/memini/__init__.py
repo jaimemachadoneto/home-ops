@@ -16,6 +16,7 @@ import json
 import logging
 import os
 import threading
+import time
 import urllib.request
 from pathlib import Path
 from typing import Any, Optional
@@ -28,6 +29,8 @@ URL = os.environ.get("MEMINI_MCP_URL", "http://litellm.ai.svc.cluster.local:4000
 KEY_FILE = Path(os.environ.get("MEMINI_KEY_FILE", "/mnt/secrets/litellm/key"))
 SERVER = "memini_hermes"
 TIMEOUT_SECONDS = 8
+# Hermes gives prefetch 8 seconds. The first turn comes right after initialize, before the briefing.
+PREFETCH_WAIT_SECONDS = 3
 MAX_CHARS = 2000
 RECALL_LIMIT = 5
 # More results than we inject, because the filter drops the memories of other namespaces.
@@ -87,12 +90,16 @@ def _recall(namespace: str, query: str) -> str:
     return "\n".join(_lines(items, RECALL_LIMIT))
 
 
-def _format_briefing(text: str) -> str:
-    briefing = json.loads(text)
-    lines = []
-    for section in ("pinned", "facts", "procedures"):
-        lines += _lines([i for i in briefing.get(section) or [] if isinstance(i, dict) and _ours(i)], RECALL_LIMIT)
-    return "\n".join(lines)
+def _briefing(namespace: str) -> str:
+    # A full briefing fills its sections with personal/jaime first and leaves no room for the
+    # Hermes memories, so ask for each part on its own.
+    items: list[dict[str, Any]] = []
+    for own in (namespace, "hermes"):
+        briefing = json.loads(_call(own, "memory_briefing", {"scope": "project"}))
+        for section in ("pinned", "facts", "procedures"):
+            items += briefing.get(section) or []
+    tagged = json.loads(_call(namespace, "memory_list", {"namespace": PERSONAL, "tags": [TAG], "limit": RECALL_LIMIT}))
+    return "\n".join(_lines(items + (tagged.get("memories") or []), 3 * RECALL_LIMIT))
 
 
 class MeminiProvider(MemoryProvider):
@@ -115,8 +122,7 @@ class MeminiProvider(MemoryProvider):
         # Only the agent that talks to Jaime saves: a scheduled job or a subagent only reads.
         self._writes = kwargs.get("agent_context", "primary") == "primary"
         namespace = self._namespace
-        self._background(self._load, lambda: _format_briefing(_call(namespace, "memory_briefing", {})),
-                         "memini briefing")
+        self._background(self._load, lambda: _briefing(namespace), "memini briefing")
 
     def queue_prefetch(self, query: str, *, session_id: str = "") -> None:
         if query.strip():
@@ -124,6 +130,9 @@ class MeminiProvider(MemoryProvider):
             self._background(self._load, lambda: _recall(namespace, query[:500]), "memini recall")
 
     def prefetch(self, query: str, *, session_id: str = "") -> str:
+        deadline = time.monotonic() + PREFETCH_WAIT_SECONDS
+        for thread in list(self._threads):
+            thread.join(max(0.0, deadline - time.monotonic()))
         with self._lock:
             context, self._context = self._context, ""
         return context
