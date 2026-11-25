@@ -203,6 +203,10 @@ expect "change a label" refused \
   kc "${sa[@]}" -n apps patch "${ks[@]}" demo "${dry[@]}" -p '{"metadata":{"labels":{"app":"evil"}}}'
 expect "add another annotation" refused \
   kc "${sa[@]}" -n apps patch "${ks[@]}" demo "${dry[@]}" -p '{"metadata":{"annotations":{"kustomize.toolkit.fluxcd.io/reconcile":"disabled"}}}'
+expect "add an owner reference" refused \
+  kc "${sa[@]}" -n apps patch "${ks[@]}" demo "${dry[@]}" -p '{"metadata":{"ownerReferences":[{"apiVersion":"v1","kind":"ConfigMap","name":"gone","uid":"00000000-0000-0000-0000-000000000009"}]}}'
+expect "add a finalizer" refused \
+  kc "${sa[@]}" -n apps patch "${ks[@]}" demo "${dry[@]}" -p '{"metadata":{"finalizers":["example.com/block"]}}'
 expect "suspend in flux-system" refused \
   kc "${sa[@]}" -n flux-system patch "${ks[@]}" demo "${dry[@]}" -p '{"spec":{"suspend":true}}'
 expect "delete a pod without an owner" refused \

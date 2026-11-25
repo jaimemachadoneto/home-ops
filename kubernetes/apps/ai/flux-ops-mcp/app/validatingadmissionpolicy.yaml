@@ -57,6 +57,15 @@ spec:
         ((has(object.metadata.labels) ? object.metadata.labels : {}) ==
         (has(oldObject.metadata.labels) ? oldObject.metadata.labels : {}))
       message: flux-ops-mcp cannot change the labels of a Flux object.
+    # An owner reference to a missing object makes the garbage collector
+    # delete the Flux object, and a finalizer can block a delete.
+    - expression: >-
+        variables.isPod ||
+        ((has(object.metadata.ownerReferences) ? object.metadata.ownerReferences : []) ==
+        (has(oldObject.metadata.ownerReferences) ? oldObject.metadata.ownerReferences : []) &&
+        (has(object.metadata.finalizers) ? object.metadata.finalizers : []) ==
+        (has(oldObject.metadata.finalizers) ? oldObject.metadata.finalizers : []))
+      message: flux-ops-mcp cannot change the owner references or the finalizers of a Flux object.
     - expression: >-
         variables.isPod ||
         (variables.newAnnotations.all(k, k == variables.reconcileKey ||
