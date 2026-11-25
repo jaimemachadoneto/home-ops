@@ -285,6 +285,22 @@ Each profile has two memories:
 The SOUL of each profile tells it to keep its working habits in the memory of
 Hermes and the facts in memini.
 
+The memory provider `memini` (`app/resources/memini/`, `memory.provider:
+memini`) does this without a tool call. `profiles.sh` copies it into each
+profile but `web`, which has no memory on purpose. It calls memini through
+the same LiteLLM server, with the Hermes key:
+
+- At the start of a session it adds the memini briefing, and before each turn
+  the memories that match the message. It adds only the memories of
+  `hermes/<profile>` and `hermes`: `personal/jaime` holds mostly the work of
+  Claude Code. An agent reads `personal/jaime` with its memini tools.
+- A write to the memory of Hermes also goes to memini: a `user` fact with the
+  visibility `hermes` (all Hermes agents), the others in `hermes/<profile>`.
+  Only the agent that talks to Jaime writes, not a scheduled job or a
+  subagent.
+- A call that fails adds nothing and does not stop the turn.
+  `memini/test_plugin.py` tests the provider; run it in the Hermes pod.
+
 `memini_hermes` lets the caller select the namespace. Give only the Hermes key
 access to it in the LiteLLM UI.
 

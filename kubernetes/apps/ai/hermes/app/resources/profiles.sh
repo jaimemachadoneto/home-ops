@@ -58,6 +58,14 @@ copy_task_tiers() {
   cp /etc/hermes/task-tiers.py "$1/plugins/task-tiers/__init__.py"
 }
 
+# copy_memini HOME: the memory provider memini (resources/memini). It recalls from memini
+# before a turn and saves the built-in memory writes there.
+copy_memini() {
+  mkdir -p "$1/plugins/memini"
+  cp /etc/hermes/memini-plugin.yaml "$1/plugins/memini/plugin.yaml"
+  cp /etc/hermes/memini.py "$1/plugins/memini/__init__.py"
+}
+
 # seed_tiers NAME: the subagents use LiteLLM models, by the difficulty of the
 # task. Seeded once, so a change in the Dashboard stays.
 seed_tiers() {
@@ -115,6 +123,13 @@ profile() {
     req_key plugins.entries.claude-subscription-directsdk-experimental.settings.claude_config_dir "$claude_dir"
   fi
   copy_task_tiers "$home" || { echo "profiles: $name: REQUIRED task-tiers copy failed"; boundary_failed=1; }
+  # web has no memory on purpose: a page that tricks it finds no private data.
+  if [ "$name" = web ]; then
+    set_key memory.provider builtin
+  else
+    copy_memini "$home" || { echo "profiles: $name: memini copy failed"; failed=1; }
+    set_key memory.provider memini
+  fi
   # The SOUL holds the rules for relayed requests and approvals, so git owns
   # it: the agent part, then the shared parts. web has no memory and gives
   # no tasks, and kid has its own memory part.

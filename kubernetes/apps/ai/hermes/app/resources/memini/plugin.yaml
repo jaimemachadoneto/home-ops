@@ -1,0 +1,4 @@
+name: memini
+version: 0.1.0
+description: "Memory provider: recall from memini before a turn and save the built-in memory writes, through the LiteLLM MCP server memini_hermes."
+author: home-ops
