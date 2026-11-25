@@ -133,12 +133,17 @@ metadata: {name: test, namespace: $1}
 spec:
   cluster: {name: $2}
   method: $3
+  pluginConfiguration: {name: barman-cloud.cloudnative-pg.io}
 EOF
 }
 backup database postgres16 plugin "${work}/ok-backup.yaml"
 backup database other plugin "${work}/other-cluster.yaml"
 backup apps postgres16 plugin "${work}/other-ns.yaml"
 backup database postgres16 volumeSnapshot "${work}/other-method.yaml"
+yq '.spec.pluginConfiguration.name = "other.example.com"' "${work}/ok-backup.yaml" >"${work}/other-plugin.yaml"
+yq '.spec.pluginConfiguration.parameters = {"barmanObjectName": "evil"}' "${work}/ok-backup.yaml" >"${work}/parameters.yaml"
+yq '.spec.target = "primary"' "${work}/ok-backup.yaml" >"${work}/extra-field.yaml"
+yq '.metadata.finalizers = ["example.com/block"]' "${work}/ok-backup.yaml" >"${work}/finalizer.yaml"
 
 failures=0
 
@@ -181,6 +186,21 @@ for _ in $(seq 1 60); do
   sleep 1
 done
 
+# The type check runs after the creation. A warning means that an expression
+# does not fit the schema of its kind.
+for _ in $(seq 1 60); do
+  [[ "$(kc get validatingadmissionpolicies -o yaml | yq '[.items[] | select(.status.typeChecking)] | length')" == 1 ]] && break
+  sleep 1
+done
+warnings="$(kc get validatingadmissionpolicies -o yaml | yq '[.items[].status.typeChecking.expressionWarnings[]?] | length')"
+if [[ "${warnings}" != 0 ]]; then
+  echo "FAIL type check: ${warnings} warning(s)" >&2
+  kc get validatingadmissionpolicies -o yaml | yq '.items[].status.typeChecking' >&2
+  failures=$((failures + 1))
+else
+  echo "ok   type check: no warnings"
+fi
+
 expect "reconcile flux-system" accepted \
   kc "${sa[@]}" -n flux-system patch "${gr[@]}" flux-system "${dry[@]}" -p '{"metadata":{"annotations":{"reconcile.fluxcd.io/requestedAt":"now"}}}'
 expect "start a manual backup" accepted \
@@ -210,6 +230,10 @@ expect "change the backup repository" refused \
 expect "Backup of another cluster" refused kc "${sa[@]}" create --dry-run=server -f "${work}/other-cluster.yaml"
 expect "Backup in another namespace" refused kc "${sa[@]}" create --dry-run=server -f "${work}/other-ns.yaml"
 expect "Backup with another method" refused kc "${sa[@]}" create --dry-run=server -f "${work}/other-method.yaml"
+expect "Backup with another plugin" refused kc "${sa[@]}" create --dry-run=server -f "${work}/other-plugin.yaml"
+expect "Backup with plugin parameters" refused kc "${sa[@]}" create --dry-run=server -f "${work}/parameters.yaml"
+expect "Backup with another spec field" refused kc "${sa[@]}" create --dry-run=server -f "${work}/extra-field.yaml"
+expect "Backup with a finalizer" refused kc "${sa[@]}" create --dry-run=server -f "${work}/finalizer.yaml"
 
 expect "the role: reconcile another GitRepository" forbidden \
   kc "${sa[@]}" -n apps patch "${gr[@]}" other "${dry[@]}" -p '{"metadata":{"annotations":{"reconcile.fluxcd.io/requestedAt":"now"}}}'

@@ -59,6 +59,18 @@ spec:
         A sandbox pod has only the labels hermes-task,
         hermes-k8s/allow-internet, hermes-k8s/allow-kube-api and
         hermes-k8s/allow-litellm.
+    # The kube-api allowance is for the Renovate loop of dev, whose Secret
+    # holds the cluster account. A sandbox of another profile cannot get it.
+    - expression: >-
+        !((has(object.metadata.labels) && 'hermes-k8s/allow-kube-api' in object.metadata.labels) ||
+          (has(object.spec.podTemplate.metadata) && has(object.spec.podTemplate.metadata.labels) &&
+           'hermes-k8s/allow-kube-api' in object.spec.podTemplate.metadata.labels)) ||
+        (has(variables.pod.volumes) &&
+         variables.pod.volumes.exists(v, has(v.secret) && has(v.secret.secretName) &&
+           v.secret.secretName == 'hermes-sandbox-dev'))
+      message: >-
+        Only a sandbox of dev (with the Secret hermes-sandbox-dev) can have the
+        label hermes-k8s/allow-kube-api.
     - expression: >-
         !has(variables.pod.nodeName) &&
         (!has(variables.pod.hostNetwork) || variables.pod.hostNetwork == false) &&
