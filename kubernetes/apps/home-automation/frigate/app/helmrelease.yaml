@@ -16,15 +16,12 @@ spec:
           resourceClaims:
             - name: gpu
               resourceClaimTemplateName: frigate-gpu
+          # No effect: the toleration matches each effect of the GPU taint. The
+          # descheduler evicts a pod that does not tolerate PreferNoSchedule.
           tolerations:
             - key: dedicated
               operator: Equal
               value: gpu
-              effect: NoSchedule
-            - key: dedicated
-              operator: Equal
-              value: gpu
-              effect: NoExecute
           nodeSelector:
             gpu: intel
         annotations:
