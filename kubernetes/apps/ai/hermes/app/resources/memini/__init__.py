@@ -2,9 +2,9 @@
 
 The provider calls memini through the LiteLLM MCP gateway, with the Hermes key and the server
 memini_hermes, as the agents do with their memini tools. Each profile uses its own namespace,
-hermes/<profile>, and memini adds the parents hermes and personal/jaime. The provider injects only
-the memories of hermes and hermes/<profile>: personal/jaime holds mostly the work of Claude Code,
-which is noise for a Hermes agent. An agent reads it on purpose with its memini tools. A call that
+hermes/<profile>, and memini adds the parents hermes and personal/jaime. The provider injects the
+memories of hermes and hermes/<profile>, and of personal/jaime only those with the tag hermes:
+personal/jaime holds mostly the work of Claude Code, which is noise for a Hermes agent. A call that
 fails gives no context and no error: memory must never stop a turn.
 
 Activate it with `memory.provider: memini` (profiles.sh does this).
@@ -32,6 +32,8 @@ MAX_CHARS = 2000
 RECALL_LIMIT = 5
 # More results than we inject, because the filter drops the memories of other namespaces.
 RECALL_FETCH = 15
+# The tag of the facts about Jaime that Hermes saves in personal/jaime.
+TAG = "hermes"
 
 
 def _call(namespace: str, tool: str, args: dict[str, Any]) -> str:
@@ -67,19 +69,28 @@ def _ours(item: dict[str, Any]) -> bool:
 
 
 def _lines(items: list[dict[str, Any]], limit: int) -> list[str]:
-    kept = [str(i.get("content") or "").strip() for i in items if isinstance(i, dict) and _ours(i)]
+    kept = [str(i.get("content") or "").strip() for i in items if isinstance(i, dict)]
     return [f"- {c}" for c in kept if c][:limit]
 
 
-def _format_recall(text: str) -> str:
-    return "\n".join(_lines(json.loads(text).get("results", []), RECALL_LIMIT))
+def _recall(namespace: str, query: str) -> str:
+    args = {"query": query, "limit": RECALL_FETCH, "response_format": "concise"}
+    ours = [i for i in json.loads(_call(namespace, "memory_recall", args)).get("results", []) if _ours(i)]
+    # The tag selects the Hermes facts in personal/jaime: a concise result does not show its tags.
+    tagged = json.loads(_call(namespace, "memory_recall", {**args, "tags": [TAG]})).get("results", [])
+    seen, items = set(), []
+    for item in tagged + ours:
+        if isinstance(item, dict) and item.get("id") not in seen:
+            seen.add(item.get("id"))
+            items.append(item)
+    return "\n".join(_lines(items, RECALL_LIMIT))
 
 
 def _format_briefing(text: str) -> str:
     briefing = json.loads(text)
     lines = []
     for section in ("pinned", "facts", "procedures"):
-        lines += _lines(briefing.get(section) or [], RECALL_LIMIT)
+        lines += _lines([i for i in briefing.get(section) or [] if isinstance(i, dict) and _ours(i)], RECALL_LIMIT)
     return "\n".join(lines)
 
 
@@ -102,12 +113,14 @@ class MeminiProvider(MemoryProvider):
         self._namespace = "hermes/" + _profile(kwargs["hermes_home"])
         # Only the agent that talks to Jaime saves: a scheduled job or a subagent only reads.
         self._writes = kwargs.get("agent_context", "primary") == "primary"
-        self._background(self._load, "memory_briefing", {}, _format_briefing, "memini briefing")
+        namespace = self._namespace
+        self._background(self._load, lambda: _format_briefing(_call(namespace, "memory_briefing", {})),
+                         "memini briefing")
 
     def queue_prefetch(self, query: str, *, session_id: str = "") -> None:
         if query.strip():
-            args = {"query": query[:500], "limit": RECALL_FETCH, "response_format": "concise"}
-            self._background(self._load, "memory_recall", args, _format_recall, "memini recall")
+            namespace = self._namespace
+            self._background(self._load, lambda: _recall(namespace, query[:500]), "memini recall")
 
     def prefetch(self, query: str, *, session_id: str = "") -> str:
         with self._lock:
@@ -122,7 +135,9 @@ class MeminiProvider(MemoryProvider):
             return
         args: dict[str, Any] = {"content": content.strip()}
         if target == "user":
-            args["visibility"] = "hermes"  # A fact about Jaime: every Hermes agent knows it.
+            # A fact about Jaime: every agent of Jaime knows it, and the tag brings it into recalls.
+            # memini keeps a working or episodic memory in hermes/<profile>, so set the tier.
+            args.update(visibility="personal", tags=[TAG], tier="semantic")
         self._background(self._save, args)
 
     def get_tool_schemas(self) -> list[dict[str, Any]]:
@@ -133,11 +148,11 @@ class MeminiProvider(MemoryProvider):
         self._threads = [t for t in self._threads if t.is_alive()] + [thread]
         thread.start()
 
-    def _load(self, tool: str, args: dict[str, Any], render, heading: str) -> None:
+    def _load(self, fetch, heading: str) -> None:
         try:
-            text = render(_call(self._namespace, tool, args))
+            text = fetch()
         except Exception as exc:  # noqa: BLE001 - memory must never stop a turn.
-            logger.debug("memini: %s failed: %s", tool, exc)
+            logger.debug("memini: %s failed: %s", heading, exc)
             return
         if text:
             with self._lock:

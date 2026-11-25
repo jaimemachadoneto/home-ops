@@ -291,11 +291,13 @@ profile but `web`, which has no memory on purpose. It calls memini through
 the same LiteLLM server, with the Hermes key:
 
 - At the start of a session it adds the memini briefing, and before each turn
-  the memories that match the message. It adds only the memories of
-  `hermes/<profile>` and `hermes`: `personal/jaime` holds mostly the work of
-  Claude Code. An agent reads `personal/jaime` with its memini tools.
-- A write to the memory of Hermes also goes to memini: a `user` fact with the
-  visibility `hermes` (all Hermes agents), the others in `hermes/<profile>`.
+  the memories that match the message. It adds the memories of
+  `hermes/<profile>` and `hermes`, and of `personal/jaime` only those with the
+  tag `hermes`: `personal/jaime` holds mostly the work of Claude Code. An agent
+  reads all of `personal/jaime` with its memini tools.
+- A write to the memory of Hermes also goes to memini: a `user` fact goes to
+  `personal/jaime` with the tag `hermes`, so Claude Code also sees it. The
+  other facts go to `hermes/<profile>`, the memory of that agent only.
   Only the agent that talks to Jaime writes, not a scheduled job or a
   subagent.
 - A call that fails adds nothing and does not stop the turn.

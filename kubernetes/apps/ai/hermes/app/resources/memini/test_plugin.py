@@ -22,11 +22,16 @@ calls = []
 
 def fake(namespace, tool, args):
     calls.append((namespace, tool, args))
+    if tool == "memory_recall" and args.get("tags") == ["hermes"]:
+        return json.dumps({"results": [
+            {"id": "t1", "content": "Jaime prefers short answers.", "namespace": "personal/jaime"},
+            {"id": "h2", "content": "Jaime lives in Spain.", "namespace": "hermes"},
+        ]})
     if tool == "memory_recall":
         return json.dumps({"results": [
-            {"content": "Jaime uses the Dracula theme.", "namespace": "personal/jaime"},
-            {"content": "The office light is light.office.", "namespace": "hermes/house"},
-            {"content": "Jaime lives in Spain.", "namespace": "hermes"},
+            {"id": "c1", "content": "Jaime uses the Dracula theme.", "namespace": "personal/jaime"},
+            {"id": "h1", "content": "The office light is light.office.", "namespace": "hermes/house"},
+            {"id": "h2", "content": "Jaime lives in Spain.", "namespace": "hermes"},
         ]})
     if tool == "memory_briefing":
         return json.dumps({
@@ -60,18 +65,22 @@ p.queue_prefetch("where does Jaime live")
 wait()
 got = p.prefetch("where does Jaime live")
 assert "Jaime lives in Spain." in got and "light.office" in got, got
-assert "Dracula" not in got, "memories of personal/jaime are not injected"
-assert calls[-1][:2] == ("hermes/house", "memory_recall")
+assert "Dracula" not in got, "untagged memories of personal/jaime are not injected"
+assert "short answers" in got, "a Hermes fact in personal/jaime is injected"
+assert got.count("Spain") == 1, "a memory in both recalls is injected once"
+assert [c[:2] for c in calls[-2:]] == [("hermes/house", "memory_recall")] * 2
 
-# A built-in memory write goes to memini: user facts for all Hermes agents, the others in the profile.
+# A built-in memory write goes to memini: user facts to personal/jaime, the others to the profile.
 calls.clear()
 p.on_memory_write("add", "user", "Jaime prefers short answers.")
 p.on_memory_write("add", "memory", "The office light is light.office.")
 p.on_memory_write("remove", "memory", "old")
 p.on_memory_write("add", "memory", "   ")
 wait()
-saved = [(c[2]["content"], c[2].get("visibility")) for c in calls if c[1] == "memory_remember"]
-assert saved == [("Jaime prefers short answers.", "hermes"), ("The office light is light.office.", None)], saved
+saved = [(c[2]["content"], c[2].get("visibility"), c[2].get("tags"), c[2].get("tier"))
+         for c in calls if c[1] == "memory_remember"]
+assert saved == [("Jaime prefers short answers.", "personal", ["hermes"], "semantic"),
+                 ("The office light is light.office.", None, None, None)], saved
 
 # The root profile is default.
 d = mod.MeminiProvider()

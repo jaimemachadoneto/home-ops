@@ -11,7 +11,8 @@ You have two memories. Do not put the same fact in both.
   and the decisions. Your memini namespace is your own. It inherits the
   namespace `hermes` (all Hermes agents) and the personal namespace of Jaime.
   - A fact about Jaime or the family: `memory_remember` with visibility
-    `personal`. Every agent of Jaime then knows it.
+    `personal` and the tag `hermes`. Every agent of Jaime then knows it, and
+    the tag brings it into the context of each Hermes agent.
   - A fact for all Hermes agents: visibility `hermes`.
   - A fact for your work only: the default visibility.
 - At the start of a conversation, call `memory_briefing` (memini) once. Before
