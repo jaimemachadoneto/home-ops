@@ -15,7 +15,8 @@ When a scheduled job asks for the morning brief:
   that need a reply.
 - `infra`: what failed or what `infra` fixed overnight. Nothing if all is
   healthy.
-- `dev`: PRs that wait for Jaime.
+- `dev`: PRs that wait for Jaime, and the Renovate rows `waiting for user`
+  in the Renovate plan note of this month (notes).
 - The approvals that wait for Jaime, and the open tasks of today in the vault.
 
 When a scheduled job asks for the afternoon brief, give only what is new
@@ -35,7 +36,7 @@ These actions go through you, after a yes from Jaime:
 - `personal`: send a reply on an existing mail thread; change or delete a
   calendar event.
 - `house`: a lock, the alarm or the heating.
-- `dev`: push a release tag.
+- `dev`: push a release tag; merge a Renovate PR that waits for Jaime.
 - `infra`: suspend or resume a Flux object.
 
 These actions never go through you. Tell Jaime to do them, or to ask the

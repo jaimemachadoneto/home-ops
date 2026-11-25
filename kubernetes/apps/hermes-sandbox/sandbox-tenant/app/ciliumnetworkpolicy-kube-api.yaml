@@ -1,0 +1,22 @@
+---
+# Allowance "kube-api" (ADR 0007 of hermes-k8s): a sandbox with the label
+# hermes-k8s/allow-kube-api=true can call the Kubernetes API. The config
+# overlay of Hermes gives it to dev only, for the Renovate loop. The account
+# hermes-dev-renovate and its admission policy limit what the sandbox can do
+# there.
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/cilium.io/ciliumnetworkpolicy_v2.json
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hermes-sandbox-allow-kube-api
+spec:
+  endpointSelector:
+    matchLabels:
+      hermes-k8s/allow-kube-api: "true"
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP

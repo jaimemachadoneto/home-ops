@@ -1,0 +1,114 @@
+---
+# The cluster account of the Renovate merge loop that the Hermes agent dev runs
+# in its sandbox (.claude/skills/renovate-merge/hermes.md). The scripts read
+# the Flux objects and the pods, reconcile the GitRepository flux-system, start
+# a VolSync backup and create a CNPG Backup of postgres16. The admission policy
+# hermes-dev-renovate (validatingadmissionpolicy-renovate.yaml) allows only
+# these changes. The token goes to the sandbox of dev through the Secret
+# hermes-sandbox-dev (externalsecret.yaml).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hermes-dev-renovate
+---
+# A long-lived token: the sandbox needs a file, and a projected token cannot go
+# into the Secret of the profile.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hermes-dev-renovate-token
+  annotations:
+    kubernetes.io/service-account.name: hermes-dev-renovate
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hermes-dev-renovate
+rules:
+  - apiGroups: [kustomize.toolkit.fluxcd.io]
+    resources: [kustomizations]
+    verbs: [get, list, watch]
+  - apiGroups: [helm.toolkit.fluxcd.io]
+    resources: [helmreleases]
+    verbs: [get, list, watch]
+  - apiGroups: [source.toolkit.fluxcd.io]
+    resources: [gitrepositories]
+    verbs: [get, list, watch]
+  # The reconcile of flux-system (an annotation, see the policy).
+  - apiGroups: [source.toolkit.fluxcd.io]
+    resources: [gitrepositories]
+    resourceNames: [flux-system]
+    verbs: [patch]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch]
+  # A manual VolSync backup (spec.trigger.manual, see the policy).
+  - apiGroups: [volsync.backube]
+    resources: [replicationsources]
+    verbs: [get, list, watch, patch]
+  # A Backup of postgres16 in database (see the policy).
+  - apiGroups: [postgresql.cnpg.io]
+    resources: [backups]
+    verbs: [get, list, watch, create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: hermes-dev-renovate
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hermes-dev-renovate
+subjects:
+  - kind: ServiceAccount
+    name: hermes-dev-renovate
+    namespace: hermes-sandbox
+---
+# External Secrets reads the token through this account. It can read only the
+# token Secret.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hermes-sandbox-kube-reader
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hermes-sandbox-kube-reader
+rules:
+  - apiGroups: [""]
+    resources: [secrets]
+    resourceNames: [hermes-dev-renovate-token]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hermes-sandbox-kube-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: hermes-sandbox-kube-reader
+subjects:
+  - kind: ServiceAccount
+    name: hermes-sandbox-kube-reader
+    namespace: hermes-sandbox
+---
+# yaml-language-server: $schema=https://k8s-schemas.bjw-s.dev/external-secrets.io/secretstore_v1.json
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: hermes-sandbox-kube
+spec:
+  provider:
+    kubernetes:
+      remoteNamespace: hermes-sandbox
+      server:
+        caProvider:
+          type: ConfigMap
+          name: kube-root-ca.crt
+          key: ca.crt
+      auth:
+        serviceAccount:
+          name: hermes-sandbox-kube-reader

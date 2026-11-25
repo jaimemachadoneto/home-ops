@@ -206,3 +206,7 @@ test-hermes-sandbox-vap:
 [doc('Test what the account flux-ops-mcp can change, with a temporary API server')]
 test-flux-ops-mcp-vap:
   scripts/test-flux-ops-mcp-vap.sh
+
+[doc('Test what the account hermes-dev-renovate can change, with a temporary API server')]
+test-hermes-renovate-vap:
+  scripts/test-hermes-renovate-vap.sh

@@ -245,6 +245,17 @@ convenience of these edges. `soul-default.md` lists these actions, and the
 actions that never go through `default` (a forward to a new address, a
 delete of mail, a payment, an automation, a merge).
 
+### Renovate
+
+`dev` runs the Renovate merge loop on Sunday at 23:00 (a scheduled job), as
+`.claude/skills/renovate-merge/hermes.md` tells. Its sandbox gets the
+allowance `kube-api` and the cluster account `hermes-dev-renovate` in
+`/run/secrets/github/kubeconfig`. The admission policy `hermes-dev-renovate`
+allows only the changes of the scripts: the reconcile of `flux-system`, a
+manual VolSync backup, and a Backup of `postgres16`. Test it with
+`just test-hermes-renovate-vap`. The rows that wait for Jaime show in the
+morning brief, and Jaime approves them through `default`.
+
 `default` has no web tool. Web questions go to `web`, which has `web_search`
 but no memory, notes or mail. The rule that `default` does not put mail text
 in a task for `web` is in the SOUL, not in code. Jaime accepted this on

@@ -32,7 +32,7 @@ spec:
         '^hermes-sandbox-[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
     # The label keys that a sandbox can have (see the rule on labels).
     - name: labelKeys
-      expression: "['hermes-task', 'hermes-k8s/allow-internet', 'hermes-k8s/allow-litellm']"
+      expression: "['hermes-task', 'hermes-k8s/allow-internet', 'hermes-k8s/allow-kube-api', 'hermes-k8s/allow-litellm']"
     # The init containers have the same rules as the containers.
     - name: allContainers
       expression: >-
@@ -57,7 +57,8 @@ spec:
           object.metadata.labels.all(k, k in variables.labelKeys))
       message: >-
         A sandbox pod has only the labels hermes-task,
-        hermes-k8s/allow-internet and hermes-k8s/allow-litellm.
+        hermes-k8s/allow-internet, hermes-k8s/allow-kube-api and
+        hermes-k8s/allow-litellm.
     - expression: >-
         !has(variables.pod.nodeName) &&
         (!has(variables.pod.hostNetwork) || variables.pod.hostNetwork == false) &&

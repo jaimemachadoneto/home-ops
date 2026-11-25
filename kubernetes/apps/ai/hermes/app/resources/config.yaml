@@ -36,6 +36,7 @@ plugins:
             - litellm
           dev:
             - internet
+            - kube-api
 
 # See ADR 0001 and ADR 0008 in hermes-k8s. Each session runs its shell in its
 # own sandbox. The Hermes image includes the plugin k8s_sandbox. The sandbox
