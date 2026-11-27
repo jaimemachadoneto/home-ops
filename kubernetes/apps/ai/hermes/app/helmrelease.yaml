@@ -37,6 +37,14 @@ spec:
         strategy: Recreate
         containers:
           app:
+            # The kubelet is the supervisor of the gateway. A restart from the
+            # Dashboard makes the gateway exit, and the kubelet starts the
+            # container again (hermes-k8s ADR 0012).
+            args:
+              - hermes
+              - gateway
+              - run
+              - --external-supervisor
             image: &image
               repository: ghcr.io/jaimemachadoneto/hermes
               tag: sha-92016dea9cecd3158a0ab94eb42770933bed6660@sha256:36d440e9f1bb6750ff83343eeb5bbb54f4e199d3ddc1296ac1c6674ab7e4a1d5
@@ -44,6 +52,10 @@ spec:
               # The login directory of `claude`, on the volume. HOME is
               # /opt/data, so this is also the default directory.
               CLAUDE_CONFIG_DIR: /opt/data/.claude
+              # Only the Dashboard reads it. The Dashboard is in another PID
+              # namespace and cannot see the gateway process, so it asks the
+              # API server of the gateway for the status.
+              GATEWAY_HEALTH_URL: http://127.0.0.1:8642
               HERMES_DISABLE_LAZY_INSTALLS: "true"
               HERMES_HOME: /opt/data
               HERMES_WRITE_SAFE_ROOT: /opt/data
