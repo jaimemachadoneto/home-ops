@@ -9,6 +9,10 @@ spec:
     kind: OCIRepository
     name: hermes
   interval: 30m
+  # A release pulls an image of about 1 GB, and the init steps then prepare
+  # each profile. With the default of 5m, Helm rolled back v0.0.10 of
+  # hermes-k8s before the pod was ready.
+  timeout: 15m
   values:
     controllers:
       hermes:
