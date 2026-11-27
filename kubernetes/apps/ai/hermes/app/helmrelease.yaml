@@ -51,7 +51,7 @@ spec:
               - --external-supervisor
             image: &image
               repository: ghcr.io/jaimemachadoneto/hermes
-              tag: sha-321da0410c2ada7c3f4e9ef9d725a5a9a62afed0@sha256:1b7872d183339fc9ebbb3c323f30f8f5b6b64bafd12f2a2225906e42ae7333e1
+              tag: sha-94d94216658daac52d0b79f0ee9021172c4058e5@sha256:40bce04225e53c4b33d36fbc7d85d8327a2674dfe690e75489438428cc5ec250
             env: &env
               # The login directory of `claude`, on the volume. HOME is
               # /opt/data, so this is also the default directory.
@@ -66,7 +66,7 @@ spec:
               HOME: /opt/data
               # The sandbox image, pinned by digest. The admission policy of
               # hermes-sandbox refuses an image with no digest.
-              HERMES_K8S_SANDBOX_IMAGE: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-321da0410c2ada7c3f4e9ef9d725a5a9a62afed0@sha256:ba14ce92599ecf73323796aea6a6a57ce446c5b4ecf8b58571046b5f68567c96
+              HERMES_K8S_SANDBOX_IMAGE: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-94d94216658daac52d0b79f0ee9021172c4058e5@sha256:ba14ce92599ecf73323796aea6a6a57ce446c5b4ecf8b58571046b5f68567c96
               SEARXNG_URL: http://searxng.selfhosted.svc.cluster.local:8080
               # git in this pod uses GITHUB_TOKEN for each repository (see
               # resources/gitconfig). A system file, so `git config --global` still works.
