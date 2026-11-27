@@ -165,7 +165,7 @@ start. The script has one line for each profile:
 | `research` | Research and lessons for Jaime | LiteLLM `opr-free-strong` | none |
 | `house` | Home Assistant | LiteLLM | none |
 | `web` | Web search for `default` (`web_search`, no memory) | LiteLLM `opr-free-strong` | none |
-| `kid` | School portal and school mailbox of the kids (`browser_colegio` and memini) | LiteLLM | none |
+| `kid` | School mailbox of the kids (`browser_colegio`, the Outlook driver of browser-sessions, and memini) | LiteLLM | none |
 
 The script does two different things:
 
@@ -238,7 +238,7 @@ names Jaime and an approval (`test_plugin.py` tests it). This is a text
 check, so a new wording can pass it: it is a second layer, not a boundary.
 Hermes does not tell a child who sent its task. The edges `kid` to
 `personal`, `personal` to `kid` and `infra` to `dev` can therefore carry a
-forged approval: a portal page or a mail could make `personal` reply on an
+forged approval: a mail could make `personal` reply on an
 existing thread or `kid` send to the school, and a log line could make
 `dev` push a release tag. Jaime accepted this on 2026-11-25 for the
 convenience of these edges. `soul-default.md` lists these actions, and the

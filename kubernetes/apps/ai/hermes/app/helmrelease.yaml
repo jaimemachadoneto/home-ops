@@ -62,8 +62,6 @@ spec:
               HOME: /opt/data
               # The sandbox image, pinned by digest. The admission policy of
               # hermes-sandbox refuses an image with no digest.
-              # TODO: After the merge, push the sandbox image of hermes-k8s ticket 12.
-              # Then set its digest here.
               HERMES_K8S_SANDBOX_IMAGE: ghcr.io/jaimemachadoneto/hermes-sandbox:sha-92016dea9cecd3158a0ab94eb42770933bed6660@sha256:ba14ce92599ecf73323796aea6a6a57ce446c5b4ecf8b58571046b5f68567c96
               SEARXNG_URL: http://searxng.selfhosted.svc.cluster.local:8080
               # git in this pod uses GITHUB_TOKEN for each repository (see
