@@ -217,11 +217,11 @@ profile web - - opr-free-strong \
 profile house - - "$FLASH" \
   memini_hermes,notes,ha_mcp \
   "Home Assistant state, energy and automation proposals"
-# memini next to a browser breaks the rule "no URL-fetch tool next to memini":
-# Jaime accepted that risk for kid on 2026-11-24.
+# browser_colegio is the Outlook driver of browser-sessions, not a browser: it
+# cannot open links, so it is no URL-fetch tool next to memini.
 profile kid - - "$FLASH" \
   memini_hermes,browser_colegio \
-  "School portal and school mailbox of the kids"
+  "School mailbox of the kids"
 
 # The built-in tools of each profile, on every platform. A platform without an
 # entry gets all tools, so the list names each platform that Hermes knows.
@@ -275,7 +275,7 @@ handoffs() {
 
 handoffs default '{
   "personal": {"use": "mail, calendar and documents of Jaime: read, drafts, add an event; with an approval, a reply on a thread or a change of an event"},
-  "kid": {"use": "the school portal and the school mailbox: open items, messages, draft replies; with an approval, a message to the school"},
+  "kid": {"use": "the school mailbox: open items, messages, draft replies; with an approval, a message to the school"},
   "house": {"use": "lights, scenes and media; the state of the house (sensors, temperature, presence); with an approval, a lock, the alarm or the heating"},
   "infra": {"use": "the cluster and the network: diagnosis, health, the check of a rollout, a reconcile or a pod restart; with an approval, a suspend or a resume"},
   "dev": {"use": "code, fixes and deployments as a PR in the sandbox; with an approval, a release tag"},
