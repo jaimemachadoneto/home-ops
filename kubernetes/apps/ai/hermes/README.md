@@ -346,8 +346,17 @@ private on ghcr.io. The pod pulls it with the Secret `ghcr-pull`. The field
 `pat_ghcr_pull` of the 1Password item `Github` gives the token.
 
 The image has no s6. The HelmRelease therefore has two containers. The
-container `app` runs `hermes gateway run` with the Webapp. The container
-`dashboard` runs `hermes dashboard` on port 9119.
+container `app` runs `hermes gateway run --external-supervisor` with the
+Webapp. The container `dashboard` runs `hermes dashboard` on port 9119.
+
+The two containers do not share a PID namespace, because the other
+containers must not read the tokens of `app`. The Dashboard reads the status
+of the gateway from its API server (`GATEWAY_HEALTH_URL`). The Restart button
+of the Dashboard asks the gateway on its control socket to exit, and the
+kubelet starts the `app` container again. This restart needs a Hermes image
+with the patch of hermes-k8s ADR 0012. With an older image, the button
+starts a second gateway in `dashboard`: restart with `/restart` in Telegram,
+or with `kubectl -n ai rollout restart deploy/hermes`.
 
 `terminal.backend` is `k8s_sandbox`. Each session runs its shell in a Sandbox
 in the namespace `hermes-sandbox`. The pod uses the account
